@@ -286,6 +286,30 @@ def _recouvre(c1, c2) -> float:
     return max(0, lx) * max(0, ly) / max(1, min(c1[2] * c1[3], c2[2] * c2[3]))
 
 
+SOURCE_PPTX = ("type", "fichier", "diapo", "etats", "titre", "animation_par_paragraphe")
+PAS_PPTX = ("id", "fond", "source", "narration", "phrases", "audio", "duree_s", "objets")
+
+
+def _garder(q: dict, vieux: dict, enregistre: bool):
+    """Reporte dans le pas repris ``q`` ce que l'ancien pas avait en plus de ce que donne le diaporama.
+
+    Gardés : voix de synthèse des autres langues (``voix``), caméra, gestes et autres champs du pas, et les champs de
+    ``source`` que la reprise ne réécrit pas. Une voix de synthèse en langue source (``source.voix: synthese``)
+    est gardée avec son son seulement si la diapositive n'a pas d'enregistrement ; sinon l'enregistrement la remplace.
+    """
+    src = {k: v for k, v in (vieux.get("source") or {}).items() if k not in q["source"] and k not in SOURCE_PPTX}
+    if enregistre:
+        src = {k: v for k, v in src.items() if not k.startswith("voix")}
+    elif src.get("voix") == "synthese" and vieux.get("audio"):
+        q["audio"] = vieux["audio"]
+        if vieux.get("duree_s"):
+            q["duree_s"] = vieux["duree_s"]
+    q["source"].update(src)
+    for k, v in vieux.items():
+        if k not in q and k not in PAS_PPTX:
+            q[k] = v
+
+
 def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None = None, images: bool = True) -> dict:
     """Reprend le diaporama ``src`` dans les sections du chapitre ``y`` qui y renvoient ; renvoie le chapitre écrit.
 
@@ -363,6 +387,8 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
                 q["audio"] = audios[n]
             if duree:
                 q["duree_s"] = duree
+            if vieux:                                   # ce que la reprise ne produit pas est gardé
+                _garder(q, vieux, enregistre=n in audios)
             deja = {o.get("id"): o for o in (vieux or {}).get("objets") or []}
             objets = []
             for k in range(1, K):                       # instants répartis, sauf réglage déjà fait

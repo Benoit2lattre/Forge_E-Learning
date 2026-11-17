@@ -22,6 +22,7 @@ bilan_*.xlsx
 site/_build/
 site/api/
 profils/index_profils.json
+site_build.log
 
 # Lourds ou personnels, par type
 *.mp4

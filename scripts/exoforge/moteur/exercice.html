@@ -228,9 +228,16 @@ function versVoix(noeud){
 function parler(texte){
   if(!('speechSynthesis' in window)) return;
   speechSynthesis.cancel(); if(EN_COURS) EN_COURS.pause();
-  const u = new SpeechSynthesisUtterance(texte); u.lang = 'fr-FR';
-  const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith('fr')); if(v) u.voice = v;
+  const lang = (document.documentElement.lang || 'fr').toLowerCase();         // langue de la page (exercice traduit : en)
+  const u = new SpeechSynthesisUtterance(texte); u.lang = lang;
+  const v = voixPour(lang); if(v) u.voice = v;
   speechSynthesis.speak(u);
+}
+function voixPour(lang){
+  // voix du navigateur dans la langue de la page ; les voix « naturelles » (Edge : Online/Natural, Chrome : Google) d'abord
+  const L = lang.slice(0, 2), note = v => (/natural|neural|online/i.test(v.name) ? 4 : 0) + (/google/i.test(v.name) ? 2 : 0)
+    + (/^(fr-fr|en-gb)$/i.test(v.lang) ? 1 : 0);
+  return speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith(L)).sort((a, b) => note(b) - note(a))[0];
 }
 const LECTURE_VOCALE = () => !!((CFG.accessibilite||{}).lecture_vocale && 'speechSynthesis' in window);
 

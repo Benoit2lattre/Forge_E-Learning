@@ -9,7 +9,7 @@ Des outils libres pour passer d'un cours existant à des activités en ligne : q
 
 Écrits pour l'enseignement de la mécanique et des mathématiques en école d'ingénieurs, les outils ne sont pas propres à ces disciplines.
 
-> **Version 0.2** (en préparation). Les outils servent déjà en cours ; leur maturité est inégale : voir l'état ci-dessous et le [journal des versions](CHANGELOG.md).
+> **Version 0.2** publiée ; **0.3** en préparation. Les outils servent déjà en cours ; leur maturité est inégale : voir l'état ci-dessous et le [journal des versions](CHANGELOG.md).
 
 ## Les outils
 
@@ -23,7 +23,7 @@ Des outils libres pour passer d'un cours existant à des activités en ligne : q
 | QuizForge | classeur Excel → questions Moodle (XML, GIFT) : huit types de questions, questions sur image, rétroactions, erreurs types visées par les leurres, contrôle de l'écriture | [outils/quizforge](outils/quizforge/README.md) |
 | ExoForge | fiche YAML → exercice guidé autonome (HTML5 et SCORM 1.2) : données tirées, formules LaTeX, diagnostic des erreurs, graphiques, audio | [outils/exoforge](outils/exoforge/README.md) |
 | DiagForge | exports Moodle → bilan : classeur, fiche du professeur, images pour les étudiants, qualité des questions, erreurs types, tirage | [outils/diagforge](outils/diagforge/README.md) |
-| CapsuleForge | diaporama narré, vidéo ou capture → chapitre de cours interactif (lecteur HTML, SCORM 2004) : parcours, sous-titres, questions, exercices, traduction, voix de synthèse | [outils/capsuleforge](outils/capsuleforge/README.md) |
+| CapsuleForge | diaporama narré, vidéo ou capture → chapitre de cours interactif (lecteur HTML, SCORM 2004 ou 1.2) : parcours, sous-titres, questions, exercices, traduction, voix de synthèse | [outils/capsuleforge](outils/capsuleforge/README.md) |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="_static/identite/formats/bandeaux/demarche_bandeau_nuit.png">
@@ -37,7 +37,7 @@ La première étape, concevoir le cours, reste celle de l'enseignant : Forge par
   <img alt="Formats produits : SCORM, XML, HTML5, H5P" src="_static/identite/formats/formats_jour.png" width="80%">
 </picture>
 
-QuizForge produit le Moodle XML (et le GIFT), ExoForge la page HTML5 et le paquet SCORM 1.2, CapsuleForge le lecteur HTML et le paquet SCORM 2004 ; l'export H5P est prévu. Les outils partagent un style ([style/](style/README.md)) et des profils d'établissement ([profils/](profils/README.md)) : couleurs par rôle, polices, barème Moodle.
+QuizForge produit le Moodle XML (et le GIFT), ExoForge la page HTML5 et le paquet SCORM 1.2, CapsuleForge le lecteur HTML et les paquets SCORM 2004 et 1.2 ; l'export H5P est prévu. Les outils partagent un style ([style/](style/README.md)) et des profils d'établissement ([profils/](profils/README.md)) : couleurs par rôle, polices, barème Moodle.
 
 ## Une bibliographie derrière chaque réglage
 
@@ -57,18 +57,18 @@ Une fiche résume un article lu en texte complet (question, public, méthode, r�
 | [H — Spécificités STEM](reference/H_specificites_stem/README.md) | paramètres aléatoires, erreurs types en mécanique | 29 | 121 |
 | [I — Accessibilité](reference/I_accessibilite/README.md) | lisibilité, dyslexie, audio | 20 | 65 |
 
-## État des outils (version 0.2)
+## État des outils (version 0.3 en préparation)
 
 | Outil | Version | Essayé en conditions réelles | Livré, pas encore essayé | Manque |
 | --- | --- | --- | --- | --- |
 | QuizForge | 0.9 | tous les types de questions dans Moodle ; `valider` ; barème « équilibré » ; quiz de séance | rappel des réglages Moodle conseillés | catalogue d'erreurs types par domaine ; export H5P |
-| ExoForge | 0.8 | quatre exercices validés ; paquet SCORM 1.2 dans Moodle | graphiques dans les étapes sur les exercices anciens | fonction Φ ; reprise d'un exercice interrompu |
-| DiagForge | 0.5 | bilan sur le bac à sable Moodle et des promotions fictives | tirage, équité, rétention ; erreurs types | essai sur une vraie promotion ; restitution aux étudiants ; traces SCORM |
-| CapsuleForge | 0.8 | chapitre pilote complet jusqu'au paquet SCORM 2004 reçu par Moodle ; traduction et voix de synthèse ; vidéo ; enregistrement d'écran | dernière version de l'enregistreur | caméo dans le lecteur ; simulation ActivePresenter ; éditeur d'assemblage ; export H5P |
+| ExoForge | 0.8 | quatre exercices validés ; paquet SCORM 1.2 dans Moodle ; exercice traduit dans un chapitre | graphiques dans les étapes sur les exercices anciens | fonction Φ ; reprise d'un exercice interrompu |
+| DiagForge | 0.6 | bilan sur le bac à sable Moodle et des promotions fictives | commande `diagforge.py` ; tirage, équité, rétention ; erreurs types | essai sur une vraie promotion ; restitution aux étudiants ; traces SCORM |
+| CapsuleForge | 0.9 | chapitre pilote complet jusqu'aux paquets SCORM 2004 et 1.2 reçus par Moodle ; chapitre bilingue (sous-titres, questions, exercice) et voix de synthèse ; vidéo ; enregistrement d'écran | remarques de vérification dans la relecture | caméo dans le lecteur ; simulation ActivePresenter ; éditeur d'assemblage ; export H5P |
 | Style, profils | — | profils `Delattre` et `Ecole1` | — | thème modifiable dans CapsuleForge |
 | Bibliographie | — | 9 axes, 197 fiches | — | règles de restitution (axe G) à appliquer dans DiagForge |
 
-Limite connue : Moodle ne prend pas officiellement en charge SCORM 2004 ([FAQ SCORM de Moodle](https://docs.moodle.org/en/SCORM_FAQ)) ; les paquets de CapsuleForge y ont fonctionné, et CapsuleForge sait aussi produire des paquets SCORM 1.2 (`--scorm-version 1.2`, à essayer dans Moodle). Détail outil par outil : page « État des outils » du site.
+Limite connue : Moodle ne prend pas officiellement en charge SCORM 2004 ([FAQ SCORM de Moodle](https://docs.moodle.org/en/SCORM_FAQ)) ; les paquets de CapsuleForge y ont fonctionné, comme ses paquets SCORM 1.2 (`--scorm-version 1.2`), plus sûrs pour d'autres plateformes. Détail outil par outil : page « État des outils » du site.
 
 ## Installation
 

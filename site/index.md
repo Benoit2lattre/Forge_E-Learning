@@ -15,7 +15,7 @@ Forge E-Learning réunit des outils libres pour passer d'un cours existant à de
 Les outils sont écrits pour l'enseignement de la mécanique et des mathématiques en école d'ingénieurs (de la licence au master), mais rien n'y est propre à ces disciplines.
 
 :::{note}
-**Version 0.2.** Les outils servent déjà en cours ; leur maturité est inégale. La page {doc}`etat_outils` dit, outil par outil, ce qui a été essayé en conditions réelles, ce qui est livré sans avoir encore été essayé et ce qui manque.
+**Version 0.2** publiée, **0.3** en préparation. Les outils servent déjà en cours ; leur maturité est inégale. La page {doc}`etat_outils` dit, outil par outil, ce qui a été essayé en conditions réelles, ce qui est livré sans avoir encore été essayé et ce qui manque.
 :::
 
 ## La démarche : de la diapositive à l'étudiant
@@ -49,7 +49,7 @@ La première étape, **concevoir le cours**, reste celle de l'enseignant : Forge
 | **QuizForge** | classeur Excel → questions Moodle (XML, GIFT) : huit types de questions (dont questions sur image et textes à trous), rétroactions, erreurs types visées par les leurres, contrôle de la qualité d'écriture | {doc}`../outils/quizforge/README` |
 | **ExoForge** | fiche YAML → exercice guidé autonome (page HTML5 et paquet SCORM 1.2) : données tirées au hasard, formules LaTeX, diagnostic des erreurs, graphiques, audio | {doc}`../outils/exoforge/README` |
 | **DiagForge** | exports Moodle → bilan : classeur, fiche du professeur, images pour les étudiants, qualité des questions, erreurs types, tirage et rétention | {doc}`../outils/diagforge/README` |
-| **CapsuleForge** | diaporama narré, vidéo ou capture → chapitre de cours interactif (lecteur HTML, paquet SCORM 2004) : parcours, sous-titres, questions, exercices, traduction, voix de synthèse | {doc}`../outils/capsuleforge/README` |
+| **CapsuleForge** | diaporama narré, vidéo ou capture → chapitre de cours interactif (lecteur HTML, paquets SCORM 2004 et 1.2) : parcours, sous-titres, questions, exercices, traduction, voix de synthèse | {doc}`../outils/capsuleforge/README` |
 
 Les outils partagent un style générique et des profils d'établissement (couleurs par rôle, polices, barème Moodle) : voir {doc}`communs`.
 

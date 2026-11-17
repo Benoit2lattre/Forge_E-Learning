@@ -15,7 +15,12 @@ Chaque outil a son propre numéro de version (voir la page « État des outils �
 - Une seule règle de découpage en phrases (`format_chapitre.decouper_phrases`) pour la relecture, la transcription et la voix de synthèse ; une diapositive sans enregistrement garde son gras dans les sous-titres.
 - `filmer` vérifie la section avant de filmer (et non après) ; `--section` facultatif avec `--sans-import` ; message d'erreur avec la liste des parties.
 - Réponses numériques des exercices arrondies dans les traces (0,66 au lieu de 0.6599999999999999) ; écran de départ d'une section mis à jour quand on change de langue.
+- Correction : relancer `pptx` sur un chapitre effaçait les voix de synthèse des autres langues (champ `voix` des pas) ; elles sont gardées, comme la caméra, les gestes et les autres champs que la reprise ne produit pas.
 - Code réorganisé sans changement de comportement : `format_chapitre.py`, `construire_chapitre.py` et `lecteur_chapitre.html` (anciennement `format2.py`, `construire2.py`, `lecteur2.html`) ; fonctions partagées rendues publiques (`ordonner`, `minsec`, `masquer`, `fiche_exoforge`, `trouver_section`) ; sons (`sons.py` : rééchantillonnage, écriture WAV) mis en commun.
+
+### ExoForge 0.8 (correction)
+
+- Bouton « Écouter » : lecture dans la langue de la page (un exercice traduit est lu en anglais, et non plus avec une voix française) ; voix « naturelles » du navigateur choisies d'abord quand il en a (Edge, Chrome).
 
 ### DiagForge 0.6
 
