@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atelier Forge</title>
+<link rel="icon" href="/static/identite/icones/exoforge_icone_jour_32.png">
+<style>
+:root{--navy:#14213D;--navy2:#28406B;--slate:#748CAB;--slate-l:#D3DDEC;--sand:#E0B989;--sand-l:#F4E6D2;--fond:#F7F6F4;--carte:#fff;--bord:#CDC9C0;
+  --texte:#1A1815;--texte2:#615C52;--ok:#5C8A66;--ok-l:#E4F0E6;--ko:#B85C50;--ko-l:#F6E3E0;--focus:#FFCD00}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:Inter,"Segoe UI",system-ui,sans-serif;color:var(--texte);background:var(--fond);font-size:15px;
+  display:grid;grid-template-rows:56px 1fr auto;grid-template-columns:224px 1fr;grid-template-areas:"tete tete" "nav main" "nav taches"}
+button,select,input{font:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+main:focus,main:focus-visible{outline:none}
+header{grid-area:tete;background:var(--navy);color:#fff;display:flex;align-items:center;gap:14px;padding:0 18px}
+header h1{font-size:18px;margin:0;font-weight:600}
+header .version{color:var(--slate-l);font-size:13px}
+header .espace{flex:1}
+header button{background:transparent;color:#fff;border:1px solid var(--slate);border-radius:6px;padding:6px 12px;cursor:pointer}
+header button:hover{background:var(--navy2)}
+nav{grid-area:nav;background:#fff;border-right:1px solid var(--bord);padding:14px 10px;display:flex;flex-direction:column;gap:4px}
+nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:9px 10px;cursor:pointer;color:var(--texte)}
+nav button img{width:24px;height:24px}
+nav button .bientot{margin-left:auto;font-size:11px;color:var(--texte2);background:var(--fond);border-radius:10px;padding:1px 7px}
+nav button:hover{background:var(--fond)}
+nav button[aria-current="page"]{background:var(--slate-l);font-weight:600}
+nav .bas{margin-top:auto;font-size:12px;color:var(--texte2);padding:8px 10px;line-height:1.4}
+main{grid-area:main;overflow:auto;padding:22px 28px 28px}
+main h2{font-size:22px;margin:0}
+.entete{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.entete img{height:56px;width:auto}
+.entete img + h2{border-left:2px solid var(--bord);padding-left:18px}
+main .chapeau{color:var(--texte2);margin:0 0 18px;max-width:900px}
+.cartes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-bottom:26px}
+.carte{background:var(--carte);border:1px solid var(--bord);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.carte .nom{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px}
+.carte .nom img{width:32px;height:32px}
+.carte p{margin:0;color:var(--texte2);font-size:14px;flex:1}
+.carte button{align-self:flex-start}
+h3{font-size:16px;margin:22px 0 8px}
+table{border-collapse:collapse;width:100%;background:var(--carte);border:1px solid var(--bord);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid #ECE9E3;vertical-align:top;font-size:14px}
+th{background:#F0EEEA;font-weight:600;color:var(--texte2);font-size:13px}
+tr:last-child td{border-bottom:0}
+td .sous{display:block;color:var(--texte2);font-size:12.5px;margin-top:2px}
+.pastille{display:inline-block;border-radius:10px;padding:1px 8px;font-size:12.5px;white-space:nowrap}
+.p-ok{background:var(--ok-l);color:#2E5A38}.p-ko{background:var(--ko-l);color:#7C2F25}.p-neutre{background:#ECE9E3;color:var(--texte2)}.p-sable{background:var(--sand-l);color:#6B4A1E}
+.btn{background:var(--navy);color:#fff;border:0;border-radius:7px;padding:7px 13px;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--navy2)}
+.btn.second{background:#fff;color:var(--navy);border:1px solid var(--slate)}
+.btn.second:hover{background:var(--fond)}
+.btn:disabled{opacity:.45;cursor:default}
+.actions{display:flex;flex-wrap:wrap;gap:6px}
+.barre{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:0 0 14px}
+.barre label{display:flex;align-items:center;gap:8px;color:var(--texte2)}
+.barre select,.barre input[type=search]{padding:6px 8px;border:1px solid var(--bord);border-radius:6px;background:#fff;min-width:200px}
+.vide{color:var(--texte2);font-style:italic;padding:14px}
+#taches{grid-area:taches;border-top:2px solid var(--navy);background:#fff;display:grid;grid-template-columns:300px 1fr;height:260px;min-height:0}
+#taches.replie{height:38px}
+#taches .liste{border-right:1px solid var(--bord);overflow:auto;min-height:0}
+#taches .titre-zone{display:flex;align-items:center;gap:10px;padding:8px 12px;font-weight:600;font-size:14px;background:#F0EEEA;position:sticky;top:0}
+#taches .titre-zone button{margin-left:auto;background:none;border:0;cursor:pointer;color:var(--texte2);font-size:13px}
+.tache{display:flex;gap:8px;align-items:flex-start;width:100%;text-align:left;border:0;background:none;padding:8px 12px;border-bottom:1px solid #F0EEEA;cursor:pointer;font-size:13.5px}
+.tache:hover{background:var(--fond)}
+.tache[aria-selected="true"]{background:var(--slate-l)}
+.tache .icone{width:18px;flex:none;text-align:center}
+.tache .duree{display:block;color:var(--texte2);font-size:12px}
+.journal{display:flex;flex-direction:column;min-height:0}
+.journal .outils{display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid var(--bord);min-height:40px;flex-wrap:wrap}
+.journal .outils .etat{font-weight:600;font-size:14px;margin-right:6px}
+.journal pre{margin:0;padding:8px 12px;overflow:auto;flex:1;font:12.5px/1.45 Consolas,"Cascadia Mono",monospace;white-space:pre-wrap;background:#FBFAF8}
+.tourne{display:inline-block;animation:tour 1s linear infinite}
+@keyframes tour{to{transform:rotate(360deg)}}
+.message{position:fixed;right:20px;top:68px;background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px;max-width:420px;box-shadow:0 4px 18px #0003;z-index:9}
+.message.erreur{background:#7C2F25}
+@media (max-width:900px){body{grid-template-columns:1fr;grid-template-areas:"tete" "nav" "main" "taches"}nav{flex-direction:row;overflow:auto}nav .bas{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <img src="/static/identite/logos/forge_e-learning_logo_nuit.png" alt="" height="30" onerror="this.remove()">
+  <h1>Atelier Forge</h1><span class="version" id="version"></span>
+  <span class="espace"></span>
+  <button type="button" id="quitter" title="Arrêter l'atelier (la fenêtre de commande se ferme)">Quitter</button>
+</header>
+<nav aria-label="Écrans">
+  <button type="button" data-ecran="accueil" aria-current="page"><img src="/static/identite/icones/exoforge_icone_jour_32.png" alt="" style="visibility:hidden">Accueil</button>
+  <button type="button" data-ecran="questions"><img src="/static/identite/icones/quizforge_icone_jour_32.png" alt="">Questions<span class="bientot">lot 3</span></button>
+  <button type="button" data-ecran="exercices"><img src="/static/identite/icones/exoforge_icone_jour_32.png" alt="">Exercices</button>
+  <button type="button" data-ecran="capsules"><img src="/static/identite/icones/capsuleforge_icone_jour_32.png" alt="">Capsules<span class="bientot">lot 2</span></button>
+  <button type="button" data-ecran="bilans"><img src="/static/identite/icones/diagforge_icone_jour_32.png" alt="">Bilans<span class="bientot">lot 3</span></button>
+  <button type="button" data-ecran="reglages"><img src="/static/identite/icones/exoforge_icone_jour_32.png" alt="" style="visibility:hidden">Réglages<span class="bientot">lot 3</span></button>
+  <div class="bas" id="racine"></div>
+</nav>
+<main id="main" tabindex="-1"></main>
+<section id="taches" aria-label="Tâches">
+  <div class="liste">
+    <div class="titre-zone">Tâches <span class="pastille p-neutre" id="nb-taches">0</span><button type="button" id="replier" aria-expanded="true">Replier ▾</button></div>
+    <div id="liste-taches" role="listbox" aria-label="Tâches de la séance"></div>
+  </div>
+  <div class="journal">
+    <div class="outils" id="outils-tache"><span class="etat">Aucune tâche lancée.</span></div>
+    <pre id="journal" aria-live="polite" aria-label="Journal de la tâche"></pre>
+  </div>
+</section>
+<script>
+"use strict";
+/* ---------- jeton (dans l'adresse, gardé pour un rechargement) ---------- */
+const JETON = (() => { const m = location.search.match(/[?&]j=([\w-]+)/); if (m) { try { sessionStorage.setItem("forge-jeton", m[1]); } catch (e) {} history.replaceState(null, "", location.pathname); return m[1]; }
+  try { return sessionStorage.getItem("forge-jeton") || ""; } catch (e) { return ""; } })();
+const $ = id => document.getElementById(id);
+const el = (tag, attrs = {}, ...enfants) => { const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) { if (v === undefined || v === null || v === false) continue; if (k.startsWith("on")) e[k] = v; else if (k === "html") e.innerHTML = v; else e.setAttribute(k, v === true ? "" : v); }
+  for (const c of enfants.flat()) if (c !== null && c !== undefined && c !== false) e.append(c instanceof Node ? c : document.createTextNode(typo(String(c)))); return e; };
+/* typographie française : espace fine avant ; ! ?, insécable avant : et », après « */
+const typo = s => s.replace(/ ([;!?])/g, " $1").replace(/ ([:»])/g, " $1").replace(/« /g, "« ");
+async function api(chemin, corps) {
+  const r = await fetch(chemin, corps === undefined ? { headers: { "X-Jeton": JETON } }
+    : { method: "POST", headers: { "X-Jeton": JETON, "Content-Type": "application/json" }, body: JSON.stringify(corps) });
+  let d; try { d = await r.json(); } catch (e) { d = { ok: false, message: "réponse illisible (" + r.status + ")" }; }
+  if (r.status === 403) message(d.message || "Accès refusé.", true);
+  return d;
+}
+let minuterieMsg = null;
+function message(texte, erreur) { let m = document.querySelector(".message"); if (!m) { m = el("div", { class: "message", role: "status" }); document.body.append(m); }
+  m.className = "message" + (erreur ? " erreur" : ""); m.textContent = typo(texte); clearTimeout(minuterieMsg); minuterieMsg = setTimeout(() => m.remove(), erreur ? 7000 : 3500); }
+const quand = s => { if (!s) return "jamais"; const d = new Date(s * 1000), j = new Date(); const h = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return d.toDateString() === j.toDateString() ? "aujourd'hui à " + h : d.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) + " à " + h; };
+const duree = s => s < 60 ? Math.round(s) + " s" : Math.floor(s / 60) + " min " + String(Math.round(s % 60)).padStart(2, "0") + " s";
+
+/* ---------- écrans ---------- */
+let ECRAN = "accueil", ETAT = null;
+const ecrans = { accueil, questions: () => bientot("quizforge", "Questions", 3), exercices, capsules: () => bientot("capsuleforge", "Capsules", 2),
+  bilans: () => bientot("diagforge", "Bilans", 3), reglages: () => bientot(null, "Réglages", 3) };
+function aller(nom) { ECRAN = nom; document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-current", b.dataset.ecran === nom ? "page" : "false"));
+  try { sessionStorage.setItem("forge-ecran", nom); } catch (e) {} ecrans[nom](); $("main").focus({ preventScroll: true }); }
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => aller(b.dataset.ecran));
+function vider(...enfants) { const m = $("main"); m.replaceChildren(...enfants); return m; }
+/* en-tête d'un écran : logo de l'outil (nom et devise) puis le nom de l'écran */
+const entete = (outil, titre) => el("div", { class: "entete" }, outil ? el("img", { src: `/static/identite/logos/${outil}_logo_jour.png`, alt: { quizforge: "QuizForge", exoforge: "ExoForge", capsuleforge: "CapsuleForge", diagforge: "DiagForge" }[outil] }) : null, el("h2", {}, titre));
+function bientot(outil, titre, lot) { vider(entete(outil, titre), el("p", { class: "chapeau" }, `Cet écran arrive avec le lot ${lot} de l'atelier. En attendant, la commande et l'assistant .bat restent disponibles.`)); }
+
+async function accueil() {
+  vider(el("h2", {}, "Accueil"), el("p", { class: "chapeau" }, "Chaque bouton lance une commande Forge ; son journal s'affiche en bas de la page. Rien à taper : les fichiers se choisissent dans des listes ou par « Parcourir… »."));
+  const outils = [["questions", "quizforge", "Questions", "Valider un classeur de questions et le convertir pour Moodle.", false],
+    ["exercices", "exoforge", "Exercices", "Construire un exercice guidé, l'essayer, retrouver son paquet SCORM.", true],
+    ["capsules", "capsuleforge", "Capsules", "À partir d'un diaporama narré, d'un film d'écran ou d'une vidéo : relire, traduire, faire parler, construire.", false],
+    ["bilans", "diagforge", "Bilans", "Analyser les résultats d'un test Moodle, des exercices et des capsules.", false]];
+  $("main").append(el("div", { class: "cartes" }, outils.map(([ecran, ic, nom, txt, pret]) => el("div", { class: "carte" },
+    el("div", { class: "nom" }, el("img", { src: `/static/identite/icones/${ic}_icone_jour_64.png`, alt: "" }), nom),
+    el("p", {}, txt), el("button", { class: pret ? "btn" : "btn second", type: "button", onclick: () => aller(ecran) }, pret ? "Ouvrir" : "Bientôt")))));
+  $("main").append(el("h3", {}, "État de cet ordinateur"));
+  const zone = el("div", { class: "vide" }, "Lecture…"); $("main").append(zone);
+  ETAT = await api("/api/etat");
+  if (!ETAT.ok) { zone.textContent = ETAT.message || "Lecture impossible."; return; }
+  $("version").textContent = "version " + ETAT.version; $("racine").textContent = typo("Dépôt : " + ETAT.racine);
+  zone.replaceWith(el("table", {}, el("thead", {}, el("tr", {}, el("th", {}, "Élément"), el("th", {}, "État"), el("th", {}, "Sert à"))),
+    el("tbody", {}, ETAT.poste.map(l => el("tr", {}, el("td", {}, l.nom),
+      el("td", {}, el("span", { class: "pastille " + (l.ok ? "p-ok" : l.facultatif ? "p-neutre" : "p-ko") }, l.ok ? "✓ " + l.detail : (l.facultatif ? "– " : "✗ ") + l.detail)),
+      el("td", {}, l.sert + (l.facultatif && !l.ok ? " (facultatif)" : "")))))));
+}
+
+/* ---------- Exercices (ExoForge) ---------- */
+let FILTRE = "", PROFIL = "";
+async function exercices() {
+  vider(entete("exoforge", "Exercices"), el("p", { class: "chapeau" }, "Les fiches des exemples publiés et de data/exoforge. « Construire » produit l'exercice et son paquet SCORM 1.2 dans dist/exoforge ; « Essayer » l'ouvre dans un nouvel onglet."));
+  if (!ETAT) ETAT = await api("/api/etat");
+  const profil = el("select", { id: "profil", "aria-label": "Profil" }, el("option", { value: "" }, "profil de la fiche"), (ETAT.profils || []).map(p => el("option", { value: p }, p)));
+  profil.value = PROFIL; profil.onchange = () => PROFIL = profil.value;
+  const filtre = el("input", { type: "search", placeholder: "Filtrer par titre ou fichier", "aria-label": "Filtrer les fiches", value: FILTRE });
+  $("main").append(el("div", { class: "barre" }, el("label", {}, "Profil", profil), filtre,
+    el("button", { class: "btn second", type: "button", onclick: autreFiche }, "Autre fiche…")));
+  const zone = el("div", {}, el("div", { class: "vide" }, "Recherche des fiches…")); $("main").append(zone);
+  const d = await api("/api/exoforge/fiches");
+  if (!d.ok) { zone.replaceChildren(el("div", { class: "vide" }, d.message || "Lecture impossible.")); return; }
+  const dessiner = () => {
+    const f = FILTRE.toLowerCase(), fiches = d.fiches.filter(x => !f || (x.titre + " " + x.fiche + " " + x.cours).toLowerCase().includes(f));
+    if (!fiches.length) return zone.replaceChildren(el("div", { class: "vide" }, d.fiches.length ? "Aucune fiche ne correspond au filtre." : "Aucune fiche trouvée."));
+    zone.replaceChildren(el("table", {}, el("thead", {}, el("tr", {}, el("th", {}, "Exercice"), el("th", {}, "Étapes"), el("th", {}, "Construit"), el("th", {}, "Actions"))),
+      el("tbody", {}, fiches.map(x => el("tr", {},
+        el("td", {}, el("b", {}, x.titre), el("span", { class: "sous" }, (x.cours ? x.cours + " · " : "") + x.fiche + (x.origine === "data" ? " (privée)" : ""))),
+        el("td", {}, String(x.etapes)),
+        el("td", {}, quand(x.construit), x.a_refaire ? el("span", { class: "sous" }, el("span", { class: "pastille p-sable" }, "fiche modifiée depuis")) : null),
+        el("td", {}, el("div", { class: "actions" },
+          el("button", { class: "btn", type: "button", onclick: () => construire(x.fiche) }, "Construire"),
+          el("button", { class: "btn second", type: "button", disabled: !x.essayer, onclick: () => essayer(x.essayer, true), title: "Toujours les mêmes valeurs (mode=fixe)" }, "Essayer"),
+          el("button", { class: "btn second", type: "button", disabled: !x.essayer, onclick: () => essayer(x.essayer, false), title: "Nouvelles valeurs à chaque ouverture" }, "Valeurs tirées"),
+          el("button", { class: "btn second", type: "button", disabled: !x.paquet, onclick: () => montrer(x.paquet) }, "Paquet SCORM"),
+          el("button", { class: "btn second", type: "button", onclick: () => montrer(x.fiche) }, "Fiche")))))))) ;
+  };
+  filtre.oninput = () => { FILTRE = filtre.value; dessiner(); };
+  dessiner();
+}
+async function construire(fiche) {
+  const r = await api("/api/lancer", { action: "exoforge.construire", params: { fiche, profil: PROFIL } });
+  if (!r.ok) return message(r.message || "Lancement impossible.", true);
+  CHOISIE = r.id; deplier(); rafraichir();
+}
+function essayer(url, fixe) { window.open(url + (fixe ? "?mode=fixe" : ""), "_blank", "noopener"); }
+async function montrer(chemin) { const r = await api("/api/montrer", { chemin }); if (!r.ok) message(r.message || "Ouverture impossible.", true); }
+async function autreFiche() {
+  message("Choisissez la fiche dans la fenêtre qui s'ouvre (elle peut être derrière le navigateur).");
+  const r = await api("/api/parcourir", { titre: "Choisir une fiche ExoForge", types: [["Fiche ExoForge", "*.yaml"]], depart: "outils/exoforge/exemples" });
+  if (!r.ok) return message(r.message || "Dialogue impossible.", true);
+  if (r.chemin) construire(r.chemin);
+}
+
+/* ---------- tâches ---------- */
+let TACHES = [], CHOISIE = null, LUES = {}, SUIVI = null;
+const ICONES = { en_cours: "⟳", reussie: "✓", echec: "✗", arretee: "■" };
+const LIBELLES = { en_cours: "en cours", reussie: "terminée", echec: "en échec", arretee: "arrêtée" };
+async function rafraichir() {
+  const d = await api("/api/taches"); if (!d.ok) return;
+  const avant = Object.fromEntries(TACHES.map(t => [t.id, t.etat])); TACHES = d.taches;
+  for (const t of TACHES) if (avant[t.id] === "en_cours" && t.etat !== "en_cours") {
+    message(`${t.etat === "reussie" ? "Terminé" : t.etat === "echec" ? "Échec" : "Arrêté"} : ${t.titre}`, t.etat === "echec");
+    if (ECRAN === "exercices" && t.outil === "exoforge") exercices();
+  }
+  if (!CHOISIE && TACHES.length) CHOISIE = TACHES.at(-1).id;
+  $("nb-taches").textContent = TACHES.filter(t => t.etat === "en_cours").length ? TACHES.filter(t => t.etat === "en_cours").length + " en cours" : String(TACHES.length);
+  $("liste-taches").replaceChildren(...[...TACHES].reverse().map(t => el("button", { type: "button", class: "tache", role: "option", "aria-selected": String(t.id === CHOISIE), onclick: () => { CHOISIE = t.id; rafraichir(); } },
+    el("span", { class: "icone" + (t.etat === "en_cours" ? " tourne" : ""), style: `color:${t.etat === "reussie" ? "var(--ok)" : t.etat === "echec" ? "var(--ko)" : "var(--texte2)"}` }, ICONES[t.etat]),
+    el("span", {}, t.titre, el("span", { class: "duree" }, LIBELLES[t.etat] + " · " + duree(t.duree))))));
+  await journal();
+}
+async function journal() {
+  const t = TACHES.find(x => x.id === CHOISIE); const pre = $("journal");
+  if (!t) return;
+  if (pre.dataset.tache !== t.id) { pre.dataset.tache = t.id; pre.textContent = ""; LUES[t.id] = 0; }
+  if ((LUES[t.id] || 0) < t.lignes) {
+    const d = await api(`/api/tache/${t.id}?depuis=${LUES[t.id] || 0}`);
+    if (d.ok) { const bas = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 30; pre.append(d.nouvelles.join("\n") + (d.nouvelles.length ? "\n" : "")); LUES[t.id] = d.depuis + d.nouvelles.length; if (bas) pre.scrollTop = pre.scrollHeight; }
+  }
+  const o = $("outils-tache");
+  o.replaceChildren(...[el("span", { class: "etat" }, `${ICONES[t.etat]} ${t.titre}`), el("span", { class: "pastille " + (t.etat === "reussie" ? "p-ok" : t.etat === "echec" ? "p-ko" : "p-neutre") }, LIBELLES[t.etat] + " · " + duree(t.duree)),
+    t.etat === "en_cours" ? el("button", { class: "btn second", type: "button", onclick: async () => { await api("/api/arreter", { id: t.id }); rafraichir(); } }, "Arrêter") : null,
+    t.liens && t.liens.essayer ? el("button", { class: "btn", type: "button", onclick: () => essayer(t.liens.essayer, true) }, "Essayer l'exercice") : null,
+    t.liens && t.liens.paquet ? el("button", { class: "btn second", type: "button", onclick: () => montrer(t.liens.paquet) }, "Montrer le paquet SCORM") : null].filter(Boolean));
+}
+function deplier() { $("taches").classList.remove("replie"); $("replier").textContent = "Replier ▾"; $("replier").setAttribute("aria-expanded", "true"); }
+$("replier").onclick = () => { const r = $("taches").classList.toggle("replie"); $("replier").textContent = r ? "Déplier ▴" : "Replier ▾"; $("replier").setAttribute("aria-expanded", String(!r)); };
+SUIVI = setInterval(rafraichir, 1000);
+
+/* ---------- quitter ---------- */
+let FINI = false;
+$("quitter").onclick = async () => {
+  let r = await api("/api/quitter", {});
+  if (!r.ok && r.en_cours) { if (!confirm(`${r.en_cours} tâche(s) tournent encore. Les arrêter et quitter ?`)) return; r = await api("/api/quitter", { forcer: true }); }
+  if (r.ok) { FINI = true; clearInterval(SUIVI); document.body.replaceChildren(el("main", { style: "padding:40px" }, el("h2", {}, "Atelier fermé"), el("p", {}, "Vous pouvez fermer cet onglet. Pour revenir : double-clic sur Forge.bat."))); }
+};
+window.addEventListener("pagehide", () => { if (!FINI) navigator.sendBeacon("/api/depart", ""); });
+
+/* ---------- départ ---------- */
+if (!JETON) vider(el("h2", {}, "Atelier Forge"), el("p", { class: "chapeau" }, "Cette page doit être ouverte par Forge.bat (double-clic à la racine du dépôt)."));
+else { let e = "accueil"; try { e = sessionStorage.getItem("forge-ecran") || "accueil"; } catch (x) {} aller(ecrans[e] ? e : "accueil"); rafraichir(); }
+</script>
+</body>
+</html>

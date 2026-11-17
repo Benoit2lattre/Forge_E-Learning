@@ -4,6 +4,14 @@ Chaque outil a son propre numéro de version (voir la page « État des outils �
 
 ## Forge E-Learning 0.3 — en préparation
 
+### Atelier Forge 0.1 (nouveau)
+
+- Une page dans le navigateur qui lance les outils Forge sans ligne de commande : double-clic sur `Forge.bat` à la racine du dépôt. Premier lot : état de l'ordinateur (modules, PowerPoint, voix) et écran Exercices (ExoForge : construire, essayer avec des valeurs fixes ou tirées, montrer le paquet SCORM, choisir une autre fiche par le dialogue de fichiers de Windows) ; journal des tâches en direct, arrêt d'une tâche, fermeture avec l'onglet. Les écrans suivent l'ordre des outils, du plus simple au plus complet (Questions, Exercices, Capsules, Bilans) ; Questions, Capsules, Bilans et Réglages arrivent ensuite.
+
+### Site et dépôt
+
+- Outils présentés partout dans l'ordre QuizForge, ExoForge, CapsuleForge (qui utilise les deux premiers), DiagForge (qui analyse les trois autres) : sommaire du site, accueil, état des outils, prochaines étapes, README.
+
 ### CapsuleForge 0.9
 
 - Paquets SCORM 1.2 en plus de SCORM 2004 (`construire --scorm … --scorm-version 1.2`) ; le lecteur reconnaît seul la version de la plateforme.

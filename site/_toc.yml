@@ -11,10 +11,10 @@ parts:
     chapters:
       - file: outils/quizforge/README
       - file: outils/exoforge/README
-      - file: outils/diagforge/README
       - file: outils/capsuleforge/README
         sections:
           - file: outils/capsuleforge/FORMAT
+      - file: outils/diagforge/README
       - file: site/communs
         sections:
           - file: style/README

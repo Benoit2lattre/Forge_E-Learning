@@ -22,8 +22,8 @@ Des outils libres pour passer d'un cours existant à des activités en ligne : q
 | --- | --- | --- |
 | QuizForge | classeur Excel → questions Moodle (XML, GIFT) : huit types de questions, questions sur image, rétroactions, erreurs types visées par les leurres, contrôle de l'écriture | [outils/quizforge](outils/quizforge/README.md) |
 | ExoForge | fiche YAML → exercice guidé autonome (HTML5 et SCORM 1.2) : données tirées, formules LaTeX, diagnostic des erreurs, graphiques, audio | [outils/exoforge](outils/exoforge/README.md) |
-| DiagForge | exports Moodle → bilan : classeur, fiche du professeur, images pour les étudiants, qualité des questions, erreurs types, tirage | [outils/diagforge](outils/diagforge/README.md) |
 | CapsuleForge | diaporama narré, vidéo ou capture → chapitre de cours interactif (lecteur HTML, SCORM 2004 ou 1.2) : parcours, sous-titres, questions, exercices, traduction, voix de synthèse | [outils/capsuleforge](outils/capsuleforge/README.md) |
+| DiagForge | exports Moodle → bilan : classeur, fiche du professeur, images pour les étudiants, qualité des questions, erreurs types, tirage | [outils/diagforge](outils/diagforge/README.md) |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="_static/identite/formats/bandeaux/demarche_bandeau_nuit.png">
@@ -63,8 +63,8 @@ Une fiche résume un article lu en texte complet (question, public, méthode, r�
 | --- | --- | --- | --- | --- |
 | QuizForge | 0.9 | tous les types de questions dans Moodle ; `valider` ; barème « équilibré » ; quiz de séance | rappel des réglages Moodle conseillés | catalogue d'erreurs types par domaine ; export H5P |
 | ExoForge | 0.8 | quatre exercices validés ; paquet SCORM 1.2 dans Moodle ; exercice traduit dans un chapitre | graphiques dans les étapes sur les exercices anciens | fonction Φ ; reprise d'un exercice interrompu |
-| DiagForge | 0.6 | bilan sur le bac à sable Moodle et des promotions fictives | commande `diagforge.py` ; tirage, équité, rétention ; erreurs types | essai sur une vraie promotion ; restitution aux étudiants ; traces SCORM |
 | CapsuleForge | 0.9 | chapitre pilote complet jusqu'aux paquets SCORM 2004 et 1.2 reçus par Moodle ; chapitre bilingue (sous-titres, questions, exercice) et voix de synthèse ; vidéo ; enregistrement d'écran | remarques de vérification dans la relecture | caméo dans le lecteur ; simulation ActivePresenter ; éditeur d'assemblage ; export H5P |
+| DiagForge | 0.6 | bilan sur le bac à sable Moodle et des promotions fictives | commande `diagforge.py` ; tirage, équité, rétention ; erreurs types | essai sur une vraie promotion ; restitution aux étudiants ; traces SCORM |
 | Style, profils | — | profils `Delattre` et `Ecole1` | — | thème modifiable dans CapsuleForge |
 | Bibliographie | — | 9 axes, 197 fiches | — | règles de restitution (axe G) à appliquer dans DiagForge |
 
@@ -92,7 +92,7 @@ python scripts/exoforge/build.py outils/exoforge/exemples/premier_exercice
 
 La seconde commande produit `dist/exoforge/premier_exercice/index.html`, à ouvrir dans le navigateur.
 
-Sous Windows, un double-clic sur `scripts/quizforge/QuizForge.bat` ouvre l'assistant de QuizForge, sans ligne de commande ; `scripts/capsuleforge/CapsuleForge.bat` fait de même pour CapsuleForge.
+Sous Windows, un double-clic sur `Forge.bat`, à la racine du dépôt, ouvre l'**Atelier Forge** : une page dans le navigateur qui lance les outils par boutons et listes (premier écran : ExoForge ; les autres suivent dans la 0.3). Un double-clic sur `scripts/quizforge/QuizForge.bat` ouvre l'assistant de QuizForge, sans ligne de commande ; `scripts/capsuleforge/CapsuleForge.bat` fait de même pour CapsuleForge.
 
 ### Tester sans Moodle d'établissement
 

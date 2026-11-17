@@ -12,8 +12,8 @@ Cette page dit, pour chaque outil, ce qui marche et a été essayé en condition
 | --- | --- | --- | --- | --- |
 | QuizForge | 0.9 | tous les types de questions importés et joués dans Moodle ; contrôle `valider` ; barème « équilibré » ; quiz de séance | rappel des réglages Moodle conseillés | catalogue d'erreurs types par domaine ; export H5P |
 | ExoForge | 0.8 | quatre exercices construits et validés (fatigue, cumul de dommage, mécanique des milieux continus, fiabilité) ; paquet SCORM 1.2 dans Moodle ; exercice joué dans un chapitre CapsuleForge, aussi en anglais | graphiques dans les étapes (moteur récent) sur les exercices anciens | fonction de répartition normale Φ dans les expressions ; reprise d'un exercice interrompu ; import d'un scénario PowerPoint |
-| DiagForge | 0.6 | bilan sur le bac à sable Moodle et sur des promotions fictives | commande `diagforge.py` ; analyse du tirage, de l'équité et de la rétention ; lecture des erreurs types | essai sur une vraie promotion ; restitution aux étudiants selon les règles de l'axe G ; lecture des traces SCORM d'ExoForge et de CapsuleForge |
 | CapsuleForge | 0.9 | chapitre pilote : diaporama narré repris, transcrit, relu, lecteur, questions, exercice, paquets SCORM 2004 et 1.2 reçus par Moodle, chapitre bilingue (sous-titres, questions, exercice, interface) et voix de synthèse ; import de vidéo ; enregistrement d'écran, micro et webcam avec raccourcis et bips | remarques de vérification dans la relecture | caméo dans le lecteur ; simulation ActivePresenter dans le chapitre ; éditeur d'assemblage ; export H5P |
+| DiagForge | 0.6 | bilan sur le bac à sable Moodle et sur des promotions fictives | commande `diagforge.py` ; analyse du tirage, de l'équité et de la rétention ; lecture des erreurs types | essai sur une vraie promotion ; restitution aux étudiants selon les règles de l'axe G ; lecture des traces SCORM d'ExoForge et de CapsuleForge |
 | Style et profils | 0.2 (avec Forge) | profils `Delattre` et `Ecole1` utilisés par QuizForge et ExoForge | — | thème modifiable dans CapsuleForge ; héritage entre profils |
 | Bibliographie | 0.2 (avec Forge) | 9 axes, 250 références, 197 fiches, 602 règles | — | règles de restitution (axe G) non encore appliquées dans DiagForge ; quelques articles inaccessibles en texte complet |
 
@@ -34,15 +34,6 @@ Cette page dit, pour chaque outil, ce qui marche et a été essayé en condition
 - **Manque** : la fonction Φ (loi normale) dans les expressions ; la reprise d'un exercice en cours ; le rejet des tirages où une erreur type donne la bonne réponse ; un journal SCORM détaillé lisible par DiagForge.
 - **Limites connues** : la notation `-(a)**2` est une erreur en JavaScript (écrire `-((a)**2)`) ; l'interface du moteur n'est traduite qu'en anglais.
 
-## DiagForge — version 0.6
-
-**Justification.** Les analyses sont écrites et testées sur des données fictives ou de démonstration ; la validation sur une vraie promotion et la restitution aux étudiants restent à faire. Le passage de 0.5 à 0.6 tient au nouvel emplacement du code (`scripts/diagforge/`) et à la commande `diagforge.py` : les chemins des commandes ont changé (`quizforge.py bilan` reste disponible).
-
-- **Essayé** : bilan à partir des exports Moodle (notes, réponses, XML des questions) du bac à sable ; classeur, fiche du professeur, images par groupe et par thème ; indicateurs de difficulté, de discrimination et de fiabilité avec leur lecture.
-- **Livré** : commande `python scripts/diagforge/diagforge.py` ; colonne « Erreur type » et onglet « Par erreur » à partir de la banque QuizForge ; analyse du tirage des questions (mode observé, équité entre étudiants, rétention).
-- **Manque** : restitution aux étudiants (pas de rang ni de classement, un repère par notion, une stratégie d'étude sous le seuil : règles de l'axe G) ; lecture des traces SCORM d'ExoForge et de CapsuleForge.
-- **Limites connues** : sur de petits effectifs, les indicateurs sont instables ; la fiche le dit (« à confirmer »). Le générateur de promotions fictives demande un export d'essai d'au moins quatre questions.
-
 ## CapsuleForge — version 0.9
 
 **Justification.** La 0.8 (v0.2 de Forge) réunissait les sources du chapitre (diaporama, vidéo, enregistreur, didacticiel). La 0.9 ajoute les paquets SCORM 1.2, la traduction des questions et des exercices, les remarques de vérification dans la relecture et un code réorganisé (`capsuleforge --version`). Le format du chapitre peut encore changer avec l'éditeur d'assemblage.
@@ -51,6 +42,15 @@ Cette page dit, pour chaque outil, ce qui marche et a été essayé en condition
 - **Livré, pas encore essayé** : les remarques de `verifier` affichées dans la relecture sur un pas qui en a (essayé sur une copie modifiée).
 - **Manque** : affichage du caméo ; simulation ActivePresenter dans le chapitre ; éditeur d'assemblage ; export H5P ; thème modifiable.
 - **Limites connues** : Moodle ne prend pas officiellement en charge SCORM 2004 ([FAQ SCORM de Moodle](https://docs.moodle.org/en/SCORM_FAQ)) ; les fonctions utilisées (données de suspension, note, achèvement, interactions) y ont fonctionné, et les paquets SCORM 1.2 (`--scorm-version 1.2`), plus sûrs pour Moodle et d'autres plateformes, y ont donné la même note. Les textes calculés par des expressions dans une fiche ExoForge restent dans la langue source. Le lecteur ne joue pas encore les formules LaTeX dans les questions.
+
+## DiagForge — version 0.6
+
+**Justification.** Les analyses sont écrites et testées sur des données fictives ou de démonstration ; la validation sur une vraie promotion et la restitution aux étudiants restent à faire. Le passage de 0.5 à 0.6 tient au nouvel emplacement du code (`scripts/diagforge/`) et à la commande `diagforge.py` : les chemins des commandes ont changé (`quizforge.py bilan` reste disponible).
+
+- **Essayé** : bilan à partir des exports Moodle (notes, réponses, XML des questions) du bac à sable ; classeur, fiche du professeur, images par groupe et par thème ; indicateurs de difficulté, de discrimination et de fiabilité avec leur lecture.
+- **Livré** : commande `python scripts/diagforge/diagforge.py` ; colonne « Erreur type » et onglet « Par erreur » à partir de la banque QuizForge ; analyse du tirage des questions (mode observé, équité entre étudiants, rétention).
+- **Manque** : restitution aux étudiants (pas de rang ni de classement, un repère par notion, une stratégie d'étude sous le seuil : règles de l'axe G) ; lecture des traces SCORM d'ExoForge et de CapsuleForge.
+- **Limites connues** : sur de petits effectifs, les indicateurs sont instables ; la fiche le dit (« à confirmer »). Le générateur de promotions fictives demande un export d'essai d'au moins quatre questions.
 
 ## Annonce de la version 0.2
 
