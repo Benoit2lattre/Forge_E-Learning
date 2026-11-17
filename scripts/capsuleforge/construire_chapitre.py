@@ -184,6 +184,14 @@ def fiche_exoforge(nom: str, dossier: Path) -> Path | None:
     return trouves[0] if trouves else None
 
 
+PREFIXE_EXERCICE = re.compile(r"^\s*(?:exercice|exercise)\s*:\s*", re.IGNORECASE)   # \s couvre les espaces insécables
+
+
+def sans_prefixe_exercice(titre: str) -> str:
+    """Titre d'une fiche ExoForge sans « Exercice : » en tête : le lecteur l'ajoute déjà devant le titre."""
+    return PREFIXE_EXERCICE.sub("", titre or "").strip()
+
+
 def exercices_partie(p: dict, dossier: Path, sortie: Path, journal=print, trad_ext: dict | None = None,
                      perimees: list | None = None) -> list[dict]:
     """Renvoie les exercices ExoForge d'une partie sous forme de sections « exercice » du lecteur (HTML de l'exercice inclus).
@@ -238,8 +246,9 @@ def exercices_partie(p: dict, dossier: Path, sortie: Path, journal=print, trad_e
                 html_tr[l] = t
             e = d.get(f"exercice/{ident}/titre")
             if e and not ref.get("titre"):
-                tr_titre[l] = {"titre": e["cible"]}
-        sections.append({"id": "exo-" + ident, "titre": F.texte(ref.get("titre") or cfg.get("titre") or ident), "tr": tr_titre,
+                tr_titre[l] = {"titre": sans_prefixe_exercice(e["cible"])}
+        titre = ref.get("titre") or sans_prefixe_exercice(F.texte(cfg.get("titre") or "")) or ident
+        sections.append({"id": "exo-" + ident, "titre": F.texte(titre), "tr": tr_titre,
                          "objectif": F.texte(ref.get("objectif") or ""), "ouverture": "", "arret": True, "annexes": [],
                          "questions": 0, "lots": [], "duree_s": float(duree) * 60, "pas": [],
                          "exercice": {"id": ident, "base": f"exercices/{ident}/", "etapes": etapes, "html": code, "html_tr": html_tr,

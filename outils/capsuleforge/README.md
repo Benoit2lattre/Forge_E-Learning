@@ -76,6 +76,8 @@ capsuleforge relire fiabilite                  (ou CapsuleForge.bat, choix 7)
 
 Ouvre dans le navigateur la diapositive, le son et le texte dit, phrase par phrase. On corrige une phrase en l'écoutant (bouton ▶ de la phrase), on la coupe au curseur (Ctrl+Entrée), on la fusionne avec la suivante, on règle son début sur l'instant de lecture. Les apparitions se posent à l'instant de lecture, au début d'une phrase, ou en faisant glisser leur repère rouge sur la piste. « Relu » marque le pas comme relu par l'auteur.
 
+![L'écran de relecture : diapositive à l'instant de lecture, piste avec les repères d'apparition, phrases horodatées à droite, apparitions et ajouts sur l'image en dessous (chapitre de démonstration)](../../_static/captures/capsuleforge/relecture.png)
+
 Sous la piste, « Ajouter » pose sur l'image ce que le diaporama n'a pas : un **spot** (zone éclairée, le reste assombri), un **cadre**, un **pointeur** (point lumineux) ou un **cache** (zone masquée jusqu'à un instant donné, pour une apparition absente du diaporama). On place le curseur dans une phrase, on choisit le type, on trace sur l'image : l'ajout prend le début et la durée de la phrase. Il se déplace à la souris, se règle dans la liste, se supprime par Suppr.
 
 Touches : Échap lit ou met en pause (même depuis un texte), Alt+↑ ou ↓ joue la phrase voisine, Ctrl+S enregistre. « Enregistrer et quitter » arrête la relecture et libère la fenêtre de commande ; fermer l'onglet a le même effet au bout de quelques secondes.
@@ -116,9 +118,15 @@ capsuleforge construire fiabilite
 
 Pour un dossier qui contient `chapitre.yaml` sans `capsule.yaml`, la commande produit `dist/capsuleforge/<nom>/index.html` : plan du chapitre à gauche (sections vues, à venir), choix du parcours, image avec ses apparitions, spots, cadres, pointeurs et caches, sous-titres tirés des phrases, texte de la section cliquable, vitesse, plein écran. La lecture s'arrête en fin de section et propose la suivante ; l'avancement est gardé dans le navigateur. Les images sont converties en WebP et les sons en MP3 mono (environ 0,5 Mo par minute) ; `--audio origine` recopie les sons tels quels. En fin de section, le lecteur pose les questions tirées de la banque QuizForge désignée par la section (vrai/faux, QCM, numérique), avec leurs rétroactions ; « proposées », elles peuvent être passées, « obligatoires », non. En tête du plan : trois jauges (vue d'ensemble, approfondissements, pratique) et un disque par partie (secteurs = sections lues, anneau ondulé = pratique, badge quand tout est fait).
 
+![Le lecteur de chapitre : plan avec jauges et disques à gauche, diapositive avec une apparition, un spot et le sous-titre, barre de lecture (chapitre de démonstration)](../../_static/captures/capsuleforge/lecteur_section.png)
+
+![Question de fin de section : rétroaction du leurre choisi, puis rétroaction générale](../../_static/captures/capsuleforge/lecteur_questions.png)
+
 #### Exercices ExoForge
 
 Une partie peut porter un exercice ExoForge : `exercice: {outil: exoforge, fiche: fiabilite_coef_securite.yaml, duree_min: 15}` (fiche cherchée à côté du chapitre, puis dans `data/exoforge`). À la construction, la fiche est reconstruite par ExoForge si elle (ou le moteur) a changé, ses fichiers sont copiés dans `exercices/<id>/` à côté du lecteur, et l'exercice devient la dernière section de la partie. Une annexe peut porter du cours et un exercice ; une partie `type: exercice` peut n'avoir aucune section et s'appelle comme une annexe (`annexes: [exo_biellette]` sur une section). L'exercice n'est proposé que par les parcours `exercices: true` (Lecture immersive). Le lecteur l'affiche dans un cadre et lui sert de plateforme SCORM : terminé, il compte dans « Pratique », et le plan affiche le meilleur score ; les réponses sont gardées dans le navigateur (journal `exercices`) pour les futures traces.
+
+![Un exercice ExoForge dans le lecteur de chapitre, en Lecture immersive](../../_static/captures/capsuleforge/lecteur_exercice.png)
 
 #### Paquets SCORM pour Moodle
 

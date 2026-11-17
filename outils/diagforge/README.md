@@ -8,7 +8,7 @@ DiagForge regroupe l'analyse de ce qui a été produit avec les outils Forge : r
 
 Le bilan lit les exports d'un test Moodle et produit, pour le professeur, un classeur d'analyse et une fiche de synthèse, et pour les étudiants, des images anonymes de la répartition des notes et de la réussite par thème. Il désigne les questions à revoir en priorité : celles qui fonctionnent mal (à reformuler) et les notions mal acquises (à retravailler en cours).
 
-La commande est `python scripts/diagforge/diagforge.py` ; elle équivaut à la commande `bilan` de [QuizForge](../quizforge/README.md) (`python scripts/quizforge/quizforge.py bilan`, mêmes options), qui lit le profil d'établissement. Code : [`scripts/diagforge/`](../../scripts/diagforge/README.md) (`bilan.py`, `bilan_sorties.py`, `graphiques.py`, `tirage.py`). Installation : [README du dépôt](https://github.com/Benoit2lattre/Forge_E-Learning#installation) (les images demandent `matplotlib`).
+La commande est `python scripts/diagforge/diagforge.py` ; elle équivaut à la commande `bilan` de [QuizForge](../quizforge/README.md) (`python scripts/quizforge/quizforge.py bilan`, mêmes options), qui lit le profil d'établissement. Code : [`scripts/diagforge/`](https://github.com/Benoit2lattre/Forge_E-Learning/tree/main/scripts/diagforge) (`bilan.py`, `bilan_sorties.py`, `graphiques.py`, `tirage.py`). Installation : [README du dépôt](https://github.com/Benoit2lattre/Forge_E-Learning#installation) (les images demandent `matplotlib`).
 
 ## Essai immédiat, sur une promotion fictive
 

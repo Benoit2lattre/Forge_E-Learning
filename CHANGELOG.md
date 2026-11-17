@@ -15,6 +15,9 @@ Chaque outil a son propre numéro de version (voir la page « État des outils �
 - Une seule règle de découpage en phrases (`format_chapitre.decouper_phrases`) pour la relecture, la transcription et la voix de synthèse ; une diapositive sans enregistrement garde son gras dans les sous-titres.
 - `filmer` vérifie la section avant de filmer (et non après) ; `--section` facultatif avec `--sans-import` ; message d'erreur avec la liste des parties.
 - Réponses numériques des exercices arrondies dans les traces (0,66 au lieu de 0.6599999999999999) ; écran de départ d'une section mis à jour quand on change de langue.
+- Correction : réponse numérique d'une question de fin de section écrite comme un calcul (« 5000/100 ») lue comme dans ExoForge (fractions, opérations, virgule, unité finale ignorée) ; elle n'était lue que jusqu'au premier signe (5000/100 était compté faux, 50/1 juste).
+- Correction : le plan du lecteur n'affiche plus « Exercice : Exercice : … » quand le titre de la fiche ExoForge commence déjà par « Exercice : ».
+- Mode d'emploi : captures du lecteur de chapitre (section, questions, exercice) et de l'écran de relecture, faites sur un chapitre de démonstration fictif.
 - Correction : relancer `pptx` sur un chapitre effaçait les voix de synthèse des autres langues (champ `voix` des pas) ; elles sont gardées, comme la caméra, les gestes et les autres champs que la reprise ne produit pas.
 - Code réorganisé sans changement de comportement : `format_chapitre.py`, `construire_chapitre.py` et `lecteur_chapitre.html` (anciennement `format2.py`, `construire2.py`, `lecteur2.html`) ; fonctions partagées rendues publiques (`ordonner`, `minsec`, `masquer`, `fiche_exoforge`, `trouver_section`) ; sons (`sons.py` : rééchantillonnage, écriture WAV) mis en commun.
 

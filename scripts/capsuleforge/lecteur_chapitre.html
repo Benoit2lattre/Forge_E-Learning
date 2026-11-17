@@ -613,7 +613,11 @@ let enQuiz = false;
 const cleQ = (p, s, k) => cleSec(p, s) + "#q" + k;
 const toutesFaites = (p, s) => [...Array(s.questions).keys()].every(k => faits.has(cleQ(p, s, k)));
 const melange = t => { t = [...t]; for (let i = t.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [t[i], t[j]] = [t[j], t[i]]; } return t; };
-const nombre = v => { const x = parseFloat(String(v).replace(/\s/g, "").replace(",", ".")); return isFinite(x) ? x : null; };
+const nombre = v => {                                       // 50 ; 0,25 ; 5000/100 ; 2.5e-3 ; « 50 MPa » (unité finale ignorée) — comme lireNombre d'ExoForge
+  const m = String(v).replace(/\s/g, "").replace(/,/g, ".").match(/^([0-9.+\-*/()eE]*[0-9.)])([^0-9.+\-*/()].*)?$/);
+  if (!m) return null;
+  try { const x = Function('"use strict";return (' + m[1] + ');')(); return typeof x === "number" && isFinite(x) ? x : null; } catch (e) { return null; }
+};
 function questions(refaire) {
   const p = S.p, s = S.s, tirees = s.lots.flatMap(l => melange(l.questions).slice(0, l.nombre)), regle = parcours ? parcours.questions : "proposees";
   const resultats = []; let k = 0; enQuiz = true;
