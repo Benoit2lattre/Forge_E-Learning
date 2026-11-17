@@ -20,7 +20,7 @@ Un pas déjà synthétisé n'est refait que si son texte a changé (ou avec --re
 
 Moteurs (gratuits) : « piper » (voix neuronale sur cet ordinateur, ``pip install piper-tts`` ; modèle téléchargé à la première
 utilisation dans ``data/capsuleforge/_voix/``), « edge » (voix neuronales de Microsoft Edge, en ligne, sans clé :
-``pip install edge-tts`` ; le texte part chez Microsoft). Autres moteurs (payants) : à brancher dans ``MOTEURS``.
+``pip install edge-tts`` ; le texte part chez Microsoft). Moteur ``essai`` : voix factice pour les tests (durée selon le nombre de mots). Autres moteurs (payants) : à brancher dans ``MOTEURS``.
 Licence : GPL v3.
 """
 from __future__ import annotations

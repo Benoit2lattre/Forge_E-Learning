@@ -1120,7 +1120,7 @@ def bilan(cibles, xml=None, mode="toutes", sortie=None, couleur="470A68", roster
     sortie = Path(sortie) if sortie else Path(cibles[0] if Path(cibles[0]).is_dir() else Path(cibles[0]).parent) / f"bilan_{base or 'test'}.xlsx"
     if sortie.suffix.lower() != ".xlsx":
         sortie = sortie.with_name(sortie.name + ".xlsx")
-    imgs, msg_img = BS.images(sortie.with_name(sortie.stem + "_images"), nom_test, notes_e, par_groupe, regr, couleur) if images else ([], "")
+    imgs, msg_img = BS.images(sortie.with_name(sortie.stem + "_images"), nom_test, notes_e, par_groupe, regr, couleur, mode) if images else ([], "")
     if msg_img:
         avert.append(msg_img)
     L[1] = ("Fichiers lus", "\n".join(avert))

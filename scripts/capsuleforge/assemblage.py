@@ -491,7 +491,7 @@ def verifier(cap: dict, dossier: Path) -> tuple[list[str], list[str]]:
     n = sum(1 for e in etapes for p in (e.get("pas") or []) if not p.get("ignorer"))
     if etapes and len(etapes) == 1 and n > 8:
         av.append(f"une seule étape pour {n} pas : découper avec Ctrl+Maj+E pendant l'enregistrement "
-                  "ou à la main dans le YAML (règle biard2018)")
+                  "ou à la main dans le YAML (une étape par idée : des étapes courtes aident à apprendre une procédure)")
     for et in etapes:
         if et.get("pas") and all(p.get("ignorer") for p in et["pas"]):
             av.append(f"étape « {et.get('titre')} » : tous ses pas sont écartés, elle n'apparaîtra pas")

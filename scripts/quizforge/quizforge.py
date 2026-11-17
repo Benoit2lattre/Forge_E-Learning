@@ -2197,7 +2197,7 @@ def main(argv=None):
     b = sp.add_parser("bilan", help="analyser les résultats d'un test Moodle (exports Notes + Réponses) -> classeur")
     b.add_argument("cibles", nargs="+", help="dossier(s) ou fichiers des exports Moodle (.csv ou .xlsx), et l'export XML des questions")
     b.add_argument("-q", "--questions", nargs="*", help="export XML des questions (sinon : les .xml trouvés dans les dossiers)")
-    b.add_argument("-t", "--tentatives", default="toutes", help="toutes | premiere | derniere | meilleure (première lettre suffit)")
+    b.add_argument("-t", "--tentatives", default="toutes", help="toutes (défaut : statistiques sur toutes les tentatives, notes sur la meilleure, comme Moodle) | premiere | derniere | meilleure (première lettre suffit)")
     b.add_argument("-s", "--sortie", default=None, help="classeur produit (défaut : bilan_<test>.xlsx dans le dossier des exports)")
     b.add_argument("-p", "--profil", help="profil (couleurs des en-têtes et des graphiques)")
     b.add_argument("-r", "--roster", nargs="*", help="liste des étudiants avec une colonne Groupe (sinon : groupe = suffixe du nom du test, ex. Quizz1_SMA)")

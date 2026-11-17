@@ -2,7 +2,7 @@
 
 Commande : ::
 
-    capsuleforge filmer <chapitre> --section partie/section [--titre "…"] [--ecran 1] [--webcam [NOM]] [--micro [NOM]]
+    capsuleforge filmer <chapitre> --section partie/section [--titre "…"] [--ecran 1] [--webcam [NOM]] [--micro NOM | --sans-micro]
                         [--ips 20] [--duree s] [--sans-import] [--appareils]
 
 Raccourcis (comme l'enregistreur de didacticiel) : Ctrl+Maj+P pause / reprise (2 bips), Ctrl+Maj+F fin (3 bips) ;
@@ -11,7 +11,7 @@ dans la fenêtre de commande, Entrée termine aussi. Un compte à rebours de 3 s
 Chaque source a son fil ; chaque image et chaque morceau de son reçoit l'instant de l'horloge commune (pauses
 retirées) : l'écran, la webcam et la voix restent calés, même si une source démarre en retard (le micro met environ
 une seconde à s'ouvrir : le début du son est complété par du silence). Fichiers bruts dans
-``<chapitre>/enregistrements/<date>/`` (``ecran.mp4``, ``micro.wav``, ``camera.mp4``, ``journal.txt``), puis import
+``<chapitre>/enregistrements/<date>/`` (``ecran_<date>.mp4``, ``micro_<date>.wav``, ``camera_<date>.mp4``, ``journal.txt``), puis import
 comme ``capsuleforge video … --son micro.wav`` : pas vidéo découpés aux silences ; la webcam devient le caméo de ces
 pas. Appareils : DirectShow (noms lus dans le journal de ffmpeg) ; écrans : mss. ``--appareils`` les liste.
 Essai sans appareils (toutes plateformes) : ``--essai`` (mire et son synthétiques).

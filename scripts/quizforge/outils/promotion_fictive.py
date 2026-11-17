@@ -1,6 +1,6 @@
 """QuizForge — promotion fictive pour tester le bilan (DiagForge).
 
-    python scripts/quizforge/outils/promotion_fictive.py <export_reponses.csv> <questions.xml> [-n 60] [--fr] [-s dossier] [--graine 7]
+    python scripts/quizforge/outils/promotion_fictive.py <export_reponses.csv> <questions.xml> [-n 60] [--fr] [-s dossier] [--graine 7] [-g "SMA;SMB"]
 
 Fabrique, au format exact d'un vrai export Moodle (« Notes » + « Réponses » avec texte de la question
 et bonne réponse), les tentatives d'une promotion fictive sur la même banque de questions :

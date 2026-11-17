@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CapsuleForge — capsules interactives de simulation logicielle, décrites par un fichier YAML.
+"""CapsuleForge — chapitres de cours interactifs et capsules de simulation logicielle, décrits par un fichier YAML.
 
 Commandes (abréviations acceptées : « en », « ed », « cons », « conv », « v »…) : ::
 
@@ -33,7 +33,7 @@ Commandes (abréviations acceptées : « en », « ed », « cons », « conv »
         enregistrement seulement). Sous-titres, apparitions et objets recalés dans le lecteur.
     python capsuleforge.py convertir freecad_pad
         capsule.yaml (format 1) -> chapitre.yaml (format 2 : parties, sections, pas en scènes), sans toucher à l'original.
-    python capsuleforge.py plan freecad_pad [--parcours immersive] [--variante ecole1]
+    python capsuleforge.py plan fiabilite [--parcours immersive] [--variante ecole1]
         Plan d'un chapitre au format 2, parcours par parcours : noms (B-S2-P4), durées, annexes, questions.
     python capsuleforge.py pptx cours.pptx --chapitre fiabilite [--diapos 6-12] [--largeur 1440]
         Remplit les sections du chapitre qui renvoient à ce diaporama : un pas par diapositive (image de départ,
@@ -611,7 +611,7 @@ def main(argv=None):
     de sortie (0 si la commande ne renvoie rien).
     """
     argv = commande_tolerante(list(sys.argv[1:] if argv is None else argv))
-    p = argparse.ArgumentParser(prog="capsuleforge", description="CapsuleForge : capsules de simulation logicielle (YAML -> HTML).")
+    p = argparse.ArgumentParser(prog="capsuleforge", description="CapsuleForge : chapitres de cours interactifs et capsules de simulation logicielle (YAML -> lecteur HTML, paquet SCORM).")
     p.add_argument("--version", action="version", version=VERSION)
     sp = p.add_subparsers(dest="cmd")
     e = sp.add_parser("enregistrer", help="enregistrer une manipulation (Windows)")
@@ -670,7 +670,7 @@ def main(argv=None):
     fl.add_argument("--essai", action="store_true", help="sources synthétiques (sans appareils)")
     vx = sp.add_parser("voix", help="voix de synthèse d'un chapitre, phrase par phrase"); vx.add_argument("chapitre")
     vx.add_argument("--langue", required=True, help="langue de la voix (fr = pas sans enregistrement ; en, es… = traduction)")
-    vx.add_argument("--moteur", default="piper", choices=["piper", "edge", "essai"], help="piper (sur le poste, défaut), edge (en ligne, gratuit)")
+    vx.add_argument("--moteur", default="piper", choices=["piper", "edge", "essai"], help="piper (sur cet ordinateur, défaut), edge (en ligne, gratuit), essai (voix factice pour les tests)")
     vx.add_argument("--voix", help="nom de la voix (défaut selon la langue, ex. en_GB-alan-medium, fr_FR-tom-medium)")
     vx.add_argument("--vitesse", type=float, default=1.0, help="1.0 = normale ; 1.1 = plus rapide")
     vx.add_argument("--sections", help="identifiants de parties ou de sections, séparés par des virgules")

@@ -74,6 +74,9 @@ def construire(fiche: Path, profil: str | None = None, auteur: bool = False) -> 
 
 if __name__ == "__main__":
     args = sys.argv[1:]
+    if any(o in args for o in ("-h", "--help")):
+        print(__doc__)
+        sys.exit(0)
     profil = None
     opt = next((o for o in ("--profil", "-p", "-P") if o in args), None)
     if opt:

@@ -126,7 +126,7 @@ def comprimer(src: Path, dst: Path, largeur_max: int = 1440, qualite: int = 28, 
         journal(f"  ATTENTION : {src.name} n'a pas de son (ActivePresenter exporte le son à part, fichier audio_NNN.mp4 : "
                 "le donner avec --son) ; découpe en pas réguliers")
     journal(f"  {src.name} -> {dst.name} : {l1} × {h1}, {ips} im/s, {duree:.1f} s"
-            + (f", son de {Path(source_son).name}" if son_src else "") + f", {dst.stat().st_size / 1e6:.1f} Mo")
+            + (f", son de {Path(source_son).name}" if son_src and source_son else "") + f", {dst.stat().st_size / 1e6:.1f} Mo")
     return {"duree_s": duree, "largeur": l1, "hauteur": h1, "son": (son, TAUX_SON)}
 
 

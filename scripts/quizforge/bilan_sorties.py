@@ -240,9 +240,10 @@ def a_revoir(questions):
 
 
 # ------------------------------------------------------------------ images
-def images(dossier: Path, nom_test, notes, par_groupe, regr, couleur):
+def images(dossier: Path, nom_test, notes, par_groupe, regr, couleur, mode="meilleure"):
     """Produit les images PNG pour les étudiants dans ``dossier`` (notes, comparaison des groupes, réussite par regroupement).
 
+    ``mode`` : tentatives retenues (voir :func:`notes_par_etudiant`), rappelé sous le titre de l'histogramme.
     Renvoie ``(chemins des images, message)`` ; sans matplotlib, aucune image et un message d'explication.
     """
     if not G.disponible():
@@ -252,7 +253,7 @@ def images(dossier: Path, nom_test, notes, par_groupe, regr, couleur):
     faits = []
     tout = [x["note20"] for x in notes]
     groupes = [g for g in par_groupe if g != "—"]
-    critere = "meilleure tentative de chaque étudiant"
+    critere = {"premiere": "première tentative", "derniere": "dernière tentative"}.get(mode, "meilleure tentative") + " de chaque étudiant"
     faits.append(G.histogramme(tout, f"{nom_test} — notes de la promotion", dossier / "notes_promotion.png", base,
                                f"{len(tout)} étudiants ({critere})"))
     if len(groupes) > 1:

@@ -2,7 +2,15 @@
 
 Chaque outil a son propre numéro de version (voir la page « État des outils » du site).
 
-## Forge E-Learning 0.2 — en préparation (novembre 2026)
+## Forge E-Learning 0.2.1 — en préparation
+
+Corrections sans changement de format :
+
+- ExoForge : `build.py --help` affiche l'aide.
+- DiagForge : le sous-titre de l'histogramme des notes indique la tentative retenue (première, dernière ou meilleure) ; aide de `bilan -t` précisée.
+- CapsuleForge : aide de la commande et de `voix --moteur` à jour ; message de `verifier` sans renvoi bibliographique interne ; journal de compression vidéo corrigé quand le son vient d'un autre fichier ; aide de `filmer` exacte (noms des fichiers, `--micro NOM`).
+
+## Forge E-Learning 0.2 — novembre 2026
 
 Forge E-Learning 0.2 réunit quatre outils libres pour passer d'un cours existant à des activités Moodle : QuizForge (questions à partir d'un classeur Excel, avec contrôle de leur écriture), ExoForge (exercices guidés à données tirées, en HTML5 et SCORM), DiagForge (analyse des résultats et de la qualité des questions) et CapsuleForge, nouveau dans cette version : un diaporama narré devient un chapitre de cours interactif, sous-titré, traduit, avec questions et exercices, déposé dans Moodle en paquet SCORM. Les réglages s'appuient sur une bibliographie de 250 références et 197 fiches de lecture.
 

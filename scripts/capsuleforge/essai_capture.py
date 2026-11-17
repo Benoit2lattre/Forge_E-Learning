@@ -1,4 +1,4 @@
-"""CapsuleForge — essai de capture sous Windows (écran, webcam, micro) avec PyAV, avant l'enregistreur intégré.
+"""CapsuleForge — diagnostic de capture sous Windows (écran, webcam, micro) avec PyAV, à lancer si ``capsuleforge filmer`` ne trouve pas un appareil.
 
 Utilisation : ::
 
