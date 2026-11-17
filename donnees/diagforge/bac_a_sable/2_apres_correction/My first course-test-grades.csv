@@ -1,0 +1,15 @@
+﻿"Last name","First name","Email address",Status,Started,Completed,Duration,Grade/4.00,"Q. 1 /1.00","Q. 2 /1.00","Q. 3 /1.00","Q. 4 /1.00"
+Student,Sam,student@moodle.a,Finished,"6 November 2026  12:12 AM","6 November 2026  12:13 AM","41 secs",3.00,1.00,1.00,1.00,0.00
+Student,Sam,student@moodle.a,Finished,"6 November 2026  12:13 AM","6 November 2026  12:14 AM","39 secs",2.20,0.00,1.00,0.20,1.00
+Student,Sam,student@moodle.a,Finished,"6 November 2026  12:14 AM","6 November 2026  12:14 AM","32 secs",2.50,1.00,0.50,0.00,1.00
+Student,Sam,student@moodle.a,Finished,"6 November 2026  12:14 AM","6 November 2026  12:15 AM","26 secs",2.67,0.67,0.00,1.00,1.00
+Student,Sam,student@moodle.a,Finished,"6 November 2026  12:15 AM","6 November 2026  12:16 AM","1 min 3 secs",2.42,0.75,1.00,0.67,0.00
+Student,Sam,student@moodle.a,Finished,"6 November 2026  12:16 AM","6 November 2026  12:17 AM","34 secs",2.67,0.50,0.67,1.00,0.50
+Student,Sam,student@moodle.a,Finished,"6 November 2026  12:17 AM","6 November 2026  12:17 AM","29 secs",2.70,0.50,0.20,1.00,1.00
+Student,Sam,student@moodle.a,Finished,"6 November 2026  12:17 AM","6 November 2026  12:18 AM","32 secs",2.10,1.00,0.00,1.00,0.10
+Student,Sam,student@moodle.a,Finished,"6 November 2026  12:18 AM","6 November 2026  12:19 AM","31 secs",3.75,1.00,1.00,1.00,0.75
+Student,Sam,student@moodle.a,Finished,"6 November 2026  12:19 AM","6 November 2026  12:19 AM","30 secs",4.00,1.00,1.00,1.00,1.00
+Student,Sam,student@moodle.a,Finished,"6 November 2026  12:19 AM","6 November 2026  12:20 AM","36 secs",3.00,1.00,0.00,1.00,1.00
+Student,Sam,student@moodle.a,Finished,"6 November 2026  12:20 AM","6 November 2026  12:20 AM","22 secs",1.87,0.00,1.00,0.67,0.20
+Student,Sam,student@moodle.a,Finished,"6 November 2026  12:21 AM","6 November 2026  12:21 AM","29 secs",4.00,1.00,1.00,1.00,1.00
+"Overall average",,,,,,,2.84,0.72,0.64,0.81,0.66

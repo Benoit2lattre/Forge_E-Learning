@@ -1,0 +1,14 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Couleurs par rôle — commandes communes à tous les jeux de couleurs
+%%
+%% Chaque jeu (Ecole1_ColorScheme.tex, New_BD_ColorScheme.tex, …) définit les cinq
+%% couleurs de rôle avec \colorlet{role…}{…}, puis se termine par
+%% \input{couleurs_roles}. Une formule écrite avec ces commandes garde le même
+%% sens quel que soit le jeu : seule la couleur change.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\TDef}[1]{\textcolor{roleDef}{#1}}         % rappel, définition, donnée connue
+\newcommand{\TPro}[1]{\textcolor{rolePro}{#1}}         % proposition, modèle en construction, options d'une question
+\newcommand{\TRes}[1]{\textcolor{roleRes}{#1}}         % résultat, formule à retenir
+\newcommand{\TAtt}[1]{\textcolor{roleAtt}{#1}}         % attention, erreur, piège
+\newcommand{\TMC}[1]{\textcolor{roleMC}{#1}}           % couleur principale (bandeau, titres) : équation en titre
+\newcommand{\TExg}[1]{\boxed{\textcolor{roleExg}{#1}}} % mise en exergue : résultat important, encadré (en mode math)

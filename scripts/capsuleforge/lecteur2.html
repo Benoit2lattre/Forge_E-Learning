@@ -1,0 +1,1004 @@
+<!doctype html>
+<html lang="__LANGUE__">
+<head>
+<meta charset="utf-8">
+<title>__TITRE__</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{--navy:#14213D;--navy2:#28406B;--slate:#748CAB;--slate-l:#D3DDEC;--sand:#E0B989;--fond:#F7F6F4;--carte:#fff;--bord:#CDC9C0;
+  --texte:#1A1815;--texte2:#615C52;--ok:#5C8A66;--focus:#FFCD00}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--texte);background:var(--fond);display:flex;flex-direction:column}
+button,select{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+header{background:var(--navy);color:#fff;padding:8px 14px;display:flex;gap:12px;align-items:center;flex:none}
+header h1{font-size:16px;margin:0;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header button{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:4px 10px}
+header button:hover{background:rgba(255,255,255,.12)}
+header label{font-size:13px;display:flex;gap:6px;align-items:center;white-space:nowrap}
+header label[hidden]{display:none}
+#synth{font-size:12px;color:var(--texte2);white-space:nowrap}
+#synth[hidden]{display:none}
+header select{padding:3px 6px;border-radius:6px;border:0;max-width:210px}
+main{flex:1;display:flex;min-height:0}
+nav{flex:none;width:310px;background:var(--carte);border-right:1px solid var(--bord);overflow:auto;padding:10px 8px 30px}
+nav.ferme{display:none}
+nav h2{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--texte2);margin:12px 8px 4px}
+nav .partie{margin:10px 0 2px;padding:0 8px;font-weight:600;color:var(--navy);display:flex;gap:8px}
+nav .partie{align-items:center}
+nav .partie svg{flex:none}
+svg.disque text{font:600 12px system-ui,sans-serif}
+#compteurs{margin:4px 8px 10px;padding:10px;border-radius:8px;background:var(--fond)}
+#compteurs .total{font-size:13px;color:var(--texte2);margin-bottom:8px}
+#compteurs .total b{color:var(--navy);font-size:15px}
+.jauge{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center;margin-bottom:7px;font-size:13px}
+.jauge .rail{grid-column:1/3;height:8px;border-radius:4px;background:var(--slate-l);overflow:hidden}
+.jauge .rail i{display:block;height:100%;background:var(--navy2);border-radius:4px;transition:width .3s}
+.jauge .pc{font-variant-numeric:tabular-nums;font-weight:600;color:var(--navy)}
+.jauge.hors{opacity:.5}
+.jauge.hors .pc{font-weight:400;font-size:12px}
+#disques{display:flex;flex-wrap:wrap;gap:3px;margin-top:10px}
+#disques button{background:none;border:0;padding:2px;border-radius:50%;line-height:0}
+#disques button:hover:not(:disabled){background:var(--slate-l)}
+#disques button:disabled{opacity:.45;cursor:default}
+#disques .sep{width:1px;background:var(--bord);margin:2px 3px}
+nav button.section{display:grid;grid-template-columns:20px 1fr auto;gap:6px;width:100%;text-align:left;background:none;border:0;border-radius:6px;padding:5px 8px;color:inherit;align-items:start}
+nav button.section:hover:not(:disabled){background:var(--slate-l)}
+nav button.section.ici{background:#FBF3E7;box-shadow:inset 3px 0 0 var(--sand)}
+nav button.section:disabled{color:#9A958A;cursor:default}
+nav .etat{width:16px;height:16px;border-radius:50%;border:2px solid var(--slate);margin-top:3px}
+nav .vue .etat{background:var(--ok);border-color:var(--ok)}
+nav .ici .etat{border-color:var(--sand);background:var(--sand)}
+nav button:disabled .etat{border-style:dashed;border-color:#C9C4B8}
+nav .duree{font-size:12px;color:var(--texte2);font-variant-numeric:tabular-nums;margin-top:2px}
+nav .renvoi{margin-left:34px;font-size:13px}
+nav .renvoi button{background:none;border:0;color:var(--navy2);text-decoration:underline;padding:2px 0;text-align:left}
+#zone{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;overflow:auto;padding:12px 16px 20px}
+#tete{width:100%;max-width:1100px;display:flex;gap:10px;align-items:baseline;margin-bottom:8px}
+#tete .nom{font-size:13px;color:var(--texte2);font-variant-numeric:tabular-nums}
+#tete h2{font-size:18px;margin:0;color:var(--navy)}
+#cadre-scene{width:100%;max-width:1100px}
+#scene{position:relative;background:#000;border-radius:8px;overflow:hidden;width:100%;box-shadow:0 2px 10px rgba(20,33,61,.18)}
+#scene img{display:block;width:100%;height:100%;object-fit:contain}
+#didac{position:absolute;inset:0;pointer-events:none;container-type:inline-size;overflow:hidden}
+#scene.avous{cursor:crosshair}
+.d-cadre{position:absolute;border:3px solid var(--sand);border-radius:4px;box-shadow:0 0 0 2000px rgba(0,0,0,.18);opacity:0;transition:opacity .2s}
+.d-cadre.visible{opacity:1}
+.d-cadre.indice{border-style:dashed;box-shadow:none;border-color:var(--navy2)}
+.d-bulle{position:absolute;max-width:34%;background:#fff;color:var(--texte);border:2px solid var(--navy);border-radius:8px;padding:.35em .6em;
+  font-size:max(11px,1.5cqw);line-height:1.3;box-shadow:0 2px 8px rgba(0,0,0,.25);opacity:0;transition:opacity .2s}
+.d-bulle.visible{opacity:1}
+.d-bulle b{color:var(--navy2)}
+#souris{position:absolute;width:2.2%;min-width:14px;transform:translate(-8%,-4%);filter:drop-shadow(1px 1px 1px rgba(0,0,0,.5))}
+.d-onde{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;border:3px solid var(--focus)}
+.d-onde.faux{border-color:#B85C50}
+.d-onde.juste{border-color:var(--ok)}
+.d-saisie{position:absolute;box-sizing:border-box;background:#fff;color:#111;border:2px solid var(--navy2);border-radius:3px;font:inherit;
+  padding:0 .3em;display:flex;align-items:center;white-space:nowrap;overflow:hidden;pointer-events:auto}
+#d-message{width:100%;max-width:1100px;margin-top:8px;padding:8px 12px;border-radius:8px;background:var(--carte);border:1px solid var(--bord);font-size:15px}
+#d-message[hidden]{display:none}
+#d-message.juste{border-left:4px solid var(--ok)}
+#d-message.faux{border-left:4px solid #B85C50}
+#d-message button{border:1px solid var(--navy2);background:var(--sand);color:var(--navy);border-radius:6px;padding:3px 12px;margin-left:8px;font-weight:600}
+#b-mode[hidden]{display:none}
+#film{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+#film[hidden]{display:none}
+#calque{position:absolute;inset:0;pointer-events:none}
+#calque svg{position:absolute;inset:0;width:100%;height:100%}
+#calque .o{position:absolute}
+#calque .cadre{border:3px solid #D7263D;border-radius:6px}
+#calque .ellipse{border-radius:50%}
+#calque .pointeur{width:2.2%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:#E0142D;box-shadow:0 0 0 5px rgba(224,20,45,.3),0 0 14px 4px rgba(224,20,45,.6)}
+#st{position:absolute;left:4%;right:4%;bottom:3.5%;text-align:center;pointer-events:none}
+#st span{background:rgba(0,0,0,.76);color:#fff;padding:3px 9px;border-radius:4px;font-size:var(--st,16px);line-height:1.7;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+#voile{position:absolute;inset:0;background:rgba(20,33,61,.82);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:5%;overflow:auto}
+#voile[hidden]{display:none}
+#voile h3{margin:0;font-size:clamp(18px,2.4vw,28px)}
+#voile p{margin:0;max-width:46em;font-size:clamp(14px,1.5vw,18px)}
+#voile .boutons{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+#voile button{border-radius:8px;border:1px solid #fff;background:transparent;color:#fff;padding:8px 16px;font-size:16px}
+#voile button.principal{background:var(--sand);border-color:var(--sand);color:var(--navy);font-weight:600}
+#voile button:hover{filter:brightness(1.12)}
+#voile.quiz{align-items:stretch;justify-content:flex-start;background:rgba(20,33,61,.9)}
+.carte{background:#fff;color:var(--texte);border-radius:10px;padding:16px 20px;text-align:left;max-width:760px;width:100%;margin:auto;font-size:clamp(14px,1.35vw,17px)}
+.carte .rang{font-size:13px;color:var(--texte2);margin-bottom:4px}
+.carte .enonce{font-weight:600;font-size:1.08em;margin:0 0 10px}
+.carte fieldset{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.carte label.option{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--bord);border-radius:8px;padding:8px 10px;cursor:pointer}
+.carte label.option:hover{background:var(--fond)}
+.carte label.option input{margin-top:4px;flex:none;width:16px;height:16px}
+.carte label.option.juste{border-color:var(--ok);background:#E4F0E6}
+.carte label.option.faux{border-color:#B85C50;background:#F6E3E0}
+.carte .champ{display:flex;gap:8px;align-items:center}
+.carte .champ input{font:inherit;padding:6px 8px;border:1.5px solid var(--bord);border-radius:6px;width:9em}
+.carte .retour{margin-top:10px;padding:9px 12px;border-radius:8px;background:var(--fond);border-left:4px solid var(--slate)}
+.carte .retour.juste{border-left-color:var(--ok)}
+.carte .retour.faux{border-left-color:#B85C50}
+.carte .retour b{display:block;margin-bottom:2px}
+.carte .retour p{margin:4px 0 0;font-size:1em;max-width:none}
+.carte .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#voile .carte button{border:1px solid var(--navy2);background:#fff;color:var(--navy);font-size:1em;padding:6px 14px;border-radius:8px}
+#voile .carte button.principal{background:var(--sand);border-color:var(--sand);font-weight:600}
+#voile .carte button:disabled{opacity:.45;cursor:default}
+nav .duree .q{color:var(--navy2);white-space:nowrap}
+#barre{width:100%;max-width:1100px;display:flex;gap:10px;align-items:center;margin-top:8px;background:var(--carte);border:1px solid var(--bord);border-radius:8px;padding:6px 10px;flex-wrap:wrap}
+#barre button{border:1px solid var(--navy2);background:#fff;color:var(--navy);border-radius:6px;padding:4px 10px;min-width:38px}
+#barre button:hover:not(:disabled){background:var(--slate-l)}
+#barre button:disabled{opacity:.4;cursor:default}
+#barre button[aria-pressed="true"]{background:var(--navy);color:#fff}
+#jouer{background:var(--sand)!important;border-color:var(--sand)!important;font-weight:600;min-width:86px!important}
+#temps{font-variant-numeric:tabular-nums;font-size:13px;color:var(--texte2);white-space:nowrap}
+#piste{position:relative;flex:1;min-width:160px;height:22px;cursor:pointer;touch-action:none}
+#piste::before{content:"";position:absolute;left:0;right:0;top:8px;height:6px;border-radius:3px;background:var(--slate-l)}
+#fait{position:absolute;left:0;top:8px;height:6px;border-radius:3px;background:var(--navy2);width:0}
+#piste .coupe{position:absolute;top:5px;width:2px;height:12px;background:#fff;box-shadow:0 0 0 1px var(--slate)}
+#curseur{position:absolute;top:3px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--navy);left:0}
+#texte{width:100%;max-width:1100px;margin-top:10px;background:var(--carte);border:1px solid var(--bord);border-radius:8px;padding:10px 14px;line-height:1.6;max-height:34vh;overflow:auto;position:relative}
+#texte[hidden]{display:none}
+#texte h3{margin:0 0 4px;font-size:13px;color:var(--texte2);font-weight:600}
+#texte .ph{cursor:pointer;border-radius:3px;padding:1px 0}
+#texte .ph:hover{background:var(--slate-l)}
+#texte .ph.ici{background:#FBE9CF}
+#texte .pas{margin:0 0 8px}
+.aide{font-size:12px;color:var(--texte2);margin-top:8px;max-width:1100px;width:100%}
+kbd{border:1px solid var(--bord);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:#fff;font:12px ui-monospace,Consolas,monospace}
+#cadre-scene[hidden],#barre[hidden],#exo[hidden],.aide[hidden]{display:none}
+#exo{width:100%;max-width:1100px;display:flex;flex-direction:column;gap:8px}
+#exo-bande{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--carte);border:1px solid var(--bord);border-radius:8px;padding:6px 10px;font-size:14px}
+#exo-bande .esp{flex:1}
+#exo-bande button{border:1px solid var(--navy2);background:#fff;color:var(--navy);border-radius:6px;padding:4px 12px}
+#exo-bande button.principal{background:var(--sand);border-color:var(--sand);font-weight:600}
+#exo-bande button:hover{filter:brightness(.97)}
+#exo-cadre{width:100%;border:1px solid var(--bord);border-radius:8px;background:#fff;min-height:420px}
+nav .exo-score{color:var(--navy2);white-space:nowrap}
+@media (max-width:860px){nav{position:absolute;z-index:5;top:44px;bottom:0;left:0;width:min(88vw,330px);box-shadow:4px 0 16px rgba(0,0,0,.25)}main{position:relative}header label span{display:none}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header>
+  <button id="b-plan" aria-expanded="true" aria-controls="plan" title="Afficher ou masquer le plan">☰ Plan</button>
+  <h1 id="titre"></h1>
+  <label id="l-voix" hidden><span>Voix</span> <select id="voix" aria-label="Langue de la voix"></select></label>
+  <label id="l-stl" hidden><span>Sous-titres</span> <select id="stl" aria-label="Langue des sous-titres et des titres"></select></label>
+  <label id="l-parcours"><span>Parcours</span> <select id="parcours" aria-label="Parcours"></select></label>
+</header>
+<main>
+  <nav id="plan" aria-label="Plan du chapitre"></nav>
+  <div id="zone">
+    <div id="tete"><span class="nom" id="s-nom"></span><h2 id="s-titre"></h2></div>
+    <div id="cadre-scene">
+      <div id="scene">
+        <img id="image" alt="">
+        <video id="film" muted playsinline preload="auto" hidden></video>
+        <div id="calque"></div>
+        <div id="didac"><div id="d-cadre" class="d-cadre"></div><div id="d-bulle" class="d-bulle" role="status"></div>
+          <svg id="souris" viewBox="0 0 24 36" aria-hidden="true" style="display:none"><path d="M1 1 L1 29 L8 22 L13 34 L18 32 L13 20 L23 20 Z" fill="#fff" stroke="#000" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+        <div id="st" aria-hidden="true"></div>
+        <div id="voile"></div>
+      </div>
+    </div>
+    <div id="barre" role="group" aria-label="Lecture">
+      <button id="jouer" title="Lire ou mettre en pause (Espace)">▶ Lire</button>
+      <button id="reculer" title="Reculer de 10 s (←)" aria-label="Reculer de 10 secondes">−10 s</button>
+      <div id="piste" role="slider" tabindex="0" aria-label="Position dans la section" aria-valuemin="0"><div id="fait"></div><div id="curseur"></div></div>
+      <span id="temps">0:00 / 0:00</span>
+      <span id="synth" hidden title="Ce passage est lu par une voix de synthèse">🗣 voix de synthèse</span>
+      <select id="vitesse" aria-label="Vitesse de lecture" title="Vitesse"><option value="0.75">× 0,75</option><option value="1" selected>× 1</option><option value="1.25">× 1,25</option><option value="1.5">× 1,5</option><option value="2">× 2</option></select>
+      <button id="b-mode" hidden aria-pressed="false" title="Faire vous-même les gestes de cette section">✋ À vous</button>
+      <button id="b-son" aria-pressed="true" title="Son : lire avec ou sans la voix (M)">🔊 Son</button>
+      <button id="b-st" aria-pressed="true" title="Sous-titres (C)">Sous-titres</button>
+      <button id="b-texte" aria-pressed="false" title="Texte de la section (T)">Texte</button>
+      <button id="b-ecran" title="Plein écran (F)" aria-label="Plein écran">⛶</button>
+    </div>
+    <div id="d-message" role="status" aria-live="assertive" hidden></div>
+    <div id="exo" hidden>
+      <div id="exo-bande" role="group" aria-label="Exercice"><span id="exo-etat" role="status"></span><span class="esp"></span></div>
+      <iframe id="exo-cadre" title="Exercice"></iframe>
+    </div>
+    <section id="texte" hidden aria-label="Texte de la section"></section>
+    <div class="aide"><kbd>Espace</kbd> lire / pause · <kbd>←</kbd> <kbd>→</kbd> reculer / avancer de 10 s · <kbd>M</kbd> son · <kbd>C</kbd> sous-titres · <kbd>T</kbd> texte · <kbd>F</kbd> plein écran</div>
+  </div>
+</main>
+<audio id="son" preload="auto"></audio>
+<script id="donnees" type="application/json">__CHAPITRE_JSON__</script>
+<script>
+"use strict";
+const C = JSON.parse(document.getElementById("donnees").textContent);
+const $ = id => document.getElementById(id), son = $("son");
+const L = C.ecran.largeur, H = C.ecran.hauteur;
+/* ---------- plateforme SCORM 2004 (Moodle) : avancement, achèvement, note et traces ; hors plateforme, rien ne change ---------- */
+const LMS = (() => {
+  let api = null;
+  const chercher = w => { let k = 0; while (w && !w.API_1484_11 && w.parent && w.parent !== w && k++ < 10) w = w.parent; return w && w.API_1484_11; };
+  try { api = chercher(window) || (window.opener && chercher(window.opener)) || null; } catch (e) { api = null; }
+  if (!api) return null;
+  try { if (String(api.Initialize("")) !== "true") return null; } catch (e) { return null; }
+  const get = k => { try { const v = api.GetValue(k); return v == null ? "" : String(v); } catch (e) { return ""; } };
+  const set = (k, v) => { try { api.SetValue(k, String(v)); } catch (e) {} };
+  let etat = {}; try { etat = JSON.parse(get("cmi.suspend_data") || "{}") || {}; } catch (e) { etat = {}; }
+  let n = parseInt(get("cmi.interactions._count"), 10) || 0, minuteur = 0, fini = false; const debut = Date.now();
+  if (get("cmi.completion_status") !== "completed") set("cmi.completion_status", "incomplete");
+  const commit = () => { clearTimeout(minuteur); minuteur = 0; if (fini) return;
+    let t = JSON.stringify(etat); if (t.length > 64000) { etat.vues = (etat.vues || []).slice(-400); t = JSON.stringify(etat).slice(0, 64000); }
+    set("cmi.suspend_data", t); set("cmi.exit", "suspend"); try { api.Commit(""); } catch (e) {} };
+  const bientot = () => { if (!minuteur) minuteur = setTimeout(commit, 1200); };
+  const horo = () => new Date().toISOString().slice(0, 19);
+  return {
+    etat,
+    ecrire(k, v) { etat[k] = v; bientot(); },
+    /* o = {id, type, reponse, correct, resultat, description} */
+    interaction(o) { if (fini) return; const p = "cmi.interactions." + (n++) + ".";
+      set(p + "id", String(o.id).replace(/[^\w\-.:/]/g, "_").slice(0, 4000)); set(p + "type", o.type);
+      if (o.description) set(p + "description", String(o.description).slice(0, 250)); set(p + "timestamp", o.horo || horo());
+      if (o.correct != null && o.correct !== "") set(p + "correct_responses.0.pattern", o.correct);
+      if (o.reponse != null) set(p + "learner_response", o.reponse); set(p + "result", o.resultat || "neutral"); bientot(); },
+    avancement(f, acheve) { set("cmi.progress_measure", Math.max(0, Math.min(1, f)).toFixed(3)); if (acheve) set("cmi.completion_status", "completed"); bientot(); },
+    note(f) { f = Math.max(0, Math.min(1, f)); set("cmi.score.min", 0); set("cmi.score.max", 100); set("cmi.score.raw", Math.round(100 * f)); set("cmi.score.scaled", f.toFixed(4)); bientot(); },
+    lieu(t) { set("cmi.location", String(t).slice(0, 1000)); bientot(); },
+    terminer() { if (fini) return; commit(); fini = true; const t = Math.round((Date.now() - debut) / 1000);
+      set("cmi.session_time", "PT" + Math.floor(t / 3600) + "H" + Math.floor(t % 3600 / 60) + "M" + (t % 60) + "S");
+      try { api.Commit(""); api.Terminate(""); } catch (e) {} }
+  };
+})();
+/* dans une plateforme, l'avancement est celui qu'elle garde (jamais celui d'un autre étudiant sur le même ordinateur) ;
+   les journaux partent en interactions ; seuls les réglages d'affichage restent dans le navigateur */
+const SUIVI = new Set(["vues", "pratique", "scores", "notes", "ici", "parcours"]), JOURNAUX = new Set(["reponses", "exercices"]);
+const memo = { lire(k, d) { if (LMS && SUIVI.has(k)) return k in LMS.etat ? LMS.etat[k] : d; if (LMS && JOURNAUX.has(k)) return d;
+                 try { const v = localStorage.getItem("capsuleforge:" + C.cle + ":" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+               ecrire(k, v) { if (LMS && SUIVI.has(k)) return LMS.ecrire(k, v); if (LMS && JOURNAUX.has(k)) return;
+                 try { localStorage.setItem("capsuleforge:" + C.cle + ":" + k, JSON.stringify(v)); } catch (e) {} } };
+addEventListener("pagehide", () => LMS && LMS.terminer()); addEventListener("beforeunload", () => LMS && LMS.terminer());
+let parcours = null, suite = [], S = null, iPas = 0, tPas = 0, enLecture = false, tHorloge = 0, retour = null;
+let vues = new Set(memo.lire("vues", []));
+/* typographie française : espace insécable avant ; : ! ? » et après « (jamais de signe seul en début de ligne) */
+const typo = t => typeof t !== "string" ? t : t.replace(/[ \u00a0\u202f]+([;!?])/g, "\u202f$1").replace(/[ \u00a0\u202f]+:(?!\/)/g, "\u00a0:").replace(/«[ \u00a0\u202f]*/g, "«\u00a0").replace(/[ \u00a0\u202f]*»/g, "\u00a0»");
+function typoDom(racine) { const w = document.createTreeWalker(racine, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { const t = typo(n.nodeValue); if (t !== n.nodeValue) n.nodeValue = t; } }
+for (const p of C.parties) for (const s of p.sections) for (const q of s.pas) for (const ph of q.phrases) ph[2] = typo(ph[2]);
+/* ---------- didacticiel : durées du mode Regarder (même calcul que l'ancien lecteur et l'éditeur) ---------- */
+const DID = C.didac || { modes: ["regarder", "a_vous"], essais: 3, juste: "Oui.", faux: "Pas tout à fait.", trajectoire: "arc" };
+const brut = s => String(s || "").replace(/\*\*/g, "");
+const md = s => String(s || "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\n/g, "<br>");
+const dureeBulle = d => d.bulle ? Math.min(5000, Math.max(1800, 900 + 45 * brut(d.bulle).length)) : 600;
+function tempsPasD(d, depuis) {
+  const immobile = ["touche", "saisie", "montrer"].includes(d.action);
+  const dist = depuis ? Math.hypot(d.point[0] - depuis[0], d.point[1] - depuis[1]) : 0;
+  let trajet = immobile || !depuis ? 0 : Math.round(Math.min(1500, Math.max(450, 350 + 1300 * dist / L)));
+  const geste = d.action === "saisie" ? 90 * (d.texte || "").length + 700 : d.action === "glisser" ? 900
+    : (immobile || d.action === "molette") ? 0 : 250 + (d.action === "double_clic" ? 160 : 0);
+  let bulle = dureeBulle(d);
+  if (d.lecture_s > 0) { const tot = d.lecture_s * 1000; if (trajet) trajet = Math.round(Math.min(trajet, Math.max(200, (tot - geste) * 0.4))); bulle = Math.max(300, tot - geste - trajet); }
+  return { trajet, geste, bulle, total: trajet + geste + bulle };
+}
+for (const p of C.parties) for (const s of p.sections) { let pos = null;
+  for (const q of s.pas) { const d = q.didac; if (!d) continue;
+    if (!d.point) d.point = pos || [L / 2, H / 2];
+    d.depuis = pos; d.T = tempsPasD(d, pos);
+    if (!q.audio) q.duree_s = Math.max(0.5, d.T.total / 1000);
+    pos = d.action === "glisser" && d.arrivee ? d.arrivee : d.point; } }
+
+/* ---------- langues : voix (son) et sous-titres (textes) au choix, indépendamment ---------- */
+const LG = C.langues || { source: "fr", autres: [], noms: {} };
+C._titre = C.titre;
+for (const p of C.parties) { p._t = { titre: p.titre };
+  for (const s of p.sections) { s._t = { titre: s.titre, objectif: s.objectif, ouverture: s.ouverture };
+    for (const q of s.pas) q._src = { audio: q.audio, duree_s: q.duree_s, apparitions: q.apparitions, objets: q.objets,
+                                      temps: q.phrases.map(ph => [ph[0], ph[1]]), textes: q.phrases.map(ph => ph[2]) }; } }
+const tousPas = () => C.parties.flatMap(p => p.sections.flatMap(s => s.pas));
+const voixDispo = [LG.source].concat((LG.autres || []).filter(l => tousPas().some(q => q.voix && q.voix[l])));
+const stDispo = [LG.source].concat((LG.autres || []).filter(l => tousPas().some(q => q.trad && q.trad[l]) || C.parties.some(p => p.tr && p.tr[l])));
+let voixL = LG.source, stL = LG.source;
+function appliquerLangues() {
+  const t = (o, k) => (o && o.tr && o.tr[stL] && o.tr[stL][k]) || null;
+  C.titre = t(C, "titre") || C._titre;
+  for (const p of C.parties) { p.titre = t(p, "titre") || p._t.titre;
+    for (const s of p.sections) { for (const k of ["titre", "objectif", "ouverture"]) s[k] = t(s, k) || s._t[k];
+      let d = 0;
+      for (const q of s.pas) { const v = (voixL !== LG.source && q.voix && q.voix[voixL]) || null, o = q._src;
+        q.audio = v ? v.audio : o.audio; q.duree_s = v ? v.duree_s : o.duree_s; q.apparitions = v ? v.apparitions : o.apparitions;
+        q.objets = v ? v.objets : o.objets; q.voixSynthese = v ? true : !!q.synthese;
+        const tps = v ? v.temps : o.temps, tr = stL !== LG.source && q.trad && q.trad[stL];
+        q.phrases = tps.map((x, k) => [x[0], x[1], (tr && tr[k] && typo(tr[k])) || o.textes[k]]); d += q.duree_s; }
+      if (s.pas.length) s.duree_s = Math.round(d * 10) / 10; } }
+  document.documentElement.lang = stL;
+}
+/* ---------- interface : libellés en français, traduits selon la langue des sous-titres ---------- */
+const UI = { en: {
+  "< 1 min": "< 1 min", "{0} min": "{0} min", "pratique {0} sur {1}": "practice {0} of {1}", ", partie achevée": ", part completed", "{0} % lu": "{0}% read",
+  "Durée de ce parcours :": "Length of this path:", " disponibles sur {0} prévues": " available out of {0} planned",
+  "Vue d'ensemble": "Overview", "Approfondissements": "Further reading", "Pratique": "Practice",
+  "Sections du cours parcourues": "Course sections viewed", "Sections des annexes parcourues": "Appendix sections viewed",
+  "Quiz répondus et exercices faits": "Quizzes answered and exercises done", " — non proposé par ce parcours": " — not offered in this path",
+  "à venir": "coming soon", " (à venir)": " (coming soon)", "Partie {0}, {1}, {2}": "Part {0}, {1}, {2}", ". Aller à la première section non vue": ". Go to the first unseen section",
+  ", à venir": ", coming soon", "Exercice : ": "Exercise: ", "à faire": "to do", "Meilleur score {0}/100, dernier {1}/100, {2} fois": "Best score {0}/100, last {1}/100, {2} time(s)",
+  "Exercice pas encore terminé": "Exercise not finished yet", "Questions de fin de section : {0} répondue(s) sur {1}": "End-of-section questions: {0} answered of {1}",
+  ", fait": ", done", ", vue": ", viewed", "↳ S'exercer : ": "↳ Practise: ", "↳ Pour aller plus loin : ": "↳ Further reading: ", "Compléments": "Additional material",
+  "⏸ Pause": "⏸ Pause", "▶ Lire": "▶ Play", "Question {0} sur {1} — {2}": "Question {0} of {1} — {2}", "Vrai": "True", "Faux": "False",
+  "Plusieurs réponses possibles": "Several answers possible", "Valider": "Check", "Passer les questions": "Skip the questions", "✓ Juste": "✓ Correct",
+  "✗ Pas tout à fait": "✗ Not quite", "Question suivante": "Next question", "Terminer": "Finish", "Entrez un nombre.": "Enter a number.",
+  "Réponse attendue : {0}.": "Expected answer: {0}.", "Indice : {0}": "Hint: {0}", "Essayez encore une fois.": "Try once more.",
+  "Reprendre le cours": "Back to the course", "Section suivante : ": "Next section: ", "Fin de la section « {0} »": "End of the section “{0}”",
+  "Questions : {0} juste(s) sur {1}.": "Questions: {0} correct out of {1}.", "Vous êtes au bout de ce qui est disponible sur ce parcours.": "You have reached the end of what is available in this path.",
+  "S'exercer : ": "Practise: ", "Pour aller plus loin : ": "Further reading: ", "Refaire les questions": "Redo the questions", "Répondre aux questions": "Answer the questions",
+  "Revoir la section": "Watch the section again", "Exercice terminé : {0}/100": "Exercise finished: {0}/100", " (meilleur score {0}/100)": " (best score {0}/100)",
+  "Déjà fait : meilleur score {0}/100.": "Already done: best score {0}/100.", "Faites l'exercice jusqu'au bout pour l'enregistrer.": "Complete the exercise to record it.",
+  "Recommencer l'exercice": "Restart the exercise", "Section déjà vue": "Section already viewed", ", questions faites.": ", questions done.", ", questions à faire.": ", questions to do.",
+  "▶ Revoir la section": "▶ Watch again", "▶ Reprendre": "▶ Resume", "▶ Commencer": "▶ Start", "{0} sur {1}": "{0} of {1}", "Texte de la section": "Section text",
+  "Le son de ce passage est introuvable ou illisible ({0}).": "The audio for this passage is missing or unreadable ({0}).", "🔊 Son": "🔊 Sound", "🔇 Muet": "🔇 Muted",
+  "Ce chapitre n'a pas encore de section à lire.": "This chapter has no section to play yet.", " (synthèse)": " (synthetic)",
+  "☰ Plan": "☰ Outline", "Afficher ou masquer le plan": "Show or hide the outline", "Plan du chapitre": "Chapter outline", "Parcours": "Path", "Voix": "Voice", "Sous-titres": "Subtitles",
+  "Langue de la voix": "Voice language", "Langue des sous-titres et des titres": "Language of subtitles and titles", "Lecture": "Playback",
+  "Lire ou mettre en pause (Espace)": "Play or pause (Space)", "Reculer de 10 s (←)": "Back 10 s (←)", "Reculer de 10 secondes": "Back 10 seconds", "Position dans la section": "Position in the section",
+  "Ce passage est lu par une voix de synthèse": "This passage is read by a synthetic voice", "🗣 voix de synthèse": "🗣 synthetic voice", "Vitesse de lecture": "Playback speed", "Vitesse": "Speed",
+  "Son : lire avec ou sans la voix (M)": "Sound: play with or without the voice (M)", "Sous-titres (C)": "Subtitles (C)", "Texte": "Text", "Texte de la section (T)": "Section text (T)",
+  "Plein écran (F)": "Full screen (F)", "Plein écran": "Full screen", "Exercice": "Exercise",
+  "✋ À vous": "✋ Your turn", "👁 Regarder": "👁 Watch", "Revenir à la démonstration": "Back to the demonstration",
+  "Faire vous-même les gestes de cette section": "Do the actions of this section yourself", "À regarder seulement.": "Just watch.", "Continuer": "Continue",
+  "C'est ici : {0}": "It's here: {0}", " Essai {0} / {1}.": " Attempt {0} / {1}.", "Réussi du premier coup : {0} / {1}": "Right first time: {0} / {1}",
+  "Texte à taper": "Text to type", "À vous : meilleur {0} % du premier coup, {1} fois": "Your turn: best {0}% right first time, {1} time(s)",
+  "À vous : pas encore fait": "Your turn: not done yet",
+  "aide": "<kbd>Space</kbd> play / pause · <kbd>←</kbd> <kbd>→</kbd> back / forward 10 s · <kbd>M</kbd> sound · <kbd>C</kbd> subtitles · <kbd>T</kbd> text · <kbd>F</kbd> full screen"
+} };
+let langueUI = "fr";
+function T(k, ...a) { const d = UI[langueUI]; let t = (d && d[k] != null) ? d[k] : k; a.forEach((x, i) => { t = t.split("{" + i + "}").join(x); }); return t; }
+const fmt = t => { t = Math.max(0, Math.round(t || 0)); return Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0"); };
+const minutes = t => t ? (t < 60 ? T("< 1 min") : T("{0} min", Math.round(t / 60))) : "";
+const partie = id => C.parties.find(p => p.id === id);
+const cleSec = (p, s) => p.id + "/" + s.id;
+
+/* ---------- parcours : ce que l'étudiant voit, dans l'ordre ---------- */
+/* une partie est-elle proposée par ce parcours ? (les exercices seulement si le parcours les prévoit) */
+const avecExercices = C.parcours.some(c => c.exercices);
+function visibleDans(p, c) {
+  if (c && p.parcours && !p.parcours.includes(c.id)) return false;
+  if (p.type === "tronc") return true;
+  if (c && c.annexes === "aucune") return false;
+  return !(p.type === "exercice" && avecExercices && c && !c.exercices);
+}
+const estVue = (p, s) => vues.has(cleSec(p, s));
+/* une section se joue si elle a des pas, ou si c'est un exercice ExoForge (proposé seulement par un parcours à exercices) */
+const exoPropose = () => !parcours || parcours.exercices || !avecExercices;
+const jouable = s => s.pas.length > 0 || (!!s.exercice && exoPropose());
+const lecSecs = p => p.sections.filter(s => !s.exercice);         // sections de cours (lecture)
+const sectionsDe = p => p.sections.filter(s => !s.exercice || exoPropose());
+const cleExo = (p, s) => cleSec(p, s) + "#exo";
+const cleAV = (p, s) => cleSec(p, s) + "#avous";
+/* une section de didacticiel faite en « À vous » est un élément de pratique (gestes demandés, pas seulement montrés) */
+const avPratique = s => !!s && ((C.didac || {}).modes || ["regarder", "a_vous"]).includes("a_vous")
+  && s.pas.some(q => q.didac && !(q.didac.observer || q.didac.action === "molette" || q.didac.action === "montrer"));
+let scores = memo.lire("scores", {});                              // exercice -> {dernier, meilleur, fois}
+const poids = s => s.duree_s || 60;
+/* pratique : quiz de fin de section et exercices ; une clé par élément fait, gardée dans le navigateur */
+let faits = new Set(memo.lire("pratique", []));
+function clesPratique(p) {
+  const cles = []; for (const s of p.sections) for (let k = 0; k < (s.questions || 0); k++) cles.push(cleSec(p, s) + "#q" + k);
+  for (const s of p.sections) if (s.exercice) cles.push(cleExo(p, s));
+  for (const s of p.sections) if (avPratique(s)) cles.push(cleAV(p, s));
+  return cles;
+}
+function pratique(p) { const cles = clesPratique(p); return { tot: cles.length, fait: cles.filter(c => faits.has(c)).length }; }
+/* note par élément de pratique (0 à 1, la meilleure) ; achèvement = sections du tronc vues (pondérées par la durée) */
+let notes = memo.lire("notes", {});
+function noter(cle, v) { notes[cle] = Math.max(notes[cle] || 0, v); memo.ecrire("notes", notes); majLMS(); }
+function majLMS() {
+  if (!LMS) return;
+  const secs = C.parties.filter(p => p.type === "tronc").flatMap(p => p.sections.filter(s => s.pas.length).map(s => [p, s]));
+  const dl = secs.reduce((n, x) => n + poids(x[1]), 0), lu = secs.filter(x => estVue(x[0], x[1])).reduce((n, x) => n + poids(x[1]), 0);
+  LMS.avancement(dl ? lu / dl : 1, !dl || lu >= dl - 0.01);
+  /* note pondérée : une question pèse 1, un exercice son poids (par défaut sa durée en minutes ; 0 = hors note) */
+  const elts = C.parties.flatMap(p => p.sections.flatMap(s => [...Array(s.questions || 0).keys()].map(k => [cleSec(p, s) + "#q" + k, 1])
+    .concat(s.exercice ? [[cleExo(p, s), s.exercice.poids == null ? 1 : s.exercice.poids]] : [])
+    .concat(avPratique(s) ? [[cleAV(p, s), Math.max(1, Math.round((s.duree_s || 60) / 60))]] : [])));
+  const tot = elts.reduce((n, e) => n + e[1], 0);
+  if (tot > 0 && elts.some(e => e[1] > 0 && e[0] in notes)) LMS.note(elts.reduce((n, e) => n + e[1] * (notes[e[0]] || 0), 0) / tot);
+}
+/* disque d'une partie : un secteur par section (taille = durée), rempli quand elle est vue ; autour, un anneau
+   ondulé qui se remplit avec la pratique ; tout fait, le disque devient un badge */
+function ondule(c, R, a, lobes) { let d = ""; for (let k = 0; k <= 180; k++) { const t = 2 * Math.PI * k / 180, r = R + a * Math.cos(lobes * t); d += (k ? "L" : "M") + (c + r * Math.sin(t)).toFixed(2) + " " + (c - r * Math.cos(t)).toFixed(2); } return d + "Z"; }
+function disque(p, taille) {
+  const secs = lecSecs(p), tot = secs.reduce((n, s) => n + poids(s), 0) || 1, c = 20, r = 13.5, pr = pratique(p);
+  const lues = secs.filter(s => estVue(p, s)).reduce((n, s) => n + poids(s), 0), lu = secs.length ? lues >= tot - 0.01 : pr.tot > 0 && pr.fait >= pr.tot;
+  const badge = lu && pr.tot > 0 && pr.fait >= pr.tot, plein = lu;
+  let a = 0, sect = "", traits = "";
+  const pt = ang => [c + r * Math.sin(2 * Math.PI * ang), c - r * Math.cos(2 * Math.PI * ang)];
+  if (!plein) for (const s of secs) { const f = poids(s) / tot, [x1, y1] = pt(a), [x2, y2] = pt(a + f);
+    if (estVue(p, s)) sect += f > 0.999 ? `<circle cx="${c}" cy="${c}" r="${r}" fill="#8A94A8"/>` : `<path d="M${c} ${c}L${x1.toFixed(2)} ${y1.toFixed(2)}A${r} ${r} 0 ${f > 0.5 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}Z" fill="#8A94A8"/>`;
+    if (secs.length > 1) traits += `<line x1="${c}" y1="${c}" x2="${x1.toFixed(2)}" y2="${y1.toFixed(2)}" stroke="#14213D" stroke-width=".6" opacity=".45"/>`;
+    a += f; }
+  let anneau = "";
+  if (badge) anneau = `<path d="${ondule(c, 17.6, 1.5, 12)}" fill="#14213D"/><circle cx="${c}" cy="${c}" r="14.6" fill="none" stroke="#E0B989" stroke-width="1.1"/>`;
+  else if (pr.tot) anneau = `<path d="${ondule(c, 17.6, 1.3, 12)}" fill="none" stroke="#B9C3D4" stroke-width="1.6"/>` +
+    (pr.fait ? `<path d="${ondule(c, 17.6, 1.3, 12)}" fill="none" stroke="#14213D" stroke-width="2.2" stroke-linecap="round" pathLength="100" stroke-dasharray="${(100 * pr.fait / pr.tot).toFixed(1)} 100"/>` : "");
+  const corps = badge ? "" : `<circle cx="${c}" cy="${c}" r="${r}" fill="${plein ? "#14213D" : "#F7F6F4"}"/>${sect}${traits}<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="#14213D" stroke-width="1.4"/>`;
+  return `<svg class="disque" width="${taille}" height="${taille}" viewBox="0 0 40 40" aria-hidden="true">${anneau}${corps}<text x="${c}" y="${c + 4.6}" text-anchor="middle" fill="${plein ? "#F7F6F4" : "#14213D"}">${p.nom}</text></svg>`;
+}
+function etatPartie(p) {
+  const secs = lecSecs(p), tot = secs.reduce((n, s) => n + poids(s), 0) || 1, lu = secs.filter(s => estVue(p, s)).reduce((n, s) => n + poids(s), 0), pr = pratique(p);
+  if (!secs.length) return pr.tot ? T("pratique {0} sur {1}", pr.fait, pr.tot) + (pr.fait >= pr.tot ? T(", partie achevée") : "") : "";
+  return T("{0} % lu", Math.round(100 * lu / tot)) + (pr.tot ? ", " + T("pratique {0} sur {1}", pr.fait, pr.tot) : "") + (lu >= tot - 0.01 && pr.tot && pr.fait >= pr.tot ? T(", partie achevée") : "");
+}
+function compteurs(d) {
+  const z = document.createElement("div"); z.id = "compteurs";
+  const dans = C.parties.filter(p => visibleDans(p, parcours));
+  const dispo = dans.flatMap(p => p.sections.filter(jouable)).reduce((n, s) => n + (s.duree_s || 0), 0);
+  const prevu = dans.flatMap(sectionsDe).reduce((n, s) => n + (s.duree_s || 0), 0);
+  const t = document.createElement("div"); t.className = "total"; t.append(T("Durée de ce parcours :") + " "); t.appendChild(document.createElement("b")).textContent = minutes(dispo) || T("{0} min", 0);
+  if (prevu > dispo + 30) t.append(T(" disponibles sur {0} prévues", minutes(prevu))); z.appendChild(t);
+  /* trois jauges selon la nature de ce qui est fait, quel que soit le parcours */
+  const lecture = parties => { const secs = parties.flatMap(p => p.sections.filter(s => s.pas.length).map(s => [p, s])); const tot = secs.reduce((n, x) => n + poids(x[1]), 0);
+    return tot ? Math.round(100 * secs.filter(x => estVue(x[0], x[1])).reduce((n, x) => n + poids(x[1]), 0) / tot) : null; };
+  const pr = C.parties.map(pratique).reduce((n, x) => ({ tot: n.tot + x.tot, fait: n.fait + x.fait }), { tot: 0, fait: 0 });
+  const jauges = [
+    [T("Vue d'ensemble"), lecture(C.parties.filter(p => p.type === "tronc")), false, T("Sections du cours parcourues")],
+    [T("Approfondissements"), lecture(C.parties.filter(p => p.type !== "tronc")), !!parcours && parcours.annexes === "aucune", T("Sections des annexes parcourues")],
+    [T("Pratique"), pr.tot ? Math.round(100 * pr.fait / pr.tot) : null, !!parcours && parcours.questions === "aucune" && !parcours.exercices, T("Quiz répondus et exercices faits")]];
+  for (const [nom, pc, hors, aide] of jauges) {
+    const j = document.createElement("div"); j.className = "jauge" + (hors ? " hors" : ""); j.title = aide + (hors ? T(" — non proposé par ce parcours") : "");
+    j.innerHTML = "<span></span><span class='pc'></span><div class='rail' role='progressbar' aria-valuemin='0' aria-valuemax='100'><i></i></div>";
+    j.children[0].textContent = nom; j.children[1].textContent = pc == null ? T("à venir") : (pc === 100 ? "✓ " : "") + pc + (langueUI === "fr" ? "\u202f%" : "%");
+    j.querySelector("i").style.width = (pc || 0) + "%"; const rail = j.querySelector(".rail"); rail.setAttribute("aria-valuenow", pc || 0); rail.setAttribute("aria-label", nom);
+    z.appendChild(j);
+  }
+  const dq = document.createElement("div"); dq.id = "disques"; let avant = null;
+  for (const p of d.tronc.concat(d.annexes)) {
+    if (avant === "tronc" && p.type !== "tronc") { const sp = document.createElement("span"); sp.className = "sep"; dq.appendChild(sp); } avant = p.type;
+    const cible = p.sections.find(s => jouable(s) && !estVue(p, s)) || p.sections.find(jouable);
+    const b = document.createElement("button"); b.innerHTML = disque(p, 34); b.disabled = !cible;
+    b.title = p.nom + " — " + p.titre + " : " + etatPartie(p) + (cible ? "" : T(" (à venir)"));
+    b.setAttribute("aria-label", T("Partie {0}, {1}, {2}", p.nom, p.titre, etatPartie(p)) + (cible ? T(". Aller à la première section non vue") : T(", à venir")));
+    b.onclick = () => { if (p.type !== "tronc" && S && S.p.type === "tronc") retour = { p: S.p, s: S.s }; ouvrir(p, cible, 0, true); };
+    dq.appendChild(b);
+  }
+  z.appendChild(dq); return z;
+}
+function derouler() {
+  const regle = parcours ? parcours.annexes : "a_la_demande";
+  const retenue = p => !parcours || !p.parcours || p.parcours.includes(parcours.id);
+  const ordre = { debut: 0, libre: 1, fin: 2 };
+  const tronc = C.parties.filter(p => p.type === "tronc" && retenue(p)).map((p, i) => [p, i]).sort((a, b) => (ordre[a[0].place] - ordre[b[0].place]) || (a[1] - b[1])).map(x => x[0]);
+  const annexes = regle === "aucune" ? [] : C.parties.filter(p => p.type !== "tronc" && retenue(p) && visibleDans(p, parcours));
+  const vuesA = new Set(); suite = [];
+  const ajouter = (p, de) => { for (const s of sectionsDe(p)) { suite.push({ p, s, de });
+    if (regle === "integrees") for (const a of s.annexes) { const pa = annexes.find(x => x.id === a); if (pa && !vuesA.has(a)) { vuesA.add(a); ajouter(pa, s); } } } };
+  tronc.forEach(p => ajouter(p, null));
+  const libres = regle === "a_la_demande" ? annexes : annexes.filter(a => !vuesA.has(a.id));
+  return { tronc, libres, regle, annexes };
+}
+function plan() {
+  const d = derouler(), z = $("plan"); z.textContent = "";
+  z.appendChild(compteurs(d));
+  const section = (p, s, retrait) => {
+    const b = document.createElement("button"); b.className = "section" + (vues.has(cleSec(p, s)) ? " vue" : "") + (S && S.s === s ? " ici" : ""); b.disabled = !jouable(s);
+    if (retrait) b.style.paddingLeft = "26px";
+    b.innerHTML = "<span class='etat'></span><span></span><span class='duree'></span>";
+    b.children[1].textContent = (s.exercice ? T("Exercice : ") : "") + s.titre + (jouable(s) ? "" : T(" (à venir)")); b.children[2].textContent = (s.exercice ? "~ " : "") + minutes(s.duree_s);
+    if (avPratique(s) && s.pas.length) { const sc = scores[cleAV(p, s)], e = document.createElement("div"); e.className = "exo-score";
+      e.textContent = sc ? "✋ " + sc.meilleur + (langueUI === "fr" ? "\u202f%" : "%") : "✋ " + T("à faire");
+      e.title = sc ? T("À vous : meilleur {0} % du premier coup, {1} fois", sc.meilleur, sc.fois) : T("À vous : pas encore fait"); b.children[2].appendChild(e); }
+    if (s.exercice) { const sc = scores[cleExo(p, s)], e = document.createElement("div"); e.className = "exo-score";
+      e.textContent = sc ? (sc.meilleur >= 100 ? "✓ " : "") + sc.meilleur + "/100" : T("à faire"); e.title = sc ? T("Meilleur score {0}/100, dernier {1}/100, {2} fois", sc.meilleur, sc.dernier, sc.fois) : T("Exercice pas encore terminé"); b.children[2].appendChild(e); }
+    if (s.questions && s.pas.length) { const nf = [...Array(s.questions).keys()].filter(k => faits.has(cleSec(p, s) + "#q" + k)).length; const q = document.createElement("div"); q.className = "q"; q.textContent = (nf >= s.questions ? "✓ " : "") + nf + "/" + s.questions + " q."; q.title = T("Questions de fin de section : {0} répondue(s) sur {1}", nf, s.questions); b.children[2].appendChild(q); }
+    b.setAttribute("aria-label", s.nom + " " + (s.exercice ? T("Exercice : ") : "") + s.titre + (vues.has(cleSec(p, s)) ? (s.exercice ? T(", fait") : T(", vue")) : "") + (jouable(s) ? "" : T(", à venir")));
+    if (S && S.s === s) b.setAttribute("aria-current", "true");
+    b.onclick = () => ouvrir(p, s, 0, true); z.appendChild(b);
+  };
+  const tete = (p, annexe) => { const e = document.createElement("div"); e.className = "partie" + (annexe ? " annexe" : ""); e.innerHTML = disque(p, 30) + "<span></span>"; e.title = etatPartie(p); e.children[1].textContent = p.titre; z.appendChild(e); };
+  for (const p of d.tronc) { tete(p);
+    for (const s of p.sections) { section(p, s);
+      for (const a of s.annexes) { const pa = d.annexes.find(x => x.id === a); if (!pa) continue;
+        if (d.regle === "integrees") { if (suite.some(x => x.p === pa && x.de === s)) { tete(pa, true); sectionsDe(pa).forEach(sa => section(pa, sa, true)); } }
+        else { const r = document.createElement("div"); r.className = "renvoi"; const b = document.createElement("button"); b.textContent = (pa.type === "exercice" ? T("↳ S'exercer : ") : T("↳ Pour aller plus loin : ")) + pa.titre; const s1 = pa.sections.find(jouable);
+          b.disabled = !s1; if (!s1) b.textContent += T(" (à venir)"); b.onclick = () => { retour = { p, s }; ouvrir(pa, s1, 0, true); }; r.appendChild(b); z.appendChild(r); } } } }
+  if (d.libres.length && d.regle === "a_la_demande") { const h = document.createElement("h2"); h.textContent = T("Compléments"); z.appendChild(h); for (const p of d.libres) { tete(p, true); sectionsDe(p).forEach(s => section(p, s)); } }
+  typoDom(z);
+}
+
+/* ---------- section et pas ---------- */
+const dureeSec = () => S.s.pas.reduce((n, q) => n + q.duree_s, 0);
+const debutPas = i => S.s.pas.slice(0, i).reduce((n, q) => n + q.duree_s, 0);
+const tSection = () => debutPas(iPas) + tPas;
+function ouvrir(p, s, t, lancer, direct) {
+  if (!s || !jouable(s)) return;
+  if (s.exercice) return ouvrirExo(p, s);
+  modeExo(false); pause(); avEffacer(); S = { p, s }; majMode();
+  if (modeAV) for (const k of Object.keys(avTraces)) if (k.startsWith(cleSec(p, s) + ":")) delete avTraces[k]; $("s-nom").textContent = s.nom; $("s-titre").textContent = typo(s.titre); $("voile").hidden = true; $("voile").classList.remove("quiz"); enQuiz = false;
+  memo.ecrire("ici", { p: p.id, s: s.id }); if (LMS) LMS.lieu(p.id + "/" + s.id);
+  const z = $("piste"); z.querySelectorAll(".coupe").forEach(e => e.remove()); const d = dureeSec();
+  s.pas.forEach((q, i) => { if (!i) return; const e = document.createElement("div"); e.className = "coupe"; e.style.left = 100 * debutPas(i) / d + "%"; z.appendChild(e); });
+  z.setAttribute("aria-valuemax", Math.round(d));
+  const choix = lancer && !direct && estVue(p, s);        // section déjà vue : on propose (revoir, questions, suite) au lieu de relancer
+  texte(); plan(); aller(t || 0, lancer && !choix); if (choix) voileDepart();
+  if (innerWidth <= 860) fermerPlan(true);
+}
+/* pas vidéo : la vidéo est jouée muette et suit l'horloge du pas (son du pas, ou voix traduite) ; vitesse ajustée
+   pour qu'elle couvre exactement la durée du pas (une voix traduite plus longue ralentit un peu l'image) */
+const film = $("film");
+const rapport = q => q.video ? (q.video.fin - q.video.debut) / Math.max(0.1, q.duree_s) : 1;
+function caler(force) {
+  const q = S && S.s.pas[iPas]; if (!q || !q.video) return;
+  const cible = q.video.debut + tPas * rapport(q), ecart = Math.abs((film.currentTime || 0) - cible);
+  film.playbackRate = Math.max(0.25, Math.min(4, rapport(q) * +$("vitesse").value));
+  if (film.readyState >= 1 && (force || ecart > (enLecture ? 0.3 : 0.04))) { try { film.currentTime = cible; } catch (e) {} }
+  if (enLecture && film.paused) film.play().catch(() => {}); else if (!enLecture && !film.paused) film.pause();
+}
+function chargerPas(i, t, lancer) {
+  iPas = i; tPas = t; const q = S.s.pas[i]; $("synth").hidden = !q.voixSynthese;
+  if (q.video) { const u = new URL(q.video.src, location.href).href; film.hidden = false;
+    if (film.src !== u) { film.src = u; film.addEventListener("loadedmetadata", () => caler(true), { once: true }); } else caler(true); }
+  else { film.hidden = true; film.pause(); }
+  if (modeAV && q.didac && avecDidac(S.s)) { dessiner(true); return avConsigne(q); }
+  if (AV) avEffacer();
+  for (const a of q.apparitions) { const im = new Image(); im.src = a[1]; }
+  const nx = S.s.pas[i + 1]; if (nx) { const im = new Image(); im.src = nx.fond; }
+  if (q.audio) { const u = new URL(q.audio, location.href).href;
+    if (son.src !== u) { son.src = u; son.load(); }
+    const poser = () => { try { son.currentTime = t; } catch (e) {} son.playbackRate = +$("vitesse").value; if (lancer) lecture(); };
+    if (son.readyState >= 1) poser(); else son.addEventListener("loadedmetadata", poser, { once: true });
+  } else { son.pause(); son.removeAttribute("src"); if (lancer) lecture(); }
+  dessiner(true);
+}
+function aller(t, lancer) {
+  const d = dureeSec(); t = Math.max(0, Math.min(d - 0.05, t)); let i = 0; while (i < S.s.pas.length - 1 && t >= debutPas(i + 1)) i++;
+  $("voile").hidden = true; $("voile").classList.remove("quiz"); enQuiz = false; chargerPas(i, t - debutPas(i), lancer === undefined ? enLecture : lancer);
+}
+function lecture() { if (modeAV && S && S.s.pas[iPas] && S.s.pas[iPas].didac) return; enLecture = true; tHorloge = performance.now(); const q = S.s.pas[iPas]; if (q.audio) son.play().catch(() => { enLecture = false; bouton(); voileDepart(); }); bouton(); }
+function pause() { enLecture = false; son.pause(); film.pause(); bouton(); }
+function bouton() { $("jouer").textContent = enLecture ? T("⏸ Pause") : T("▶ Lire"); }
+function finPas() {
+  if (iPas < S.s.pas.length - 1) return chargerPas(iPas + 1, 0, true);
+  pause(); if (AV) { avEffacer(); bulleD({}, false); cadreD({}, false); } const nouvelle = !vues.has(cleSec(S.p, S.s));
+  if (modeAV && avPratique(S.s)) {                          // section faite en « À vous » : pratique faite, note = réussis du premier coup
+    const ks = S.s.pas.filter(q => q.didac && !aObserver(q.didac)).map(q => cleSec(S.p, S.s) + ":" + q.id), k = cleAV(S.p, S.s);
+    const r = ks.length ? ks.filter(x => avTraces[x]).length / ks.length : 1;
+    faits.add(k); memo.ecrire("pratique", [...faits]); const sc = scores[k] || { meilleur: 0, fois: 0 };
+    scores[k] = { dernier: Math.round(100 * r), meilleur: Math.max(sc.meilleur, Math.round(100 * r)), fois: sc.fois + 1 }; memo.ecrire("scores", scores);
+    if (LMS) LMS.interaction({ id: "avous:" + cleSec(S.p, S.s), type: "numeric", reponse: String(Math.round(100 * r)), resultat: String(r.toFixed(2)), description: T("Réussi du premier coup : {0} / {1}", ks.filter(x => avTraces[x]).length, ks.length) });
+    noter(k, r); } vues.add(cleSec(S.p, S.s)); memo.ecrire("vues", [...vues]); plan();
+  if (LMS) { LMS.interaction({ id: "lecture:" + cleSec(S.p, S.s), type: "other", reponse: "vue", resultat: "neutral", description: S.s.nom + " " + S.s.titre }); if (nouvelle) majLMS(); }
+  const regle = parcours ? parcours.questions : "proposees";
+  if (S.s.questions && regle !== "aucune" && !toutesFaites(S.p, S.s)) questions(false); else finSection();
+}
+/* ---------- questions de fin de section (banque QuizForge) ---------- */
+let enQuiz = false;
+const cleQ = (p, s, k) => cleSec(p, s) + "#q" + k;
+const toutesFaites = (p, s) => [...Array(s.questions).keys()].every(k => faits.has(cleQ(p, s, k)));
+const melange = t => { t = [...t]; for (let i = t.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [t[i], t[j]] = [t[j], t[i]]; } return t; };
+const nombre = v => { const x = parseFloat(String(v).replace(/\s/g, "").replace(",", ".")); return isFinite(x) ? x : null; };
+function questions(refaire) {
+  const p = S.p, s = S.s, tirees = s.lots.flatMap(l => melange(l.questions).slice(0, l.nombre)), regle = parcours ? parcours.questions : "proposees";
+  const resultats = []; let k = 0; enQuiz = true;
+  const v = $("voile"); v.hidden = false; v.classList.add("quiz");
+  const finir = () => { enQuiz = false; v.classList.remove("quiz"); finSection(resultats); };
+  const poser = () => {
+    const q = tirees[k]; v.textContent = ""; let essais = 0, clos = false;
+    const c = document.createElement("div"); c.className = "carte"; v.appendChild(c);
+    const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+    c.appendChild(el("div", "rang", T("Question {0} sur {1} — {2}", k + 1, tirees.length, s.titre)));
+    const en = el("p", "enonce", q.question); en.id = "enonce"; c.appendChild(en);
+    const f = document.createElement("fieldset"); f.setAttribute("aria-labelledby", "enonce"); c.appendChild(f);
+    let options = [], champ = null;
+    if (q.type === "numerique") { const d = el("div", "champ"); champ = document.createElement("input"); champ.type = "text"; champ.inputMode = "decimal"; champ.setAttribute("aria-labelledby", "enonce"); champ.autocomplete = "off"; d.append(champ, el("span", "", q.unite || "")); f.appendChild(d); }
+    else { const liste = q.type === "vf" ? [{ texte: T("Vrai"), vrai: true, correct: q.reponse === true }, { texte: T("Faux"), vrai: false, correct: q.reponse === false }] : melange(q.choix);
+      const plusieurs = q.type === "qcm" && q.plusieurs; if (plusieurs) c.insertBefore(el("div", "rang", T("Plusieurs réponses possibles")), f);
+      options = liste.map(ch => { const l = el("label", "option"), i = document.createElement("input"); i.type = plusieurs ? "checkbox" : "radio"; i.name = "rep"; l.append(i, el("span", "", ch.texte)); f.appendChild(l); i.onchange = () => valider.disabled = false; return { ch, l, i }; }); }
+    const retour = el("div", "retour"); retour.setAttribute("role", "status"); retour.hidden = true; c.appendChild(retour);
+    const actions = el("div", "actions"); c.appendChild(actions);
+    const valider = el("button", "principal", T("Valider")); valider.disabled = q.type !== "numerique"; actions.appendChild(valider);
+    if (regle !== "obligatoires" || refaire) { const b = el("button", "", T("Passer les questions")); b.onclick = finir; actions.appendChild(b); }
+    const montrer = (juste, lignes) => { retour.hidden = false; retour.className = "retour " + (juste ? "juste" : "faux"); retour.textContent = ""; retour.appendChild(el("b", "", juste ? T("✓ Juste") : T("✗ Pas tout à fait"))); for (const t of lignes) if (t) retour.appendChild(el("p", "", t)); };
+    const clore = juste => { clos = true; resultats.push(juste); faits.add(cleQ(p, s, k)); memo.ecrire("pratique", [...faits]);
+      if (LMS) { const lettre = ch => "abcdefghijklmnopqrstuvwxyz"[q.choix.indexOf(ch)] || "x";
+        const tr = q.type === "vf" ? { type: "true-false", reponse: options.find(o => o.i.checked) ? String(options.find(o => o.i.checked).ch.vrai) : "", correct: String(q.reponse) }
+          : q.type === "qcm" ? { type: "choice", reponse: options.filter(o => o.i.checked).map(o => lettre(o.ch)).join("[,]"), correct: q.choix.filter(c => c.correct).map(lettre).join("[,]") }
+          : { type: "numeric", reponse: String(nombre(champ.value) ?? ""), correct: (q.valeur - (q.tolerance || 0)) + "[:]" + (q.valeur + (q.tolerance || 0)) };
+        LMS.interaction(Object.assign(tr, { id: "question:" + cleSec(p, s) + ":" + (q.titre || k), resultat: juste ? "correct" : "incorrect", description: q.question })); }
+      noter(cleQ(p, s, k), juste ? 1 : 0);
+      const j = memo.lire("reponses", []); j.push({ section: cleSec(p, s), question: q.titre, juste, essais: essais, date: new Date().toISOString().slice(0, 16) }); memo.ecrire("reponses", j.slice(-500)); plan();
+      valider.textContent = k < tirees.length - 1 ? T("Question suivante") : T("Terminer"); valider.disabled = false; valider.onclick = () => { k++; if (k < tirees.length) poser(); else finir(); }; valider.focus(); };
+    valider.onclick = () => {
+      essais++;
+      if (q.type === "numerique") {
+        const x = nombre(champ.value); if (x == null) return montrer(false, [T("Entrez un nombre.")]);
+        const proche = (a, tol) => Math.abs(x - a) <= Math.abs(tol || 0) + 1e-9;
+        if (proche(q.valeur, q.tolerance)) { champ.disabled = true; montrer(true, [q.feedback_juste, q.feedback]); return clore(true); }
+        const e = q.erreurs.find(e => proche(e.valeur, e.tolerance));
+        if (essais >= 2) { champ.disabled = true; montrer(false, [e ? e.feedback : q.feedback_faux, T("Réponse attendue : {0}.", (langueUI === "fr" ? String(q.valeur).replace(".", ",") : String(q.valeur)) + (q.unite ? " " + q.unite : "")), q.feedback]); return clore(false); }
+        montrer(false, [e ? e.feedback : q.feedback_faux, q.indices[0] ? T("Indice : {0}", q.indices[0]) : "", T("Essayez encore une fois.")]); champ.focus(); champ.select(); return;
+      }
+      const coches = options.filter(o => o.i.checked), juste = options.every(o => o.i.checked === !!o.ch.correct);
+      options.forEach(o => { o.i.disabled = true; if (o.ch.correct) o.l.classList.add("juste"); else if (o.i.checked) o.l.classList.add("faux"); });
+      const lignes = q.type === "vf" ? [juste ? q.feedback_juste : q.feedback_faux, q.feedback] : coches.filter(o => !o.ch.correct).map(o => o.ch.feedback).concat([q.feedback]);
+      montrer(juste, lignes); clore(juste);
+    };
+    typoDom(c); new MutationObserver(() => typoDom(retour)).observe(retour, { childList: true });
+    if (champ) { champ.onkeydown = e => { if (e.key === "Enter" && !clos) { e.preventDefault(); valider.click(); } }; champ.focus(); } else options[0].i.focus();
+  };
+  poser();
+}
+function suivante() { const k = suite.findIndex(x => x.s === S.s); for (let i = k + 1; i < suite.length && k >= 0; i++) if (jouable(suite[i].s)) return suite[i]; return null; }
+/* ce qui vient après la section en cours : retour au cours après une annexe, sinon la suite du parcours */
+function prochaine() {
+  if (retour && S.p.type !== "tronc" && !suivanteDansPartie()) { const r = retour;
+    return [T("Reprendre le cours"), () => { retour = null; const k = suite.findIndex(x => x.s === r.s); let n = null; for (let i = k + 1; i < suite.length && k >= 0; i++) if (jouable(suite[i].s)) { n = suite[i]; break; } if (n) ouvrir(n.p, n.s, 0, true); else ouvrir(r.p, r.s, 0, false); }]; }
+  const n = suivanteDansPartie() || suivante();
+  return n ? [(n.s.exercice ? T("Exercice : ") : T("Section suivante : ")) + n.s.titre, () => ouvrir(n.p, n.s, 0, true)] : null;
+}
+function finSection(resultats) {
+  const v = $("voile"); v.textContent = ""; v.hidden = false; v.classList.remove("quiz"); enQuiz = false;
+  const h = document.createElement("h3"); h.textContent = T("Fin de la section « {0} »", S.s.titre); v.appendChild(h);
+  if (resultats && resultats.length) { const p = document.createElement("p"); p.textContent = T("Questions : {0} juste(s) sur {1}.", resultats.filter(Boolean).length, resultats.length); v.appendChild(p); }
+  if (modeAV && avecDidac(S.s)) { const ks = S.s.pas.filter(q => q.didac && !aObserver(q.didac)).map(q => cleSec(S.p, S.s) + ":" + q.id);
+    const p = document.createElement("p"); p.textContent = T("Réussi du premier coup : {0} / {1}", ks.filter(k => avTraces[k]).length, ks.length); v.appendChild(p); }
+  if (S.s.ouverture) { const p = document.createElement("p"); p.textContent = S.s.ouverture; v.appendChild(p); }
+  const b = document.createElement("div"); b.className = "boutons"; v.appendChild(b);
+  const bt = (txt, f, principal) => { const e = document.createElement("button"); e.textContent = txt; if (principal) e.className = "principal"; e.onclick = f; b.appendChild(e); return e; };
+  let premier = null; const pr = prochaine();
+  if (pr) premier = bt(pr[0], pr[1], true); else { const p = document.createElement("p"); p.textContent = T("Vous êtes au bout de ce qui est disponible sur ce parcours."); v.insertBefore(p, b); }
+  if ((parcours ? parcours.annexes : "a_la_demande") === "a_la_demande" && S.p.type === "tronc") for (const a of S.s.annexes) { const pa = partie(a), s1 = pa && visibleDans(pa, parcours) && pa.sections.find(jouable); if (s1) bt((pa.type === "exercice" ? T("S'exercer : ") : T("Pour aller plus loin : ")) + pa.titre, () => { retour = { p: S.p, s: S.s }; ouvrir(pa, s1, 0, true); }); }
+  if (S.s.questions && (parcours ? parcours.questions : "proposees") !== "aucune") bt(toutesFaites(S.p, S.s) ? T("Refaire les questions") : T("Répondre aux questions"), () => questions(true));
+  bt(T("Revoir la section"), () => ouvrir(S.p, S.s, 0, true, true));
+  typoDom(v);
+  (premier || b.firstChild).focus();
+}
+function suivanteDansPartie() { if (S.p.type === "tronc") return null; const k = S.p.sections.indexOf(S.s); const s = S.p.sections.slice(k + 1).find(jouable); return s ? { p: S.p, s } : null; }
+
+/* ---------- exercices ExoForge : la page de l'exercice dans un cadre, et l'API SCORM 1.2 qu'il y cherche ---------- */
+let enExo = false, EXO = null;
+function modeExo(on) {
+  enExo = on; $("cadre-scene").hidden = on; $("barre").hidden = on; document.querySelector(".aide").hidden = on; $("exo").hidden = !on;
+  $("texte").hidden = on || $("b-texte").getAttribute("aria-pressed") !== "true";
+  if (!on) { const f = $("exo-cadre"); if (f.getAttribute("srcdoc")) { f.removeAttribute("srcdoc"); f.src = "about:blank"; } EXO = null; }
+  taille();
+}
+function bandeExo() {
+  const z = $("exo-bande"), sc = scores[cleExo(EXO.p, EXO.s)];
+  z.querySelectorAll("button").forEach(b => b.remove());
+  $("exo-etat").textContent = EXO.fini ? T("Exercice terminé : {0}/100", EXO.score) + (sc && sc.fois > 1 ? T(" (meilleur score {0}/100)", sc.meilleur) : "") + "."
+    : sc ? T("Déjà fait : meilleur score {0}/100.", sc.meilleur) : T("Faites l'exercice jusqu'au bout pour l'enregistrer.");
+  const bt = (txt, f, principal) => { const e = document.createElement("button"); e.textContent = txt; if (principal) e.className = "principal"; e.onclick = f; z.appendChild(e); return e; };
+  const pr = prochaine(); if (pr) bt(pr[0], pr[1], EXO.fini);
+  bt(T("Recommencer l'exercice"), () => ouvrirExo(EXO.p, EXO.s));
+  typoDom(z);
+}
+function ouvrirExo(p, s) {
+  pause(); avEffacer(); S = { p, s }; majMode(); memo.ecrire("ici", { p: p.id, s: s.id }); if (LMS) LMS.lieu(p.id + "/" + s.id);
+  $("s-nom").textContent = s.nom; $("s-titre").textContent = typo(T("Exercice : ") + s.titre); $("voile").hidden = true; enQuiz = false;
+  EXO = { p, s, statut: "not attempted", score: null, fini: false, essai: 1, inter: {} };
+  modeExo(true);
+  const f = $("exo-cadre"); f.title = T("Exercice : ") + s.titre;
+  f.srcdoc = s.exercice.html.replace("__BASE__", new URL(s.exercice.base, location.href).href);
+  plan(); bandeExo(); if (innerWidth <= 860) fermerPlan(true); $("zone").scrollTop = 0; taille();
+}
+function exoFini() {
+  const p = EXO.p, s = EXO.s, k = cleExo(p, s), sc = Math.round(EXO.score == null ? 0 : EXO.score);
+  EXO.fini = true; faits.add(k); memo.ecrire("pratique", [...faits]); vues.add(cleSec(p, s)); memo.ecrire("vues", [...vues]);
+  const a = scores[k] || { meilleur: 0, fois: 0 }; scores[k] = { dernier: sc, meilleur: Math.max(a.meilleur, sc), fois: a.fois + 1 }; memo.ecrire("scores", scores);
+  const inter = Object.keys(EXO.inter).sort((x, y) => x - y).map(i => EXO.inter[i]), j = memo.lire("exercices", []);
+  if (LMS) { const TYPES = ["true-false", "choice", "fill-in", "long-fill-in", "matching", "sequencing", "likert", "numeric"];
+    for (const x of inter) { const ty = TYPES.includes(x.type) ? x.type : "other", lst = v => ty === "choice" ? String(v).split(",").join("[,]") : String(v);
+      /* numérique : ExoForge accepte une tolérance qu'il ne transmet pas → valeur attendue en description, pas de motif exact */
+      LMS.interaction({ id: "exercice:" + s.exercice.id + ":" + (x.id || "?"), type: ty, reponse: x.student_response != null ? lst(x.student_response) : "", horo: x.horo,
+        correct: x.correct_responses && ty !== "numeric" && ty !== "other" ? lst(x.correct_responses) : "",
+        description: ty === "numeric" && x.correct_responses ? "Valeur attendue ≈ " + x.correct_responses + " (tolérance de l'exercice)" : "",
+        resultat: { correct: "correct", wrong: "incorrect", incorrect: "incorrect", unanticipated: "unanticipated" }[x.result] || "neutral" }); }
+    LMS.interaction({ id: "exercice:" + s.exercice.id + ":score", type: "numeric", reponse: String(sc), resultat: String(sc / 100), description: "Score de l'exercice « " + s.titre + " » (sur 100)" }); }
+  noter(k, sc / 100);
+  j.push({ section: cleSec(p, s), exercice: s.exercice.id, score: sc, essai: EXO.essai, interactions: inter, date: new Date().toISOString().slice(0, 16) });
+  memo.ecrire("exercices", j.slice(-100)); EXO.inter = {}; EXO.essai++;
+  plan(); bandeExo();
+}
+/* API SCORM 1.2 minimale : le moteur ExoForge la trouve en remontant les fenêtres parentes (comme dans Moodle) */
+window.API = {
+  LMSInitialize() { return "true"; }, LMSFinish() { return "true"; }, LMSCommit() { return "true"; },
+  LMSGetLastError() { return "0"; }, LMSGetErrorString() { return ""; }, LMSGetDiagnostic() { return ""; },
+  LMSGetValue(k) { return k === "cmi.core.lesson_status" ? (EXO ? EXO.statut : "not attempted") : ""; },
+  LMSSetValue(k, v) {
+    if (!EXO) return "true"; v = String(v);
+    if (k === "cmi.core.score.raw") EXO.score = +v;
+    else if (k === "cmi.core.lesson_status") { EXO.statut = v; if (v === "completed" || v === "passed") exoFini(); }
+    else { const m = /^cmi\.interactions\.(\d+)\.(.+)$/.exec(k); if (m) { const x = EXO.inter[m[1]] = EXO.inter[m[1]] || { horo: new Date().toISOString().slice(0, 19) }; x[m[2].replace(".0.pattern", "")] = v; } }
+    return "true";
+  }
+};
+function voileDepart() {
+  const v = $("voile"); v.textContent = ""; v.hidden = false; v.classList.remove("quiz"); enQuiz = false;
+  const vue = estVue(S.p, S.s), regle = parcours ? parcours.questions : "proposees", avecQ = S.s.questions && regle !== "aucune", faites = avecQ && toutesFaites(S.p, S.s);
+  const h = document.createElement("h3"); h.textContent = S.s.titre; v.appendChild(h);
+  if (S.s.objectif) { const p = document.createElement("p"); p.textContent = S.s.objectif; v.appendChild(p); }
+  if (vue) { const p = document.createElement("p"); p.textContent = T("Section déjà vue") + (avecQ ? (faites ? T(", questions faites.") : T(", questions à faire.")) : "."); v.appendChild(p); }
+  const b = document.createElement("div"); b.className = "boutons"; v.appendChild(b);
+  const bt = (txt, f, principal) => { const e = document.createElement("button"); e.textContent = txt; if (principal) e.className = "principal"; e.onclick = f; b.appendChild(e); return e; };
+  const qPrincipal = vue && avecQ && !faites;
+  const premier = bt(vue ? T("▶ Revoir la section") : tSection() > 1 ? T("▶ Reprendre") : T("▶ Commencer"), () => { v.hidden = true; if (modeAV && S.s.pas[iPas].didac) avConsigne(S.s.pas[iPas]); else lecture(); }, !qPrincipal);
+  let q = null; if (avecQ) q = bt(faites ? T("Refaire les questions") : T("Répondre aux questions"), () => questions(true), qPrincipal);
+  if (vue) { const n = suivanteDansPartie() || suivante(); if (n) bt(T("Section suivante : ") + n.s.titre, () => ouvrir(n.p, n.s, 0, true)); }
+  typoDom(v); (qPrincipal ? q : premier).focus();
+}
+
+/* ---------- image, apparitions, objets, sous-titres ---------- */
+function surTrajet(o, t) { const p = o.trajet; if (!p || p.length < 2) return o.position;
+  const f = Math.max(0, Math.min(1, (t - o.debut_s) / Math.max(0.1, o.duree_s * 0.9))), lg = []; let tot = 0;
+  for (let i = 1; i < p.length; i++) { const d = Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); lg.push(d); tot += d; }
+  let r = f * tot; for (let i = 0; i < lg.length; i++) { if (r <= lg[i] || i === lg.length - 1) { const k = lg[i] ? Math.min(1, r / lg[i]) : 0; return [p[i][0] + k * (p[i + 1][0] - p[i][0]), p[i][1] + k * (p[i + 1][1] - p[i][1])]; } r -= lg[i]; }
+  return p[p.length - 1]; }
+let signature = "", iPhrase = -2;
+function dessiner(force) {
+  const q = S.s.pas[iPas], t = tPas;
+  let f = q.fond; for (const a of q.apparitions) if (a[0] <= t) f = a[1];
+  const im = $("image"); if (im.dataset.f !== f) { im.dataset.f = f; im.src = f; }
+  const vus = q.objets.map((o, i) => [o, i]).filter(x => t >= x[0].debut_s && t < x[0].debut_s + x[0].duree_s);
+  const sig = iPas + ":" + vus.map(x => x[1]).join(","), z = $("calque");
+  if (sig !== signature || force) { signature = sig; z.textContent = "";
+    const spots = vus.filter(x => x[0].type === "spot");
+    if (spots.length) { const forme = o => o.forme === "ellipse" ? `<ellipse cx="${o.cadre[0] + o.cadre[2] / 2}" cy="${o.cadre[1] + o.cadre[3] / 2}" rx="${o.cadre[2] / 2}" ry="${o.cadre[3] / 2}"/>` : `<rect x="${o.cadre[0]}" y="${o.cadre[1]}" width="${o.cadre[2]}" height="${o.cadre[3]}" rx="12"/>`;
+      z.innerHTML = `<svg viewBox="0 0 ${L} ${H}" preserveAspectRatio="none"><defs><filter id="flou" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter><mask id="trous"><rect width="${L}" height="${H}" fill="#fff"/><g fill="#000" filter="url(#flou)">${spots.map(x => forme(x[0])).join("")}</g></mask></defs><rect width="${L}" height="${H}" fill="rgba(0,0,0,.5)" mask="url(#trous)"/></svg>`; }
+    for (const [o, i] of vus) { if (o.type === "spot") continue; const e = document.createElement("div"); e.className = "o " + o.type + (o.forme === "ellipse" ? " ellipse" : ""); e.dataset.i = i;
+      if (o.type !== "pointeur") { e.style.left = 100 * o.cadre[0] / L + "%"; e.style.top = 100 * o.cadre[1] / H + "%"; e.style.width = 100 * o.cadre[2] / L + "%"; e.style.height = 100 * o.cadre[3] / H + "%"; }
+      if (o.type === "cache") e.style.background = o.couleur || "#fff";
+      z.appendChild(e); } }
+  dessinerDidac(q, t);
+  for (const [o, i] of vus) if (o.type === "pointeur") { const e = z.querySelector(`.o[data-i="${i}"]`), p = surTrajet(o, t); if (e) { e.style.left = 100 * p[0] / L + "%"; e.style.top = 100 * p[1] / H + "%"; } }
+  let k = -1; q.phrases.forEach((ph, i) => { if (ph[0] <= t + 0.02) k = i; }); if (k >= 0 && t > q.phrases[k][1] + 0.6) k = -1;
+  const cle = iPas + "." + k;
+  if (cle !== iPhrase || force) { iPhrase = cle; const st = $("st"); st.textContent = "";
+    if (k >= 0 && $("b-st").getAttribute("aria-pressed") === "true") { const s = document.createElement("span"); s.textContent = q.phrases[k][2]; st.appendChild(s); }
+    document.querySelectorAll("#texte .ph.ici").forEach(e => e.classList.remove("ici"));
+    const e = document.querySelector(`#texte .ph[data-k="${cle}"]`); if (e) { e.classList.add("ici"); const z = $("texte"); if (enLecture && !z.hidden && (e.offsetTop < z.scrollTop + 30 || e.offsetTop + e.offsetHeight > z.scrollTop + z.clientHeight - 10)) z.scrollTop = Math.max(0, e.offsetTop - 40); } }
+  const d = dureeSec(), ts = tSection();
+  $("fait").style.width = $("curseur").style.left = 100 * ts / d + "%"; $("temps").textContent = fmt(ts) + " / " + fmt(d);
+  $("piste").setAttribute("aria-valuenow", Math.round(ts)); $("piste").setAttribute("aria-valuetext", T("{0} sur {1}", fmt(ts), fmt(d)));
+}
+/* ---------- didacticiel : « Regarder » = fonction du temps du pas ; « À vous » = l'étudiant fait le geste ---------- */
+const pcL = v => 100 * v / L + "%", pcH = v => 100 * v / H + "%";
+function placerD(el, x, y, l, h) { el.style.left = pcL(x); el.style.top = pcH(y); if (l != null) { el.style.width = pcL(l); el.style.height = pcH(h); } }
+function arc(a, b) { const dx = b[0] - a[0], dy = b[1] - a[1], cx = (a[0] + b[0]) / 2 - dy * 0.12, cy = (a[1] + b[1]) / 2 + dx * 0.12;
+  return u => { u = Math.max(0, Math.min(1, u)); const e = u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2, f = 1 - e;
+    return [f * f * a[0] + 2 * f * e * cx + e * e * b[0], f * f * a[1] + 2 * f * e * cy + e * e * b[1]]; }; }
+function chemin(d) {
+  const a = d.depuis || d.point, b = d.point;
+  if (d.trajet && d.trajet.length > 2) { const tr = d.trajet, tT = Math.max(1, tr[tr.length - 1][2]);
+    const pts = [[a[0], a[1], 0], ...tr.slice(1).map(q => [q[0], q[1], q[2] / tT])]; pts[pts.length - 1] = [b[0], b[1], 1];
+    return u => { let k = 1; while (k < pts.length - 1 && pts[k][2] < u) k++; const A = pts[k - 1], B = pts[k], v = B[2] > A[2] ? Math.min(1, Math.max(0, (u - A[2]) / (B[2] - A[2]))) : 1;
+      return [A[0] + (B[0] - A[0]) * v, A[1] + (B[1] - A[1]) * v]; }; }
+  return arc(a, b);
+}
+function bulleD(d, visible) {
+  const b = $("d-bulle"), z = $("didac");
+  if (!visible || !d.bulle) { b.classList.remove("visible"); b.dataset.q = ""; return; }
+  if (b.dataset.q !== d.bulle) { b.dataset.q = d.bulle; b.innerHTML = md(typo(d.bulle)); }
+  b.classList.add("visible");
+  const bw = b.offsetWidth * L / Math.max(1, z.clientWidth), bh = b.offsetHeight * H / Math.max(1, z.clientHeight);
+  if (d.bulle_position) return placerD(b, Math.max(0, Math.min(d.bulle_position[0], L - bw)), Math.max(0, Math.min(d.bulle_position[1], H - bh)));
+  const c = d.cadre || [d.point[0] - 60, d.point[1] - 24, 120, 48];
+  let x = c[0] + c[2] / 2 - bw / 2, y = c[1] + c[3] + H * 0.015; if (y + bh > H * 0.98) y = c[1] - bh - H * 0.015;
+  placerD(b, Math.max(L * 0.005, Math.min(x, L - bw - L * 0.005)), Math.max(H * 0.005, y));
+}
+function cadreD(d, visible, indice) {
+  const c = $("d-cadre");
+  if (!visible || !d.cadre || d.action === "touche") { c.classList.remove("visible", "indice"); return; }
+  placerD(c, d.cadre[0], d.cadre[1], d.cadre[2], d.cadre[3]); c.classList.toggle("indice", !!indice); c.classList.add("visible");
+}
+function onde(x, y, classe, u) { const o = document.createElement("div"); o.className = "d-onde " + (classe || ""); placerD(o, x, y);
+  if (u != null) { o.style.transform = `scale(${0.3 + 1.1 * u})`; o.style.opacity = 1 - u; } else { o.animate([{ transform: "scale(.3)", opacity: 1 }, { transform: "scale(1.4)", opacity: 0 }], 600); setTimeout(() => o.remove(), 650); }
+  $("didac").appendChild(o); return o; }
+function dessinerDidac(q, t) {
+  const z = $("didac"), sou = $("souris");
+  z.querySelectorAll(".d-onde.regarder,.d-saisie.regarder").forEach(e => e.remove());
+  const d = q && q.didac;
+  if (!d) { sou.style.display = "none"; bulleD({}, false); cadreD({}, false); return; }
+  if (modeAV) return;                                       // « À vous » : la consigne est posée par avConsigne
+  const ms = t * 1000, T = d.T, apres = ms >= T.trajet;
+  let pos = d.point;
+  if (!apres) pos = chemin(d)(ms / Math.max(1, T.trajet));
+  else if (d.action === "glisser" && d.arrivee) pos = ms < T.trajet + T.geste ? arc(d.point, d.arrivee)((ms - T.trajet) / T.geste) : d.arrivee;
+  sou.style.display = ""; placerD(sou, pos[0], pos[1]);
+  cadreD(d, apres); bulleD(d, apres);
+  const clics = { clic: [0], clic_droit: [0], clic_milieu: [0], double_clic: [0, 160], glisser: [-250] }[d.action];
+  if (clics) for (const dt of clics) { const u = (ms - (T.trajet + 250 + dt)) / 600; if (u >= 0 && u < 1) onde(d.point[0], d.point[1], "regarder", u).classList.add("regarder"); }
+  if (d.action === "saisie" && d.cadre && apres && ms < T.trajet + T.geste) {
+    const c = document.createElement("div"); c.className = "d-saisie regarder"; placerD(c, d.cadre[0], d.cadre[1], Math.max(d.cadre[2], 60), d.cadre[3]);
+    c.style.fontSize = Math.max(11, d.cadre[3] * z.clientHeight / H * 0.6) + "px"; c.textContent = (d.texte || "").slice(0, Math.floor((ms - T.trajet) / 90)); z.appendChild(c); }
+}
+/* mode « À vous » */
+let modeAV = memo.lire("mode", false) === true, AV = null;
+const avecDidac = s => s && s.pas.some(q => q.didac);
+const aObserver = d => d.observer || d.action === "molette" || d.action === "montrer";
+function majMode() {
+  const ok = !!(S && !S.s.exercice && avecDidac(S.s) && (DID.modes || []).includes("a_vous")), b = $("b-mode");
+  b.hidden = !ok; b.setAttribute("aria-pressed", modeAV && ok); b.textContent = modeAV && ok ? T("👁 Regarder") : T("✋ À vous");
+  b.title = modeAV && ok ? T("Revenir à la démonstration") : T("Faire vous-même les gestes de cette section");
+  $("scene").classList.toggle("avous", modeAV && ok); $("jouer").disabled = modeAV && ok; if (!(modeAV && ok)) avMessage("");
+}
+function avMessage(html, classe) { const m = $("d-message"); m.innerHTML = html || ""; m.className = classe || ""; m.hidden = !html; }
+function avEffacer() { const z = $("didac"); z.querySelectorAll(".d-saisie").forEach(e => e.remove()); AV = null; }
+function avConsigne(q) {
+  avEffacer(); const d = q.didac; AV = { q, essais: 0, valide: false, champ: null }; avMessage("");
+  pause(); $("souris").style.display = "none"; $("voile").hidden = true;
+  if (aObserver(d)) { cadreD(d, true); bulleD(d, true);
+    avMessage(T("À regarder seulement.") + ` <button id="av-vu">${T("Continuer")}</button>`); $("av-vu").onclick = () => avReussite(null, null, true); $("av-vu").focus(); return; }
+  const generique = d.indice != null ? !!d.indice : (!d.cadre || d.origine === "aucune" || /^(Cliquez|Double-cliquez) ici/.test(d.bulle || ""));
+  cadreD(d, generique, true); bulleD(d, true);
+  if (d.action === "saisie" && d.cadre) {
+    const z = $("didac"), c = document.createElement("input"); c.className = "d-saisie"; c.setAttribute("aria-label", T("Texte à taper"));
+    placerD(c, d.cadre[0], d.cadre[1], Math.max(d.cadre[2], 60), d.cadre[3]); c.style.fontSize = Math.max(11, d.cadre[3] * z.clientHeight / H * 0.6) + "px";
+    z.appendChild(c); AV.champ = c;
+    c.addEventListener("keydown", ev => { ev.stopPropagation(); if (ev.key !== "Enter") return; ev.preventDefault(); if (reponseJuste(c.value, d)) avReussite(); else avEchec(null, null); });
+    setTimeout(() => c.focus(), 50);
+  }
+}
+function reponseJuste(saisi, d) {
+  const norm = s => String(s).trim().toLowerCase().replace(/\s+/g, "").replace(",", ".");
+  const nombre = s => { const m = norm(s).match(/^([-+]?\d*\.?\d+(?:e[-+]?\d+)?)([a-zµ°%]*)$/); return m ? [parseFloat(m[1]), m[2]] : null; };
+  const tol = d.tolerance || 1e-9;
+  return [d.texte || "", ...(d.accepte || [])].some(a => { if (norm(saisi) === norm(a)) return true; const x = nombre(saisi), y = nombre(a);
+    return !!(x && y && Math.abs(x[0] - y[0]) <= tol * Math.max(1, Math.abs(y[0])) && (!x[1] || !y[1] || x[1] === y[1])); });
+}
+const avTraces = {};
+function avNoter(juste) {
+  const q = AV.q, k = cleSec(S.p, S.s) + ":" + q.id;
+  if (avTraces[k] === undefined) { avTraces[k] = juste && AV.essais === 0;
+    if (LMS) LMS.interaction({ id: "geste:" + k, type: "other", reponse: "essais=" + (AV.essais + 1), resultat: avTraces[k] ? "correct" : "incorrect", description: brut(q.didac.bulle || q.didac.action) }); }
+}
+function avReussite(x, y, vu) {
+  if (!AV || AV.valide) return; AV.valide = true; const d = AV.q.didac;
+  if (!vu) { avNoter(true); if (x != null) onde(x, y, "juste"); avMessage(md(typo(DID.juste || "Oui.")), "juste"); }
+  if (AV.champ) { AV.champ.remove(); AV.champ = null; }
+  if (d.retour_juste && !vu) { avMessage(md(typo(d.retour_juste)) + ` <button id="av-vu">${T("Continuer")}</button>`, "juste"); $("av-vu").onclick = avSuivant; $("av-vu").focus(); return; }
+  setTimeout(avSuivant, 450);
+}
+function avSuivant() { avMessage(""); bulleD({}, false); cadreD({}, false); tPas = S.s.pas[iPas].duree_s; finPas(); }
+function avEchec(x, y) {
+  AV.essais++; if (x != null) onde(x, y, "faux"); const d = AV.q.didac, n = DID.essais || 3;
+  if (AV.essais >= n) { cadreD(d, true); avTraces[cleSec(S.p, S.s) + ":" + AV.q.id] = false; avMessage(T("C'est ici : {0}", md(typo(d.bulle || ""))), "faux"); }
+  else avMessage(md(typo(d.retour_faux || DID.faux || "Pas tout à fait.")) + T(" Essai {0} / {1}.", AV.essais, n), "faux");
+}
+const gestesAV = d => [{ action: d.action, cadre: d.cadre, touches: d.touches }, ...(d.ou || [])];
+const EVT = { clic: "click", double_clic: "dblclick", clic_droit: "contextmenu", clic_milieu: "auxclick", molette: "wheel" };
+function coordsScene(ev) { const r = $("scene").getBoundingClientRect(); return [(ev.clientX - r.left) * L / r.width, (ev.clientY - r.top) * H / r.height]; }
+function dansZone(c, x, y) { const m = Math.max(6, L * 0.004); return x >= c[0] - m && x <= c[0] + c[2] + m && y >= c[1] - m && y <= c[1] + c[3] + m; }
+function actionAttendue(type, ev) {
+  if (!modeAV || !AV || AV.valide || !$("voile").hidden) return; const d = AV.q.didac; if (aObserver(d)) return;
+  const [x, y] = coordsScene(ev), g = gestesAV(d).filter(q => EVT[q.action] && q.cadre);
+  if (!g.length) return;
+  if (g.some(q => EVT[q.action] === type && dansZone(q.cadre, x, y))) return avReussite(x, y);
+  if (type === "click" && g.some(q => q.action === "double_clic" && dansZone(q.cadre, x, y))) return;
+  if (d.action === "glisser" && type === "click") return;
+  if (ev.target.closest && ev.target.closest(".d-saisie")) return;
+  if (type === "click" || type === "contextmenu" || g.some(q => EVT[q.action] === type)) avEchec(x, y);
+}
+{ const sc = $("scene"); let appui = null;
+  sc.addEventListener("dragstart", ev => ev.preventDefault());
+  sc.addEventListener("mousedown", ev => { appui = coordsScene(ev); if (modeAV && AV) ev.preventDefault(); });
+  sc.addEventListener("mouseup", ev => { if (!modeAV || !AV || AV.q.didac.action !== "glisser" || !appui) return; const d = AV.q.didac;
+    const [x, y] = coordsScene(ev), a = appui; appui = null; if (Math.hypot(x - a[0], y - a[1]) < 10) return;
+    const proche = d.arrivee && Math.hypot(x - d.arrivee[0], y - d.arrivee[1]) < L * 0.03;
+    if (d.cadre && dansZone(d.cadre, a[0], a[1]) && proche) avReussite(x, y); else avEchec(x, y); });
+  sc.addEventListener("click", ev => { if (ev.button === 0) actionAttendue("click", ev); });
+  sc.addEventListener("dblclick", ev => actionAttendue("dblclick", ev));
+  sc.addEventListener("contextmenu", ev => { if (modeAV && AV) { ev.preventDefault(); actionAttendue("contextmenu", ev); } });
+  sc.addEventListener("auxclick", ev => { if (ev.button === 1) actionAttendue("auxclick", ev); });
+  sc.addEventListener("wheel", ev => { if (modeAV && AV) { ev.preventDefault(); actionAttendue("wheel", ev); } }, { passive: false }); }
+function libelleTouche(ev) {
+  const noms = { Enter: "Entrée", Tab: "Tab", Escape: "Échap", Delete: "Suppr", Backspace: "Retour arrière", ArrowUp: "Haut", ArrowDown: "Bas",
+    ArrowLeft: "Gauche", ArrowRight: "Droite", Home: "Début", End: "Fin", " ": "Espace" };
+  const k = noms[ev.key] || (ev.key.length === 1 ? ev.key.toUpperCase() : ev.key);
+  return [ev.ctrlKey && "Ctrl", ev.altKey && "Alt", ev.metaKey && "Win", k].filter(Boolean).join("+");
+}
+document.addEventListener("keydown", ev => {                 // touches attendues en « À vous » : avant les raccourcis du lecteur
+  if (!modeAV || !AV || AV.valide || !$("voile").hidden || aObserver(AV.q.didac)) return;
+  if (ev.target.closest && ev.target.closest(".d-saisie")) return;
+  const touches = gestesAV(AV.q.didac).filter(q => q.action === "touche"); if (!touches.length) return;
+  if (["Control", "Alt", "Shift", "Meta"].includes(ev.key)) return;
+  const norm = t => String(t || "").toLowerCase().replace(/\s/g, "");
+  ev.preventDefault(); ev.stopImmediatePropagation();
+  if (touches.some(q => norm(libelleTouche(ev)) === norm(q.touches))) avReussite(); else if (AV.q.didac.action === "touche") avEchec();
+}, true);
+$("b-mode").onclick = () => { modeAV = !modeAV; memo.ecrire("mode", modeAV); avEffacer(); majMode(); if (S) ouvrir(S.p, S.s, 0, true, true); };
+
+function texte() {
+  const z = $("texte"); z.textContent = ""; const h = document.createElement("h3"); h.textContent = T("Texte de la section"); z.appendChild(h);
+  if (S.s.narration) { const n = document.createElement("p"); n.className = "pas"; n.innerHTML = md(S.s.narration); z.appendChild(n); }
+  S.s.pas.forEach((q, i) => { const p = document.createElement("p"); p.className = "pas";
+    if (q.phrases.length) q.phrases.forEach((ph, k) => { const s = document.createElement("span"); s.className = "ph"; s.dataset.k = i + "." + k; s.textContent = ph[2] + " "; s.onclick = () => aller(debutPas(i) + ph[0] + 0.01, true); p.appendChild(s); });
+    else p.textContent = q.texte || ""; if (p.textContent) z.appendChild(p); });
+  typoDom(z);
+}
+function boucle(maintenant) {
+  if (S && enLecture) { const q = S.s.pas[iPas];
+    if (q.audio) { tPas = son.currentTime || 0; if (son.ended || tPas >= q.duree_s - 0.03) { finPas(); } }
+    else { tPas += (maintenant - tHorloge) / 1000 * +$("vitesse").value; tHorloge = maintenant; if (tPas >= q.duree_s) finPas(); }
+    if (S && enLecture) { dessiner(); caler(false); } }
+  requestAnimationFrame(boucle);
+}
+son.addEventListener("ended", () => { if (enLecture) finPas(); });
+son.addEventListener("seeked", () => { tPas = son.currentTime; dessiner(); caler(true); });
+son.addEventListener("error", () => { if (son.getAttribute("src")) { pause(); const v = $("voile"); v.hidden = false; v.textContent = ""; const p = document.createElement("p"); p.textContent = T("Le son de ce passage est introuvable ou illisible ({0}).", S.s.pas[iPas].audio); v.appendChild(p); } });
+
+/* ---------- commandes ---------- */
+$("jouer").onclick = () => { if (!S || enExo) return; if (enQuiz) return ouvrir(S.p, S.s, 0, true, true); if (!$("voile").hidden && tSection() >= dureeSec() - 0.5) return ouvrir(S.p, S.s, 0, true, true); $("voile").hidden = true; enLecture ? pause() : lecture(); };
+$("reculer").onclick = () => S && aller(tSection() - 10);
+$("vitesse").onchange = () => { son.playbackRate = +$("vitesse").value; caler(false); memo.ecrire("vitesse", $("vitesse").value); };
+function reglerSon(actif) { son.muted = !actif; const b = $("b-son"); b.setAttribute("aria-pressed", actif); b.textContent = actif ? T("🔊 Son") : T("🔇 Muet"); memo.ecrire("son", actif);
+  if (!actif && $("b-st").getAttribute("aria-pressed") !== "true") $("b-st").click(); }          // sans la voix, les sous-titres s'affichent
+$("b-son").onclick = () => reglerSon($("b-son").getAttribute("aria-pressed") !== "true");
+$("b-st").onclick = () => { const b = $("b-st"), v = b.getAttribute("aria-pressed") !== "true"; b.setAttribute("aria-pressed", v); memo.ecrire("st", v); if (S) dessiner(true); };
+$("b-texte").onclick = () => { const b = $("b-texte"), v = b.getAttribute("aria-pressed") !== "true"; b.setAttribute("aria-pressed", v); $("texte").hidden = !v; memo.ecrire("texte", v); taille(); if (S) dessiner(true); };
+$("b-ecran").onclick = () => { const e = $("cadre-scene"); if (document.fullscreenElement) document.exitFullscreen(); else if (e.requestFullscreen) e.requestFullscreen(); };
+function fermerPlan(f) { $("plan").classList.toggle("ferme", f); $("b-plan").setAttribute("aria-expanded", !f); taille(); }
+$("b-plan").onclick = () => fermerPlan(!$("plan").classList.contains("ferme"));
+const piste = $("piste");
+const viser = e => { const r = piste.getBoundingClientRect(); aller(dureeSec() * Math.max(0, Math.min(1, (e.clientX - r.left) / r.width))); };
+piste.onpointerdown = e => { if (!S) return; piste.setPointerCapture(e.pointerId); viser(e); piste.onpointermove = viser; piste.onpointerup = () => piste.onpointermove = piste.onpointerup = null; };
+piste.onkeydown = e => { if (e.key === "ArrowLeft") { aller(tSection() - 10); e.preventDefault(); e.stopPropagation(); } else if (e.key === "ArrowRight") { aller(tSection() + 10); e.preventDefault(); e.stopPropagation(); } };
+document.addEventListener("keydown", e => {
+  if (!S || enQuiz || enExo || e.ctrlKey || e.metaKey || e.altKey) return; const tag = e.target.tagName;
+  if (tag === "SELECT" || tag === "INPUT" || tag === "TEXTAREA") return;
+  if (e.code === "Space" && tag !== "BUTTON") { e.preventDefault(); $("jouer").click(); }
+  else if (e.key === "ArrowLeft") { e.preventDefault(); aller(tSection() - 10); }
+  else if (e.key === "ArrowRight") { e.preventDefault(); aller(tSection() + 10); }
+  else if (e.key.toLowerCase() === "m") $("b-son").click();
+  else if (e.key.toLowerCase() === "c") $("b-st").click();
+  else if (e.key.toLowerCase() === "t") $("b-texte").click();
+  else if (e.key.toLowerCase() === "f") $("b-ecran").click();
+});
+/* la scène garde ses proportions et tient dans la fenêtre */
+function taille() { const sc = $("scene"), plein = !!document.fullscreenElement, z = $("zone");
+  if (enExo) { const f = $("exo-cadre"); const haut = f.getBoundingClientRect().top - z.getBoundingClientRect().top + z.scrollTop; f.style.height = Math.max(420, z.clientHeight - haut - 22) + "px"; return; }
+  const lMax = plein ? innerWidth : Math.min(1100, z.clientWidth - 32), hMax = plein ? innerHeight : Math.max(240, innerHeight - ($("texte").hidden ? 200 : 200 + Math.min(innerHeight * 0.3, 240)));
+  const l = Math.min(lMax, hMax * L / H); sc.style.width = l + "px"; sc.style.height = l * H / L + "px"; sc.style.margin = "0 auto"; sc.style.setProperty("--st", Math.max(12, Math.min(26, l * 0.021)) + "px"); }
+addEventListener("resize", taille); document.addEventListener("fullscreenchange", taille);
+
+/* ---------- démarrage ---------- */
+/* menus de langue (montrés seulement s'il y a un choix) */
+const nomL = l => (LG.noms && LG.noms[l]) || l;
+for (const [id, liste, cle, etiquette] of [["voix", voixDispo, "voix", l => nomL(l) + (l !== LG.source ? T(" (synthèse)") : "")], ["stl", stDispo, "stl", nomL]]) {
+  if (liste.length < 2) continue; const sel = $(id); $("l-" + id).hidden = false;
+  for (const l of liste) { const o = document.createElement("option"); o.value = l; o.textContent = etiquette(l); sel.appendChild(o); }
+  const m = memo.lire(cle, LG.source); sel.value = liste.includes(m) ? m : LG.source;
+  if (id === "voix") voixL = sel.value; else stL = sel.value;
+  sel.onchange = () => { memo.ecrire(cle, sel.value); const avantVoix = voixL; if (id === "voix") voixL = sel.value; else stL = sel.value;
+    pause(); appliquerLangues(); libelles(); $("titre").textContent = typo(C.titre); plan();
+    if (S && !S.s.exercice) { if (voixL !== avantVoix) { ouvrir(S.p, S.s, 0, false, true); voileDepart(); } else { $("s-titre").textContent = typo(S.s.titre); texte(); dessiner(true); } } };
+}
+/* libellés fixes de la page (boutons, infobulles, aide) et titres des parcours */
+const AIDE_FR = document.querySelector(".aide").innerHTML;
+function libelles() {
+  if (typeof majMode === "function") majMode();
+  langueUI = stL === "fr" ? "fr" : (UI[stL] ? stL : "en");
+  const fixe = [["b-plan", "textContent", "☰ Plan"], ["b-plan", "title", "Afficher ou masquer le plan"], ["plan", "aria-label", "Plan du chapitre"],
+    ["voix", "aria-label", "Langue de la voix"], ["stl", "aria-label", "Langue des sous-titres et des titres"], ["parcours", "aria-label", "Parcours"],
+    ["barre", "aria-label", "Lecture"], ["jouer", "title", "Lire ou mettre en pause (Espace)"], ["reculer", "title", "Reculer de 10 s (←)"],
+    ["reculer", "aria-label", "Reculer de 10 secondes"], ["piste", "aria-label", "Position dans la section"], ["synth", "title", "Ce passage est lu par une voix de synthèse"],
+    ["synth", "textContent", "🗣 voix de synthèse"], ["vitesse", "aria-label", "Vitesse de lecture"], ["vitesse", "title", "Vitesse"], ["b-son", "title", "Son : lire avec ou sans la voix (M)"],
+    ["b-st", "title", "Sous-titres (C)"], ["b-st", "textContent", "Sous-titres"], ["b-texte", "title", "Texte de la section (T)"], ["b-texte", "textContent", "Texte"],
+    ["b-ecran", "title", "Plein écran (F)"], ["b-ecran", "aria-label", "Plein écran"], ["exo-bande", "aria-label", "Exercice"], ["texte", "aria-label", "Texte de la section"]];
+  for (const [id, att, k] of fixe) { const e = $(id); if (!e) continue; if (att === "textContent" || att === "title") e[att] = T(k); else e.setAttribute(att, T(k)); }
+  for (const [id, k] of [["l-voix", "Voix"], ["l-stl", "Sous-titres"], ["l-parcours", "Parcours"]]) $(id).querySelector("span").textContent = T(k);
+  document.querySelector(".aide").innerHTML = langueUI === "fr" ? AIDE_FR : T("aide");
+  for (const o of $("vitesse").options) o.textContent = "× " + (langueUI === "fr" ? o.value.replace(".", ",") : o.value);
+  for (const o of $("voix").options) o.textContent = nomL(o.value) + (o.value !== LG.source ? T(" (synthèse)") : "");
+  for (const o of $("parcours").options) { const c = C.parcours.find(x => x.id === o.value); if (c) o.textContent = (c.tr && c.tr[stL] && c.tr[stL].titre) || c.titre; }
+  bouton(); const bs = $("b-son"); bs.textContent = bs.getAttribute("aria-pressed") === "true" ? T("🔊 Son") : T("🔇 Muet");
+}
+appliquerLangues();
+$("titre").textContent = typo(C.titre); typoDom(document.querySelector(".aide"));
+if (C.parcours.length > 1) { const s = $("parcours"); C.parcours.forEach(p => { const o = document.createElement("option"); o.value = p.id; o.textContent = p.titre; s.appendChild(o); });
+  s.value = memo.lire("parcours", C.parcours[0].id); if (!s.value) s.value = C.parcours[0].id; parcours = C.parcours.find(p => p.id === s.value);
+  s.onchange = () => { parcours = C.parcours.find(p => p.id === s.value); memo.ecrire("parcours", s.value); plan(); };
+} else { $("l-parcours").style.display = "none"; parcours = C.parcours[0] || null; }
+$("vitesse").value = memo.lire("vitesse", "1"); if (!$("vitesse").value) $("vitesse").value = "1";
+if (memo.lire("son", true) === false) reglerSon(false);
+if (memo.lire("st", true) === false) $("b-st").setAttribute("aria-pressed", "false");
+if (memo.lire("texte", false) === true) { $("b-texte").setAttribute("aria-pressed", "true"); $("texte").hidden = false; }
+libelles(); plan(); taille();
+(function () { const ici = memo.lire("ici", null); let d = ici && suite.concat(C.parties.flatMap(p => p.sections.map(s => ({ p, s })))).find(x => x.p.id === ici.p && x.s.id === ici.s && jouable(x.s));
+  if (!d) d = suite.find(x => jouable(x.s)) || C.parties.flatMap(p => p.sections.map(s => ({ p, s }))).find(x => jouable(x.s));
+  if (d) { ouvrir(d.p, d.s, 0, false); if (!d.s.exercice) voileDepart(); } else { const v = $("voile"); v.hidden = false; v.textContent = T("Ce chapitre n'a pas encore de section à lire."); } })();
+if (innerWidth <= 860) fermerPlan(true);
+majLMS();
+requestAnimationFrame(boucle);
+</script>
+</body>
+</html>

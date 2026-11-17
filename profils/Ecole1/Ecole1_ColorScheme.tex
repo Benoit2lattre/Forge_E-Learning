@@ -1,0 +1,81 @@
+
+%
+% Jeu de couleurs de l'établissement d'exemple Ecole1
+% (mêmes commandes que les autres jeux : \TR, \TV, \TB… ; voir style/latex/couleurs_roles.tex)
+%
+
+% Couleurs principales
+% Blanc
+\newcommand {\TW}[1] {\textcolor{white}{#1}}
+% Encre : 29 29 29
+\definecolor{noirC}{RGB}{29,29,29}
+\newcommand{\TN}[1]{\textcolor{noirC}{#1}}
+% Rouge : 223 35 29
+\definecolor{rougeF}{RGB}{223,35,29}
+\newcommand{\TR}[1]{\textcolor{rougeF}{#1}}
+% Violet : 71 10 104
+\definecolor{violetR}{RGB}{71,10,104}
+\newcommand{\TV}[1]{\textcolor{violetR}{#1}}
+% Orange vif : 252 76 2
+\definecolor{orangeB}{RGB}{252,76,2}
+\newcommand{\TOB}[1]{\textcolor{orangeB}{#1}}
+% Jaune : 255 205 0
+\definecolor{jauneFA}{RGB}{255,205,0}
+\newcommand{\TJ}[1]{\textcolor{jauneFA}{#1}}
+% Cyan : 100 204 201
+\definecolor{cyanI}{RGB}{100,204,201}
+\newcommand{\TC}[1]{\textcolor{cyanI}{#1}}
+% Bleu : 77 98 201
+\definecolor{bleuE}{RGB}{77,98,201}
+\newcommand{\TB}[1]{\textcolor{bleuE}{#1}}
+% Rouge brun : 124 38 41
+\definecolor{rougeS}{RGB}{124,38,41}
+\newcommand{\TRS}[1]{\textcolor{rougeS}{#1}}
+% Mauve : 159 40 66
+\definecolor{mauveSI}{RGB}{159,40,66}
+\newcommand{\TM}[1]{\textcolor{mauveSI}{#1}}
+% Orange : 255 143 28
+\definecolor{orangeVE}{RGB}{255,143,28}
+\newcommand{\TO}[1]{\textcolor{orangeVE}{#1}}
+% Gris secondaire : 221 221 221
+\definecolor{grisS}{RGB}{221,221,221}
+\newcommand{\TG}[1]{\textcolor{grisS}{#1}}
+
+% Couleurs d'accent
+% Orange
+\definecolor{orangeCent}{RGB}{255,97,27}
+\newcommand{\TOC}[1]{\textcolor{orangeCent}{#1}}
+% Rose
+\definecolor{roseCent}{RGB}{247,66,159}
+\newcommand{\TRC}[1]{\textcolor{roseCent}{#1}}
+% Violet
+\definecolor{violetCent}{RGB}{122,55,228}
+\newcommand{\TVC}[1]{\textcolor{violetCent}{#1}}
+
+
+
+%PERSO
+\newcommand {\tw}[1] {\textcolor{white}{#1}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% HARMONISATION (proposition v2) — à partir d'ici, mêmes noms dans tous les jeux
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Les commandes ci-dessus restent valables (anciennes diapos). Attention :
+% \TV = violet ici, mais vert dans New_BD_ColorScheme : préférer \TVi / \TVe.
+
+% Teintes communes (couleur la plus proche de la charte)
+% Gris foncé : absent de la charte
+\definecolor{grisF}{RGB}{95,99,104}
+\newcommand{\TS}[1]{\textcolor{grisF}{#1}}    % gris foncé
+\newcommand{\TVi}[1]{\textcolor{violetR}{#1}} % violet
+% Vert : absent de la charte, remplacé par le cyan
+\newcommand{\TVe}[1]{\textcolor{cyanI}{#1}}   % vert
+
+% Couleurs de rôle (commandes \TDef, \TPro, \TRes, \TAtt, \TMC, \TExg dans couleurs_roles.tex)
+\colorlet{roleDef}{bleuE}     % rappel, définition
+\colorlet{rolePro}{violetR}   % proposition, modèle
+\colorlet{roleRes}{roseCent}   % résultat à retenir
+\colorlet{roleAtt}{rougeF}    % attention, erreur
+\colorlet{roleExg}{violetR}   % mise en exergue (encadré)
+\colorlet{roleMC}{violetR}    % couleur principale : bandeau, titres
+\input{couleurs_roles}

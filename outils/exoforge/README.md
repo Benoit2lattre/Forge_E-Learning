@@ -1,0 +1,178 @@
+# ExoForge
+
+<p><img src="../../_static/identite/icones/exoforge_icone_jour_64.png#gh-light-mode-only" alt="ExoForge" align="right"><img src="../../_static/identite/icones/exoforge_icone_nuit_64.png#gh-dark-mode-only" alt="ExoForge" align="right"></p>
+
+ExoForge construit un exercice interactif à partir d'une fiche texte (YAML) : une page HTML autonome, qui s'ouvre dans n'importe quel navigateur, et un paquet SCORM 1.2 à déposer dans Moodle. L'exercice enchaîne des étapes (explication, question à choix, réponse numérique) à côté d'un encadré permanent (énoncé, tableau, graphique, formules) ; il peut tirer ses données au hasard, diagnostiquer les erreurs prévisibles et être commenté à l'oral.
+
+![Un exercice ExoForge (profil Ecole1) : encadré permanent, graphique généré, question avec retour](../../_static/captures/exoforge/exercice_question.png)
+
+Code : [`scripts/exoforge/`](https://github.com/Benoit2lattre/Forge_E-Learning/tree/main/scripts/exoforge). Installation : [README du dépôt](https://github.com/Benoit2lattre/Forge_E-Learning#installation).
+
+## En 3 minutes
+
+```bash
+python scripts/exoforge/build.py outils/exoforge/exemples/premier_exercice
+```
+
+| Sortie (dans `dist/exoforge/`, non suivi) | Usage |
+| --- | --- |
+| `premier_exercice/index.html` | l'exercice : à ouvrir dans le navigateur pour le tester |
+| `premier_exercice_scorm12.zip` | à déposer dans Moodle : Ajouter une activité › Paquetage SCORM ; la note est transmise au carnet de notes |
+
+![SCORM : un paquet standard qui transmet la progression et la note](../../_static/identite/formats/bandeaux/scorm_bandeau_jour.png)
+
+### Déposer l'exercice dans Moodle
+
+1. Dans le cours, mode édition : **Ajouter une activité ou une ressource › Paquetage SCORM**.
+2. Donnez un nom, une description, puis déposez `…_scorm12.zip` dans « Paquetage ». Enregistrez.
+3. L'activité propose **Aperçu** (essai sans note) et **Entrer** ; les réglages (nombre de tentatives, méthode d'évaluation, note reportée au carnet) se trouvent dans « Paramètres ».
+
+| Ajouter l'activité | Déposer le paquet |
+| --- | --- |
+| ![Ajouter une activité : Paquetage SCORM](../../_static/captures/exoforge/moodle_ajout_activite.png) | ![Formulaire du paquetage SCORM](../../_static/captures/exoforge/moodle_paquet_scorm.png) |
+| **L'activité** | **L'exercice dans Moodle (aperçu)** |
+| ![Page de l'activité SCORM](../../_static/captures/exoforge/moodle_activite_scorm.png) | ![Aperçu de l'exercice dans Moodle](../../_static/captures/exoforge/moodle_apercu_scorm.png) |
+
+Options de `build.py` (l'extension `.yaml` peut être omise) :
+
+| Option | Rôle |
+| --- | --- |
+| `-p Ecole1` | profil : couleurs, polices, jeu de couleurs LaTeX (nom, alias ou première lettre) ; sinon le `profil:` de la fiche, sinon le profil par défaut |
+| `-a` | mode auteur intégré à la page (emplacements audio, relevé des temps, données tirées, avertissements) |
+
+Pour tester la page sans reconstruire : `index.html?auteur` (mode auteur), `?mode=fixe` (données d'origine de la fiche), `?seed=12` (un tirage précis, pour reproduire ce qu'a vu un étudiant).
+
+## Écrire une fiche
+
+Partez de [`exemples/premier_exercice.yaml`](exemples/premier_exercice.yaml), la fiche minimale ci-dessous, puis des trois exemples complets. Rangez vos fiches où vous voulez ; `data/exoforge/` n'est pas publié.
+
+```yaml
+id: premier_exercice                    # nom des sorties et du dossier des médias
+titre: "Exercice : contrainte dans une barre en traction"
+cours: "Résistance des matériaux — Traction simple"
+auteur: "Benoit Delattre"
+profil: Delattre
+
+donnees:                                # tirées à chaque ouverture
+  tirage:
+    F: {parmi: [10, 15, 20, 25, 30]}      # kN
+    d: {parmi: [10, 12, 16, 20]}          # mm
+  calculs:
+    S: "pi*d**2/4"
+    sigma: "F*1000/S"
+  fixe: {F: 20, d: 16}                  # données d'origine (?mode=fixe)
+
+rappel:                                 # encadré permanent, à gauche
+  titre: "Énoncé"
+  texte: >-
+    Une barre cylindrique de diamètre d = {=d} mm est tendue par un effort F = {=F} kN.
+    <b>Quelle est la contrainte normale dans la barre ?</b>
+  formules:
+    - tex: '\sigma = \dfrac{F}{S}'
+
+etapes:
+  - id: unite
+    type: choix
+    titre: "Question 1 : unités"
+    enonce: "Avec F en newtons et S en mm², la contrainte F / S s'exprime en :"
+    options:
+      - {texte: "MPa", correct: true}
+      - {texte: "Pa", retour: "1 N/m² = 1 Pa, mais ici la section est en mm²."}
+      - {texte: "kPa", retour: "1 N/mm² = 10<sup>6</sup> N/m², soit 1 MPa."}
+    explication: "1 N/mm² = 1 MPa."
+
+  - id: contrainte
+    type: numerique
+    titre: "Question 2 : contrainte"
+    enonce: "Calculez la contrainte normale σ (en MPa)."
+    attendu: "sigma"
+    erreurs:                            # diagnostic des erreurs prévisibles
+      - {si: "F/S", message: "F est en kN : convertissez-le en N."}
+      - {si: "F*1000/(pi*d**2)", message: "La section d'un disque est πd²/4."}
+    indice: "S = π × {=d}² / 4 = {=round(S)} mm²."
+    solution: "σ = {=F*1000} N / {=round(S)} mm² = <b>{=round(sigma*10)/10} MPa</b>"
+
+defauts:
+  tentatives: 3
+  points_par_tentative: [1, 0.75, 0.5]
+  tolerance: 0.02                       # écart relatif accepté
+```
+
+![Diagnostic d'une erreur prévisible sur une réponse numérique](../../_static/captures/exoforge/exercice_diagnostic.png)
+
+### Étapes (`etapes`)
+
+Chaque étape a un `id` (unique) et un `type`.
+
+| Type | Contenu | Clés utiles |
+| --- | --- | --- |
+| `info` | blocs de contenu et bouton « Continuer » | `contenu`, `suite_auto: true` (suite à la fin de l'audio), `mises_en_evidence: [{t, fin, cible}]` (cadre lumineux sur un élément), `sous_titres: [{t, texte}]` |
+| `choix` | une ou plusieurs bonnes réponses | `options` (`texte`, `correct`, `retour`, `pose: {variable: valeur}`, `aller_a: <id>`), `plusieurs: true`, `correct: <expression>` (bonne réponse calculée), `retour_juste` / `retour_faux`, `explication`, `note: false` (question non notée : estimation, confiance), `options_une_par_une: true` (propositions lues à l'oral) |
+| `numerique` | réponse saisie, tolérante (`0,25`, `1/4`, `2.5e-3`) | `attendu` (expression), `tolerance`, `erreurs: [{si, message}]`, `indice`, `solution`, `aide: {texte, graphique}` (rappel de méthode sur demande) |
+
+Pour toutes : `tentatives`, `points_par_tentative`, `repeter: 3` (répète l'étape avec k = 0, 1, 2 et i = k + 1), `si: <expression>` (étape affichée seulement si la condition est vraie), `audio: <emplacement>`, `focus_rappel: <id>` (met en évidence un élément de l'encadré), `ajoute_au_rappel` (complète la zone « modèle » de l'encadré : `remplace`, `apres`, `exergue`), `fin: {graphique: …}` (pilote le graphique à la fin de l'étape).
+
+**Blocs de contenu** : `texte`, `liste`, `formule` (avec `legende`), `image`.
+
+**Fin de l'exercice** (`conclusion`) : `titre`, `recommencer: true` (ou le texte du bouton) pour refaire l'exercice avec de nouvelles données.
+
+### Encadré permanent (`rappel`)
+
+Toujours visible à gauche : `texte`, `image`, `tableau` (lignes calculées), `graphique`, `formules`, et une zone `modele` qui se remplit au fil des étapes.
+
+**Graphique** : axes `x` et `y` (`titre`, `log`, `min`, `max`, `pas`, bornes calculables), `courbes: [{id, y: <f(x)>, etiquette, cachee, pointilles}]`, `points` (`x`, `y`, `etiquette`, `lecture` : pointillés vers les axes, `apparait: revele`), `description` (texte lu et affiché, pour l'accessibilité). Les étapes le pilotent : `graphique: {actif, lecture, revele, montre}`.
+
+![Profil Delattre : données tirées, graphique en échelle logarithmique, choix du parcours](../../_static/captures/exoforge/exercice_profil_delattre.png)
+
+### Données et valeurs calculées (`donnees`)
+
+- `constantes`, `tirage` (`parmi` : liste ; ou `min`, `max`, `pas`), `calculs` (dans l'ordre), `rejeter_si` (nouveau tirage si la condition est vraie), `fixe` (données d'origine).
+- Dans tous les textes, `{=expr}` affiche une valeur calculée : `{=n[k]}`, `{=round(N[k])}`. Fonctions : `sum`, `prod`, `round`, `floor`, `ceil`, `abs`, `min`, `max`, `log10`, `ln`, `exp`, `sqrt`, `pow`, `pi`, `fmt` (nombre à la française). Les accolades LaTeX ne sont pas touchées.
+
+### Formules LaTeX
+
+Les formules (`$…$` dans les textes, `tex:` dans les blocs) sont rendues par MathJax, embarqué dans la page (fonctionne hors ligne). Vos macros IguanaTeX sont reprises telles quelles :
+
+```yaml
+latex:
+  fichiers: [ppt_commandes.tex]         # cherché à côté de la fiche, puis dans style/latex/ et les profils
+  macros:
+    hu: '\vect{\hat{U}}'
+```
+
+Le profil choisit le jeu de couleurs (`\TR`, `\TB`… et les commandes de rôle `\TDef`, `\TRes`, `\TAtt`… : voir [style/](../../style/README.md)). En YAML, écrivez les textes contenant du LaTeX entre apostrophes ou en bloc (`tex: |-`, `texte: >-`).
+
+### Comportement par défaut (`defauts`)
+
+`tentatives`, `points_par_tentative`, `tolerance`, `ordre_options` (`melange` ou `fixe`), `suite` (`bouton` : « Continuer » ; `auto` : l'étape suivante s'ouvre dès la correction). Chaque étape peut les remplacer.
+
+**Accessibilité** : `accessibilite: {lecture_vocale: true}` ajoute un bouton « Écouter » (synthèse vocale) sur les cartes sans enregistrement ; chaque graphique a une description textuelle.
+
+## Ajouter l'audio : deux temps
+
+1. **Construction sans média.** L'exercice fonctionne tel quel. La construction écrit `script_enregistrement.md` dans le dossier des médias : chaque emplacement audio, le texte de la fiche à lire, les apparitions numérotées et les emplacements facultatifs.
+2. **Reprise.** Déposez les fichiers dans le dossier des médias (majuscules indifférentes), puis reconstruisez :
+   - `<emplacement>.mp3` (ou `.m4a`, `.wav`, `.ogg`), ou découpé en segments, un par apparition : `<emplacement>_a1.mp3`, `_a2`… ;
+   - `<emplacement>.txt` : transcription, affichée sous l'étape ;
+   - `<emplacement>.reperes.json` : temps d'apparition relevés en mode auteur ;
+   - facultatifs : `<id>_explication`, `<id>_retour_<lettre>`, `<id>_aide`.
+
+Dossier des médias : `data/exoforge/media/<id>/` s'il existe (enregistrements non publiés), sinon `media/<id>/` à côté de la fiche.
+
+**Mode auteur** (`-a` ou `index.html?auteur`) : emplacement audio de chaque étape ; « Pointer les apparitions » pendant l'écoute (Espace : marquer ; Retour arrière : annuler ; ← : reculer de 5 s) ; données tirées ; avertissements de construction.
+
+**Enregistrer avec Audacity** : un projet par exercice, un titre de piste par emplacement (`presentation`, `q1_a1`…), puis export groupé (Fichier › Exporter › Exporter plusieurs) dans le dossier des médias.
+
+**Sons** (facultatif) : `charte.sons: {juste: …, faux: …}` dans le profil ; `sons: false` dans une fiche pour les couper.
+
+## Exemples ([`exemples/`](https://github.com/Benoit2lattre/Forge_E-Learning/tree/main/outils/exoforge/exemples))
+
+| Fiche | Montre |
+| --- | --- |
+| `premier_exercice.yaml` | fiche minimale : données tirées, question à choix, réponse numérique avec diagnostic |
+| `fatigue_haigh_goodman.yaml` | contrainte moyenne : tableau et diagramme de Haigh calculés, droite de Goodman, point qui apparaît, coefficient de sécurité |
+| `miner_cumul_generique.yaml` | cumul de Miner : estimation non notée, choix du parcours (seul ou guidé), étapes répétées, graphique logarithmique, audio |
+
+```bash
+python scripts/exoforge/build.py outils/exoforge/exemples/fatigue_haigh_goodman -p Ecole1
+```

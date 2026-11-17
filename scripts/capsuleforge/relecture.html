@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>CapsuleForge — relecture</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{--navy:#14213D;--navy2:#28406B;--slate:#748CAB;--slate-l:#D3DDEC;--sand:#E0B989;--fond:#F7F6F4;--bord:#CDC9C0;
+  --texte:#1A1815;--texte2:#615C52;--ok:#5C8A66;--ok-l:#D7E6DA;--ko:#B85C50;--ko-l:#EFD9D5;--focus:#FFCD00}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--texte);background:var(--fond);
+  display:flex;flex-direction:column;overflow:hidden}
+header{background:var(--navy);color:#fff;padding:7px 14px;display:flex;gap:10px;align-items:center;flex:none}
+header h1{font-size:16px;margin:0;white-space:nowrap}
+header #titre{opacity:.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+header #etat{font-size:12px;opacity:.9;white-space:nowrap}
+button,select,input{font:inherit}
+button{padding:4px 9px;border:1px solid var(--navy2);border-radius:6px;background:#fff;color:var(--navy);cursor:pointer}
+button:hover:not(:disabled){background:var(--slate-l)}
+button:disabled{opacity:.45;cursor:default}
+button.primaire{background:var(--sand);border-color:var(--sand);font-weight:600}
+button.petit{padding:1px 6px;font-size:12px}
+select{padding:3px 6px;border:1px solid var(--bord);border-radius:6px;background:#fff;max-width:100%}
+:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+main{flex:1;display:flex;min-height:0}
+#gauche{flex:1 1 52%;min-width:0;display:flex;flex-direction:column;padding:10px 12px;gap:8px;overflow:auto}
+#droite{flex:1 1 48%;min-width:340px;display:flex;flex-direction:column;border-left:1px solid var(--bord);background:#fff;min-height:0}
+#choix{display:flex;gap:6px;align-items:center}
+#choix select{flex:1;min-width:0}
+#scene{position:relative;background:#000;border:1px solid var(--bord);border-radius:6px;overflow:hidden;flex:none}
+#scene img{display:block;width:100%;height:auto}
+#soustitre{position:absolute;left:4%;right:4%;bottom:3%;text-align:center;pointer-events:none}
+#soustitre span{background:rgba(0,0,0,.72);color:#fff;padding:3px 8px;border-radius:4px;font-size:14px;line-height:1.7;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone}
+#calque{position:absolute;inset:0;z-index:1;touch-action:none}
+#calque.dessin{cursor:crosshair}
+#calque .o{position:absolute;box-sizing:border-box}
+#calque .spot{border-radius:8px}
+#calque .ellipse{border-radius:50%}
+#calque svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#calque .o.choisi.hors{outline-color:#fff;outline-style:dotted}
+#objets select{padding:1px 3px;font-size:12px}
+#calque .cadre{border:3px solid #D7263D;border-radius:6px}
+#calque .cache.hors{opacity:.55}
+#calque .pointeur{width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:#E0142D;box-shadow:0 0 0 5px rgba(224,20,45,.3),0 0 14px 4px rgba(224,20,45,.6)}
+#calque .o.choisi{outline:2px dashed var(--focus);outline-offset:2px;cursor:move}
+#calque .poignee{position:absolute;right:-7px;bottom:-7px;width:13px;height:13px;background:var(--focus);border:1px solid var(--navy);cursor:nwse-resize}
+#soustitre{z-index:2}
+#ajouts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#ajouts button.actif{background:var(--navy);color:#fff}
+#objets{display:flex;flex-direction:column;gap:4px}
+#objets .ligne{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:3px 6px;border:1px solid var(--bord);border-radius:6px;background:#fff;cursor:pointer}
+#objets .ligne.choisi{border-color:var(--navy2);background:var(--slate-l)}
+#objets input{width:66px;padding:2px 4px;border:1px solid var(--bord);border-radius:4px}
+#objets .nom{font-weight:600;color:var(--navy2);min-width:86px}
+#piste .ob{position:absolute;top:15px;height:6px;background:var(--navy2);border-radius:3px;opacity:.8}
+#piste .ob.cache{background:var(--texte2)}
+#fini{position:fixed;inset:0;background:var(--fond);display:none;align-items:center;justify-content:center;z-index:20;font-size:18px;text-align:center;padding:20px}
+#commandes{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#temps{font-variant-numeric:tabular-nums;min-width:96px}
+#piste{position:relative;height:52px;background:#fff;border:1px solid var(--bord);border-radius:6px;cursor:pointer;flex:none;user-select:none}
+#piste .ph{position:absolute;top:24px;height:26px;background:var(--slate-l);border-right:1px solid #fff}
+#piste .ph:nth-child(even){background:#E7ECF4}
+#piste .ph.active{background:var(--sand)}
+#piste .app{position:absolute;top:0;width:18px;margin-left:-9px;height:100%;cursor:ew-resize;z-index:2}
+#piste .app::before{content:"";position:absolute;left:8px;top:14px;bottom:0;width:2px;background:var(--ko)}
+#piste .app b{position:absolute;top:0;left:-3px;min-width:24px;text-align:center;background:var(--ko);color:#fff;font-size:10px;
+  border-radius:3px;padding:0 3px;line-height:14px}
+#tete{position:absolute;top:0;bottom:0;width:2px;background:var(--navy);z-index:3;pointer-events:none}
+#apparitions{display:flex;flex-direction:column;gap:4px}
+#apparitions .ligne{display:flex;gap:8px;align-items:center;padding:3px 6px;border:1px solid var(--bord);border-radius:6px;background:#fff}
+#apparitions .ligne.vue{border-color:var(--ko);background:var(--ko-l)}
+#apparitions img{height:42px;border:1px solid var(--bord);border-radius:3px;cursor:pointer}
+#apparitions input{width:74px;padding:2px 4px;border:1px solid var(--bord);border-radius:4px}
+#apparitions .nom{font-weight:600;color:var(--ko);min-width:22px}
+h2{font-size:13px;margin:6px 0 0;color:var(--texte2);font-weight:600;text-transform:none}
+#entete-droite{padding:8px 12px;border-bottom:1px solid var(--bord);display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex:none}
+#entete-droite .info{color:var(--texte2);font-size:12px;flex:1;min-width:120px}
+#phrases{flex:1;overflow:auto;padding:6px 8px 60px}
+.phrase{display:grid;grid-template-columns:64px 1fr auto;gap:6px;align-items:start;padding:5px 4px;border-radius:6px;border:1px solid transparent}
+.phrase.active{background:#FBF3E7;border-color:var(--sand)}
+.phrase .jouer{font-variant-numeric:tabular-nums;font-size:12px;padding:3px 4px;text-align:center}
+.phrase textarea{width:100%;resize:none;overflow:hidden;border:1px solid var(--bord);border-radius:6px;padding:5px 7px;font:inherit;
+  line-height:1.45;background:#fff;color:inherit}
+.phrase textarea:focus{border-color:var(--navy2)}
+.phrase .outils{display:flex;flex-direction:column;gap:2px}
+.phrase .outils>div{display:flex;flex-direction:column;gap:2px}
+.phrase .outils button{white-space:nowrap;text-align:left}
+.phrase .outils select{font-size:12px;padding:1px 2px;width:100%;color:var(--ko)}
+.phrase .duree{grid-column:1;font-size:11px;color:var(--texte2);text-align:center}
+.phrase.longue .duree{color:var(--ko);font-weight:600}
+.marque{display:flex;align-items:center;gap:6px;color:var(--ko);font-size:12px;margin:1px 4px 1px 70px}
+.marque::after{content:"";flex:1;border-top:1px dashed var(--ko)}
+.marque.objet{color:var(--navy2)}
+.marque.objet::after{border-color:var(--slate)}
+#aide{font-size:12px;color:var(--texte2);padding:6px 12px;border-top:1px solid var(--bord);flex:none}
+kbd{border:1px solid var(--bord);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:#fff;font:12px ui-monospace,Consolas,monospace}
+#message{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:7px 14px;border-radius:8px;
+  display:none;z-index:10;max-width:80%}
+#message.ko{background:var(--ko)}
+label.coche{display:flex;gap:5px;align-items:center;white-space:nowrap}
+@media (max-width:900px){main{flex-direction:column;overflow:auto}#droite{border-left:0;border-top:1px solid var(--bord);min-height:60vh}body{overflow:auto}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Relecture</h1><span id="titre"></span><span id="etat"></span>
+  <button id="annuler" title="Annuler la dernière coupe, fusion ou pose (Ctrl+Z hors d'un texte)" disabled>Annuler</button>
+  <button id="enregistrer" class="primaire" title="Ctrl+S">Enregistrer</button>
+  <button id="quitter" title="Enregistre, puis arrête la relecture et libère la fenêtre de commande">Enregistrer et quitter</button>
+</header>
+<main>
+  <section id="gauche">
+    <div id="choix">
+      <button id="precedent" title="Pas précédent">◀</button>
+      <select id="pas" aria-label="Pas à relire"></select>
+      <button id="suivant" title="Pas suivant">▶</button>
+    </div>
+    <div id="scene"><img id="image" alt="Diapositive à l'instant de lecture"><div id="calque"></div><div id="soustitre"></div></div>
+    <div id="commandes">
+      <button id="lecture" class="primaire" title="Échap">▶ Lire</button>
+      <span id="temps">0:00 / 0:00</span>
+      <label>Vitesse <select id="vitesse"><option>0.75</option><option selected>1</option><option>1.25</option><option>1.5</option><option>2</option></select></label>
+      <label class="coche"><input type="checkbox" id="st" checked> phrase sur l'image</label>
+    </div>
+    <div id="piste" title="Cliquer pour se placer ; faire glisser un repère rouge pour déplacer une apparition"><div id="tete"></div></div>
+    <div id="ajouts">
+      <span>Ajouter :</span>
+      <button data-outil="spot" title="Éclaire une zone et assombrit le reste : tracer la zone sur l'image">Spot</button>
+      <button data-outil="cadre" title="Entoure une zone : tracer la zone sur l'image">Cadre</button>
+      <button data-outil="pointeur" title="Point lumineux, comme un pointeur laser : cliquer sur l'image">Pointeur</button>
+      <button data-outil="cache" title="Cache une zone jusqu'à un instant donné (apparition absente du diaporama) : tracer la zone sur l'image">Cache</button>
+      <span id="ajout-info" style="color:var(--texte2);font-size:12px"></span>
+    </div>
+    <h2 id="titre-app">Apparitions</h2>
+    <div id="apparitions"></div>
+    <h2 id="titre-obj">Ajouts sur l'image</h2>
+    <div id="objets"></div>
+  </section>
+  <section id="droite">
+    <div id="entete-droite">
+      <span class="info" id="info"></span>
+      <label class="coche" title="Marque ce pas comme relu par l'auteur"><input type="checkbox" id="relu"> Relu</label>
+    </div>
+    <div id="phrases"></div>
+    <div id="aide">
+      <kbd>Échap</kbd> lire / pause · <kbd>Alt</kbd>+<kbd>↑</kbd> <kbd>↓</kbd> phrase précédente / suivante ·
+      <kbd>Ctrl</kbd>+<kbd>Entrée</kbd> couper au curseur · <kbd>Ctrl</kbd>+<kbd>S</kbd> enregistrer
+    </div>
+  </section>
+</main>
+<div id="message" role="status"></div>
+<div id="fini"><p>Relecture terminée et enregistrée.<br>Vous pouvez fermer cet onglet ; la fenêtre de commande est libérée.</p></div>
+<audio id="son" preload="auto"></audio>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const son = $("son");
+let C = null, P = null, rang = 0, arretA = null, pile = [], preparees = 0, outil = null, choisi = null, phraseChoisie = -1, fini = false;
+const NOMS = { spot: "Spot", cadre: "Cadre", pointeur: "Pointeur", cache: "Cache" };
+const modifies = new Set();
+
+const fmt = t => { t = Math.max(0, t || 0); const m = Math.floor(t / 60), s = t - 60 * m; return m + ":" + (s < 10 ? "0" : "") + s.toFixed(1).replace(".", ","); };
+const duree = () => (isFinite(son.duration) && son.duration) || (P && P.duree_s) || (P && P.phrases.length && P.phrases[P.phrases.length - 1].fin_s) || 1;
+const horodatee = ph => ph.debut_s != null;
+
+function message(txt, ko) { const m = $("message"); m.textContent = txt; m.className = ko ? "ko" : ""; m.style.display = "block"; clearTimeout(message.t); message.t = setTimeout(() => m.style.display = "none", ko ? 7000 : 2500); }
+function marquer() { modifies.add(P.id); etat(); listePas(); }
+function etat() { $("etat").textContent = modifies.size ? modifies.size + " pas à enregistrer" : "enregistré"; $("annuler").disabled = !pile.length; }
+function memoriser() { pile.push({ id: P.id, phrases: JSON.parse(JSON.stringify(P.phrases)), apparitions: JSON.parse(JSON.stringify(P.apparitions)), objets: JSON.parse(JSON.stringify(P.objets)) }); if (pile.length > 60) pile.shift(); }
+
+async function charger() {
+  const r = await (await fetch("/api/chapitre")).json();
+  if (!r.ok) return message(r.message || "Lecture impossible", true);
+  C = r; $("titre").textContent = r.titre + " — " + r.dossier; document.title = "Relecture — " + r.dossier;
+  for (const p of C.pas) p.objets = p.objets || [];
+  for (const p of C.pas) if (p.prepare) { modifies.add(p.id); preparees++; }
+  const voulu = decodeURIComponent(location.hash.slice(1));
+  rang = Math.max(0, C.pas.findIndex(p => p.id === voulu || p.nom === voulu));
+  if (rang < 0 || !voulu) rang = Math.max(0, C.pas.findIndex(p => p.phrases.length));
+  listePas(); ouvrir(rang); etat();
+  if (preparees) message(preparees + " pas : phrases préparées d'après la transcription, à enregistrer");
+}
+
+function listePas() {
+  const s = $("pas"); s.textContent = ""; let groupe = null, nomG = null;
+  C.pas.forEach((p, i) => {
+    if (p.section !== nomG) { groupe = document.createElement("optgroup"); groupe.label = p.section; s.appendChild(groupe); nomG = p.section; }
+    const o = document.createElement("option"); o.value = i;
+    o.textContent = (p.relu ? "✓ " : "") + (modifies.has(p.id) ? "● " : "") + p.nom + (p.titre ? " — " + p.titre : "") + (p.phrases.length ? "" : " (sans texte)");
+    groupe.appendChild(o);
+  });
+  s.value = rang;
+}
+
+function ouvrir(i) {
+  rang = Math.max(0, Math.min(C.pas.length - 1, i)); P = C.pas[rang];
+  son.pause(); arretA = null; choisi = null; phraseChoisie = -1; choisirOutil(null);
+  if (P.audio) { son.src = "/media/" + P.audio; son.playbackRate = +$("vitesse").value; } else son.removeAttribute("src");
+  $("pas").value = rang; $("relu").checked = !!P.relu; location.hash = P.id;
+  $("precedent").disabled = rang === 0; $("suivant").disabled = rang === C.pas.length - 1;
+  $("lecture").disabled = !P.audio;
+  for (const a of P.apparitions) { const im = new Image(); im.src = "/media/" + a.fichier; }
+  dessiner(); suivre(true);
+}
+
+function dessiner() { dessinerPhrases(); dessinerPiste(); dessinerApparitions(); dessinerObjets(); calque(true); info(); }
+
+function info() {
+  const mots = P.phrases.reduce((n, ph) => n + ph.texte.split(/\s+/).filter(Boolean).length, 0);
+  const d = duree();
+  $("info").textContent = P.phrases.length + " phrases, " + mots + " mots" + (P.audio ? ", " + Math.round(mots * 60 / d) + " mots/min" : "") +
+    (P.audio ? "" : " — pas de son pour ce pas");
+}
+
+function hauteur(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight + 2) + "px"; }
+
+function dessinerPhrases() {
+  const z = $("phrases"); z.textContent = "";
+  const app = [...P.apparitions].sort((a, b) => a.debut_s - b.debut_s); let k = 0;
+  const marque = a => { const m = document.createElement("div"); m.className = "marque"; m.textContent = "▣ apparition " + a.id + " à " + fmt(a.debut_s); z.appendChild(m); };
+  const obj = [...P.objets].sort((a, b) => instant(a) - instant(b)); let ko = 0;
+  const marqueO = o => { const m = document.createElement("div"); m.className = "marque objet"; m.style.cursor = "pointer";
+    m.textContent = o.type === "cache" ? "◧ cache " + o.id + " levé à " + fmt(instant(o)) : "◎ " + NOMS[o.type].toLowerCase() + " " + o.id + " à " + fmt(o.debut_s) + " (" + o.duree_s.toFixed(1).replace(".", ",") + " s)";
+    m.onclick = () => choisir(o.id); z.appendChild(m); };
+  P.phrases.forEach((ph, i) => {
+    while (k < app.length && horodatee(ph) && app[k].debut_s <= ph.debut_s + 0.05) marque(app[k++]);
+    while (ko < obj.length && horodatee(ph) && instant(obj[ko]) <= ph.debut_s + 0.05) marqueO(obj[ko++]);
+    const l = document.createElement("div"); l.className = "phrase"; l.dataset.i = i;
+    const long = horodatee(ph) && ph.fin_s - ph.debut_s > 12; if (long) l.classList.add("longue");
+    const g = document.createElement("div");
+    const j = document.createElement("button"); j.className = "jouer"; j.textContent = horodatee(ph) ? "▶ " + fmt(ph.debut_s) : "—";
+    j.disabled = !horodatee(ph) || !P.audio; j.title = "Écouter cette phrase"; j.onclick = () => jouerPhrase(i);
+    const du = document.createElement("div"); du.className = "duree"; du.textContent = horodatee(ph) ? (ph.fin_s - ph.debut_s).toFixed(1).replace(".", ",") + " s" : "";
+    if (long) du.title = "Phrase longue pour un sous-titre : à couper";
+    g.append(j, du);
+    const t = document.createElement("textarea"); t.value = ph.texte; t.rows = 1; t.spellcheck = true; t.lang = "fr";
+    t.oninput = () => { ph.texte = t.value; hauteur(t); marquer(); info(); };
+    t.onfocus = () => { if (son.paused && horodatee(ph) && P.audio && phraseA(son.currentTime || 0) !== i) { arretA = null; son.currentTime = ph.debut_s + 0.01; suivre(true); } infoAjout(); };
+    t.onkeydown = e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); couper(i, t.selectionStart); } else if (e.key === "Enter") e.preventDefault(); };
+    const o = document.createElement("div"); o.className = "outils";
+    const o1 = document.createElement("div");
+    const bc = bouton("Couper", "Couper la phrase à l'endroit du curseur (Ctrl+Entrée)", () => couper(i, t.selectionStart));
+    const bf = bouton("Fusionner ↓", "Fusionner avec la phrase suivante", () => fusionner(i)); bf.disabled = i === P.phrases.length - 1;
+    const bd = bouton("Début ici", "Faire commencer cette phrase à l'instant de lecture", () => debutIci(i)); bd.disabled = !P.audio;
+    o1.append(bc, bf, bd); o.append(o1);
+    if (P.apparitions.length && horodatee(ph)) {
+      const s = document.createElement("select"); s.title = "Poser une apparition au début de cette phrase";
+      s.innerHTML = "<option value=''>▣ apparition…</option>" + P.apparitions.map(a => `<option value="${a.id}">${a.id}</option>`).join("");
+      s.onchange = () => { if (s.value) poser(s.value, ph.debut_s); };
+      o.append(s);
+    }
+    l.append(g, t, o); z.appendChild(l); hauteur(t);
+  });
+  while (k < app.length) marque(app[k++]);
+  while (ko < obj.length) marqueO(obj[ko++]);
+  if (!P.phrases.length) { const v = document.createElement("p"); v.style.cssText = "color:var(--texte2);padding:10px"; v.textContent = "Ce pas n'a pas de texte. Lancer « capsuleforge transcrire » pour un premier jet, ou écrire la narration dans le chapitre."; z.appendChild(v); }
+}
+function bouton(txt, titre, f) { const b = document.createElement("button"); b.className = "petit"; b.textContent = txt; b.title = titre; b.setAttribute("aria-label", titre); b.onclick = f; return b; }
+
+function dessinerPiste() {
+  const z = $("piste"); z.querySelectorAll(".ph,.app,.ob").forEach(e => e.remove()); const d = duree();
+  for (const o of P.objets) { const e = document.createElement("div"); e.className = "ob " + o.type; e.style.left = 100 * o.debut_s / d + "%"; e.style.width = Math.max(0.3, 100 * o.duree_s / d) + "%"; e.title = NOMS[o.type] + " " + o.id; z.appendChild(e); }
+  P.phrases.forEach((ph, i) => { if (!horodatee(ph)) return; const e = document.createElement("div"); e.className = "ph"; e.dataset.i = i;
+    e.style.left = 100 * ph.debut_s / d + "%"; e.style.width = Math.max(0.2, 100 * (ph.fin_s - ph.debut_s) / d) + "%"; z.appendChild(e); });
+  for (const a of P.apparitions) {
+    const e = document.createElement("div"); e.className = "app"; e.style.left = 100 * a.debut_s / d + "%"; e.innerHTML = "<b>" + a.id + "</b>";
+    e.title = "Apparition " + a.id + " : " + fmt(a.debut_s);
+    e.onpointerdown = ev => { ev.stopPropagation(); ev.preventDefault(); e.setPointerCapture(ev.pointerId); memoriser(); let bouge = false;
+      e.onpointermove = m => { const r = z.getBoundingClientRect(); a.debut_s = Math.round(10 * Math.max(0, Math.min(d, d * (m.clientX - r.left) / r.width))) / 10; e.style.left = 100 * a.debut_s / d + "%"; bouge = true; image(); };
+      e.onpointerup = () => { e.onpointermove = e.onpointerup = null; if (bouge) { marquer(); dessiner(); } else pile.pop(); etat(); };
+    };
+    z.appendChild(e);
+  }
+}
+$("piste").onpointerdown = e => { if (!P.audio) return; if (choisi) { choisi = null; dessinerObjets(); } const r = $("piste").getBoundingClientRect(); arretA = null; son.currentTime = duree() * Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); suivre(); };
+
+function etatImage(t) { let f = P.fond, td = -1; for (const a of P.apparitions) if (a.debut_s <= t && a.debut_s >= td) { td = a.debut_s; f = a.fichier; } return f; }
+function image() { const f = etatImage(son.currentTime || 0); const im = $("image"); if (f && im.dataset.f !== f) { im.dataset.f = f; im.src = "/media/" + f; } }
+
+function dessinerApparitions() {
+  const z = $("apparitions"); z.textContent = ""; $("titre-app").style.display = P.apparitions.length ? "" : "none";
+  for (const a of P.apparitions) {
+    const l = document.createElement("div"); l.className = "ligne"; l.dataset.id = a.id;
+    const n = document.createElement("span"); n.className = "nom"; n.textContent = a.id;
+    const im = document.createElement("img"); im.src = "/media/" + a.fichier; im.alt = "État " + a.id; im.title = "Se placer juste avant cette apparition";
+    im.onclick = () => { arretA = null; son.currentTime = Math.max(0, a.debut_s - 1.5); suivre(); };
+    const c = document.createElement("input"); c.type = "number"; c.step = "0.1"; c.min = "0"; c.value = a.debut_s; c.setAttribute("aria-label", "Instant de l'apparition " + a.id + " en secondes");
+    c.onchange = () => { if (c.value !== "") poser(a.id, +c.value); };
+    const u = document.createElement("span"); u.textContent = "s";
+    const b = bouton("Poser à l'instant de lecture", "L'apparition " + a.id + " se fera à l'instant où se trouve la lecture", () => poser(a.id, son.currentTime)); b.disabled = !P.audio;
+    const e = bouton("▶ Voir", "Écouter à partir de 2 s avant l'apparition", () => { arretA = a.debut_s + 3; son.currentTime = Math.max(0, a.debut_s - 2); son.play(); });
+    e.disabled = !P.audio;
+    l.append(n, im, c, u, b, e); z.appendChild(l);
+  }
+}
+
+function poser(id, t) { const a = P.apparitions.find(x => x.id === id); if (!a) return; memoriser(); a.debut_s = Math.round(10 * Math.max(0, t)) / 10; marquer(); dessiner(); suivre(true); message("Apparition " + id + " à " + fmt(a.debut_s)); }
+
+/* instant de coupe : les mots reconnus dans l'intervalle de la phrase donnent l'instant du mot où l'on coupe */
+function instantCoupe(ph, gauche, droite) {
+  const ng = gauche.split(/\s+/).filter(Boolean).length, nd = droite.split(/\s+/).filter(Boolean).length;
+  const m = (P.mots || []).filter(w => w[0] >= ph.debut_s - 0.05 && w[1] <= ph.fin_s + 0.05);
+  const frac = ng / Math.max(1, ng + nd);
+  if (m.length >= 2) { const k = Math.max(1, Math.min(m.length - 1, Math.round(frac * m.length))); return [m[k - 1][1], m[k][0]]; }
+  const t = ph.debut_s + frac * (ph.fin_s - ph.debut_s); return [t, t];
+}
+function couper(i, pos) {
+  const ph = P.phrases[i]; const g = ph.texte.slice(0, pos).trim(), d = ph.texte.slice(pos).trim();
+  if (!g || !d) return message("Placer le curseur à l'intérieur de la phrase, là où elle doit être coupée");
+  memoriser();
+  const a = { texte: g }, b = { texte: d.charAt(0).toUpperCase() === d.charAt(0) ? d : d };
+  if (horodatee(ph)) { const [f, s] = instantCoupe(ph, g, d); a.debut_s = ph.debut_s; a.fin_s = +Math.max(ph.debut_s, f).toFixed(2); b.debut_s = +Math.min(ph.fin_s, Math.max(s, a.fin_s)).toFixed(2); b.fin_s = ph.fin_s; }
+  P.phrases.splice(i, 1, a, b); marquer(); dessiner(); suivre(true);
+  const t = $("phrases").querySelector(`.phrase[data-i="${i + 1}"] textarea`); if (t) { t.focus(); t.setSelectionRange(0, 0); }
+}
+function fusionner(i) {
+  if (i >= P.phrases.length - 1) return; memoriser();
+  const a = P.phrases[i], b = P.phrases[i + 1]; const n = { texte: (a.texte.trim() + " " + b.texte.trim()).trim() };
+  if (horodatee(a) || horodatee(b)) { n.debut_s = horodatee(a) ? a.debut_s : b.debut_s; n.fin_s = horodatee(b) ? b.fin_s : a.fin_s; }
+  P.phrases.splice(i, 2, n); marquer(); dessiner(); suivre(true);
+  const t = $("phrases").querySelector(`.phrase[data-i="${i}"] textarea`); if (t) { t.focus(); t.setSelectionRange(a.texte.trim().length, a.texte.trim().length); }
+}
+function debutIci(i) {
+  const ph = P.phrases[i], t = +son.currentTime.toFixed(2), av = P.phrases[i - 1], ap = P.phrases[i + 1];
+  if (av && horodatee(av) && t <= av.debut_s) return message("L'instant de lecture est avant la phrase précédente", true);
+  if (ap && horodatee(ap) && t >= ap.debut_s) return message("L'instant de lecture est après la phrase suivante", true);
+  memoriser(); ph.debut_s = t; if (ph.fin_s == null || ph.fin_s < t) ph.fin_s = ap && horodatee(ap) ? ap.debut_s : +duree().toFixed(2);
+  if (av && horodatee(av) && av.fin_s > t) av.fin_s = t;
+  if (av && av.debut_s != null && av.fin_s == null) av.fin_s = t;
+  marquer(); dessiner(); suivre(true);
+}
+
+/* ---------- ajouts sur l'image : spot, cadre, pointeur, cache ---------- */
+const instant = o => o.type === "cache" ? o.debut_s + o.duree_s : o.debut_s;       // un cache compte par l'instant où il est levé
+const ecran = () => ({ L: (C.ecran && C.ecran.largeur) || $("image").naturalWidth || 1440, H: (C.ecran && C.ecran.hauteur) || $("image").naturalHeight || 1080 });
+/* la phrase de référence est toujours celle de l'instant de lecture (surlignée) */
+function phraseRef() { const ph = P.phrases[phraseA(son.currentTime || 0)]; return ph && horodatee(ph) ? ph : null; }
+function infoAjout() { const ph = phraseRef(); $("ajout-info").textContent = outil ? (outil === "pointeur" ? "Cliquer sur l'image" : "Tracer la zone sur l'image") + (ph ? " — sera calé sur la phrase surlignée (" + fmt(ph.debut_s) + ")" : " — sera calé sur l'instant de lecture") : ""; }
+function choisirOutil(o) { outil = outil === o ? null : o; document.querySelectorAll("#ajouts button[data-outil]").forEach(b => b.classList.toggle("actif", b.dataset.outil === outil)); $("calque").classList.toggle("dessin", !!outil); infoAjout(); }
+document.querySelectorAll("#ajouts button[data-outil]").forEach(b => b.onclick = () => choisirOutil(b.dataset.outil));
+function tempsPour(type) { const ph = phraseRef(), t = +(son.currentTime || 0).toFixed(1);
+  if (type === "cache") return { debut_s: 0, duree_s: Math.max(0.1, +(ph ? ph.debut_s : t).toFixed(1)) };
+  return ph ? { debut_s: +ph.debut_s.toFixed(1), duree_s: Math.max(0.5, +(ph.fin_s - ph.debut_s).toFixed(1)) } : { debut_s: t, duree_s: 4 }; }
+function nouvelId() { let k = 1; const pris = new Set(P.objets.map(o => o.id).concat(P.apparitions.map(a => a.id))); while (pris.has("o" + k)) k++; return "o" + k; }
+function couleurA(x, y) { try { const im = $("image"), { L, H } = ecran(), c = document.createElement("canvas"); c.width = c.height = 1; const g = c.getContext("2d");
+    g.drawImage(im, Math.max(0, Math.min(L - 1, x)) * im.naturalWidth / L, Math.max(0, Math.min(H - 1, y)) * im.naturalHeight / H, 1, 1, 0, 0, 1, 1);
+    const d = g.getImageData(0, 0, 1, 1).data; return "#" + [d[0], d[1], d[2]].map(v => v.toString(16).padStart(2, "0")).join(""); } catch (e) { return "#ffffff"; } }
+function pointImage(e) { const r = $("calque").getBoundingClientRect(), { L, H } = ecran(); return [Math.max(0, Math.min(L, (e.clientX - r.left) * L / r.width)), Math.max(0, Math.min(H, (e.clientY - r.top) * H / r.height))]; }
+/* pointeur mobile : position le long de sa ligne brisée, à vitesse constante sur la durée de l'objet */
+function surTrajet(o, t) {
+  const p = o.trajet; if (!p || p.length < 2) return o.position;
+  const f = Math.max(0, Math.min(1, (t - o.debut_s) / Math.max(0.1, o.duree_s * 0.9)));       // arrivé un peu avant la fin
+  const lg = []; let tot = 0; for (let i = 1; i < p.length; i++) { const d = Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); lg.push(d); tot += d; }
+  let reste = f * tot; for (let i = 0; i < lg.length; i++) { if (reste <= lg[i] || i === lg.length - 1) { const k = lg[i] ? Math.min(1, reste / lg[i]) : 0; return [p[i][0] + k * (p[i + 1][0] - p[i][0]), p[i][1] + k * (p[i + 1][1] - p[i][1])]; } reste -= lg[i]; }
+  return p[p.length - 1];
+}
+function visible(o, t) { return t >= o.debut_s - 0.001 && t < o.debut_s + o.duree_s; }
+let signature = "";
+function calque(force) {
+  const t = son.currentTime || 0, z = $("calque");
+  const vus = P.objets.filter(o => visible(o, t) || o.id === choisi);
+  const sig = vus.map(o => o.id + (visible(o, t) ? "" : "-")).join(",") + "|" + choisi;
+  if (sig === signature && !force) {                                  // rien n'a changé, sauf les pointeurs en mouvement
+    const e = ecran(); for (const o of vus) if (o.trajet && o.id !== choisi) { const el = z.querySelector(`.o[data-id="${o.id}"]`), q = surTrajet(o, t); if (el) { el.style.left = 100 * q[0] / e.L + "%"; el.style.top = 100 * q[1] / e.H + "%"; } }
+    return; }
+  signature = sig;
+  z.textContent = ""; const { L, H } = ecran();
+  const spots = vus.filter(o => o.type === "spot" && visible(o, t));            // un seul voile, percé d'un trou par spot
+  if (spots.length) {
+    const forme = o => o.forme === "ellipse" ? `<ellipse cx="${o.cadre[0] + o.cadre[2] / 2}" cy="${o.cadre[1] + o.cadre[3] / 2}" rx="${o.cadre[2] / 2}" ry="${o.cadre[3] / 2}"/>`
+      : `<rect x="${o.cadre[0]}" y="${o.cadre[1]}" width="${o.cadre[2]}" height="${o.cadre[3]}" rx="12"/>`;
+    z.innerHTML = `<svg viewBox="0 0 ${L} ${H}" preserveAspectRatio="none" aria-hidden="true"><defs><filter id="flou" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
+      <mask id="trous"><rect width="${L}" height="${H}" fill="#fff"/><g fill="#000" filter="url(#flou)">${spots.map(forme).join("")}</g></mask></defs>
+      <rect width="${L}" height="${H}" fill="rgba(0,0,0,.5)" mask="url(#trous)"/></svg>`;
+  }
+  for (const o of vus) {
+    const e = document.createElement("div"); e.className = "o " + o.type + (o.forme === "ellipse" ? " ellipse" : "") + (o.id === choisi ? " choisi" : "") + (visible(o, t) ? "" : " hors"); e.dataset.id = o.id;
+    if (o.type === "pointeur") { const q = o.id === choisi ? o.position : surTrajet(o, t); e.style.left = 100 * q[0] / L + "%"; e.style.top = 100 * q[1] / H + "%";
+      if (o.trajet && o.id === choisi) z.insertAdjacentHTML("beforeend", `<svg viewBox="0 0 ${L} ${H}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${o.trajet.map(q => q.join(",")).join(" ")}" fill="none" stroke="#E0142D" stroke-width="4" stroke-dasharray="14 10" vector-effect="non-scaling-stroke"/></svg>`); }
+    else { e.style.left = 100 * o.cadre[0] / L + "%"; e.style.top = 100 * o.cadre[1] / H + "%"; e.style.width = 100 * o.cadre[2] / L + "%"; e.style.height = 100 * o.cadre[3] / H + "%"; }
+    if (o.type === "cache") e.style.background = o.couleur || "#fff";
+    if (o.id === choisi && o.type !== "pointeur") { const p = document.createElement("div"); p.className = "poignee"; p.dataset.poignee = "1"; e.appendChild(p); }
+    z.appendChild(e);
+  }
+}
+$("calque").onpointerdown = ev => {
+  const z = $("calque"), cible = ev.target.closest(".o"), [x0, y0] = pointImage(ev); ev.preventDefault();
+  if (outil) {
+    memoriser(); const type = outil, o = Object.assign({ id: nouvelId(), type }, tempsPour(type));
+    if (type === "pointeur") { o.position = [Math.round(x0), Math.round(y0)]; P.objets.push(o); choisi = o.id; choisirOutil(null); marquer(); dessiner(); return; }
+    o.cadre = [Math.round(x0), Math.round(y0), 1, 1]; P.objets.push(o); choisi = o.id; calque(true); z.setPointerCapture(ev.pointerId);
+    z.onpointermove = m => { const [x, y] = pointImage(m); o.cadre = [Math.round(Math.min(x0, x)), Math.round(Math.min(y0, y)), Math.round(Math.abs(x - x0)), Math.round(Math.abs(y - y0))]; calque(true); };
+    z.onpointerup = () => { z.onpointermove = z.onpointerup = null; choisirOutil(null);
+      if (o.cadre[2] < 12 || o.cadre[3] < 12) { P.objets.pop(); pile.pop(); choisi = null; message("Zone trop petite : tracer en faisant glisser la souris"); }
+      else { if (type === "cache") o.couleur = couleurA(o.cadre[0] - 3, o.cadre[1] - 3); marquer(); }
+      dessiner(); etat(); };
+    return;
+  }
+  if (!cible) { if (choisi) { choisi = null; dessinerObjets(); calque(true); } return; }
+  const o = P.objets.find(x => x.id === cible.dataset.id); if (!o) return;
+  if (choisi !== o.id) { choisi = o.id; dessinerObjets(); calque(true); }
+  const taille = !!ev.target.dataset.poignee, dep = o.type === "pointeur" ? [...o.position] : [...o.cadre]; let bouge = false; memoriser();
+  const dep0 = o.trajet ? o.trajet.map(q => [...q]) : null;
+  z.setPointerCapture(ev.pointerId);
+  z.onpointermove = m => { const [x, y] = pointImage(m), dx = x - x0, dy = y - y0; if (Math.abs(dx) + Math.abs(dy) < 2 && !bouge) return; bouge = true;
+    if (o.type === "pointeur") { o.position = [Math.round(dep[0] + dx), Math.round(dep[1] + dy)]; if (o.trajet) o.trajet = dep0.map(q => [Math.round(q[0] + dx), Math.round(q[1] + dy)]); }
+    else if (taille) o.cadre = [dep[0], dep[1], Math.max(12, Math.round(dep[2] + dx)), Math.max(12, Math.round(dep[3] + dy))];
+    else o.cadre = [Math.round(dep[0] + dx), Math.round(dep[1] + dy), dep[2], dep[3]];
+    calque(true); };
+  z.onpointerup = () => { z.onpointermove = z.onpointerup = null; if (bouge) { if (o.type === "cache") o.couleur = couleurA(o.cadre[0] - 3, o.cadre[1] - 3); marquer(); calque(true); } else pile.pop(); etat(); };
+};
+function choisir(id) { choisi = id; const o = P.objets.find(x => x.id === id); if (o && !visible(o, son.currentTime || 0)) { arretA = null; son.currentTime = o.type === "cache" ? Math.max(0, instant(o) - 1) : o.debut_s + 0.05; } dessinerObjets(); calque(true); suivre(true); }
+function supprimerObjet(id) { memoriser(); P.objets = P.objets.filter(o => o.id !== id); if (choisi === id) choisi = null; marquer(); dessiner(); }
+function dessinerObjets() {
+  const z = $("objets"); z.textContent = "";
+  for (const o of [...P.objets].sort((a, b) => instant(a) - instant(b))) {
+    const l = document.createElement("div"); l.className = "ligne" + (o.id === choisi ? " choisi" : ""); l.onclick = e => { if (e.target === l || e.target.classList.contains("nom")) choisir(o.id); };
+    const n = document.createElement("span"); n.className = "nom"; n.textContent = NOMS[o.type] + " " + o.id + (o.trajet ? " (mobile)" : "");
+    if (o.origine === "pptx") n.title = "Dessiné dans PowerPoint : sa forme se modifie dans le diaporama, puis « capsuleforge pptx »";
+    const champ = (v, titre, f) => { const c = document.createElement("input"); c.type = "number"; c.step = "0.1"; c.min = "0"; c.value = v; c.setAttribute("aria-label", titre); c.title = titre;
+      c.onchange = () => { if (c.value === "") return; memoriser(); f(Math.max(0, +c.value)); marquer(); dessiner(); suivre(true); }; return c; };
+    const txt = t => { const s = document.createElement("span"); s.textContent = t; return s; };
+    if (o.type === "spot" || o.type === "cadre") { const f = document.createElement("select"); f.title = "Forme"; f.setAttribute("aria-label", "Forme");
+      f.innerHTML = "<option value=''>rectangle</option><option value='ellipse'>ellipse</option>"; f.value = o.forme === "ellipse" ? "ellipse" : "";
+      f.onchange = () => { memoriser(); if (f.value) o.forme = "ellipse"; else delete o.forme; marquer(); dessiner(); }; n.append(" ", f); }
+    if (o.type === "cache") l.append(n, txt("levé à"), champ(o.duree_s, "Instant où le cache est levé, en secondes", v => { o.debut_s = 0; o.duree_s = Math.max(0.1, v); }), txt("s"));
+    else l.append(n, txt("à"), champ(o.debut_s, "Début en secondes", v => o.debut_s = v), txt("s pendant"), champ(o.duree_s, "Durée en secondes", v => o.duree_s = Math.max(0.1, v)), txt("s"));
+    const cal = bouton("Caler sur la phrase", "Reprend le début et la durée de la phrase surlignée (celle de l'instant de lecture)", () => { const ph = phraseRef(); if (!ph) return message("Se placer d'abord dans une phrase (clic sur la piste ou sur son bouton ▶)"); memoriser(); Object.assign(o, tempsPour(o.type)); marquer(); dessiner(); suivre(true); });
+    const ici = bouton("Instant de lecture", o.type === "cache" ? "Le cache est levé à l'instant de lecture" : "L'objet commence à l'instant de lecture", () => { memoriser(); const t = +(son.currentTime || 0).toFixed(1); if (o.type === "cache") { o.debut_s = 0; o.duree_s = Math.max(0.1, t); } else o.debut_s = t; marquer(); dessiner(); suivre(true); });
+    const voir = bouton("▶ Voir", "Écouter le passage", () => { choisi = null; const a = instant(o); arretA = (o.type === "cache" ? a : o.debut_s + o.duree_s) + 1.5; son.currentTime = Math.max(0, a - 2); son.play(); dessinerObjets(); calque(true); }); voir.disabled = !P.audio;
+    const sup = bouton("Supprimer", "Supprimer cet ajout (touche Suppr quand il est choisi)", () => supprimerObjet(o.id));
+    l.append(cal, ici, voir, sup); z.appendChild(l);
+  }
+  if (!P.objets.length) { const v = document.createElement("div"); v.style.cssText = "color:var(--texte2);font-size:12px"; v.textContent = "Aucun ajout. Se placer dans une phrase (elle est surlignée), choisir un type, puis tracer sur l'image : l'ajout prend le temps de cette phrase."; z.appendChild(v); }
+}
+
+function phraseA(t) { let k = -1; P.phrases.forEach((ph, i) => { if (horodatee(ph) && ph.debut_s <= t + 0.02) k = i; }); return k; }
+function jouerPhrase(i) { const ph = P.phrases[i]; if (!ph || !horodatee(ph) || !P.audio) return; son.currentTime = ph.debut_s; arretA = ph.fin_s + 0.15; son.play(); suivre(true); }
+
+let actif = -2;
+function suivre(force) {
+  if (!P) return; const t = son.currentTime || 0, d = duree();
+  $("tete").style.left = 100 * Math.min(1, t / d) + "%";
+  $("temps").textContent = fmt(t) + " / " + fmt(d);
+  image(); calque(force);
+  const k = phraseA(t);
+  if (k !== actif || force) {
+    actif = k;
+    document.querySelectorAll(".phrase.active,.ph.active").forEach(e => e.classList.remove("active"));
+    const l = $("phrases").querySelector(`.phrase[data-i="${k}"]`);
+    if (l) { l.classList.add("active"); if (!son.paused && !l.contains(document.activeElement)) l.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+    const b = $("piste").querySelector(`.ph[data-i="${k}"]`); if (b) b.classList.add("active");
+  }
+  const ph = P.phrases[k]; const st = $("soustitre"); st.textContent = "";
+  if ($("st").checked && ph && t <= ph.fin_s + 0.4) { const s = document.createElement("span"); s.textContent = ph.texte; st.appendChild(s); }
+  let vue = null, td = -1; for (const a of P.apparitions) if (a.debut_s <= t && a.debut_s >= td) { td = a.debut_s; vue = a.id; }
+  document.querySelectorAll("#apparitions .ligne").forEach(e => e.classList.toggle("vue", e.dataset.id === vue));
+}
+function boucle() { if (P && !son.paused) { if (arretA != null && son.currentTime >= arretA) { son.pause(); arretA = null; } suivre(); } requestAnimationFrame(boucle); }
+
+son.onplay = son.onpause = () => { $("lecture").textContent = son.paused ? "▶ Lire" : "⏸ Pause";
+  if (!son.paused && choisi) { choisi = null; dessinerObjets(); calque(true); } };      // en lecture, rien n'est montré hors de son temps
+son.onloadedmetadata = () => { dessinerPiste(); dessinerApparitions(); info(); suivre(true); };
+son.onseeked = () => { suivre(); infoAjout(); };
+son.onerror = () => { if (P && P.audio) message("Son illisible : " + P.audio, true); };
+$("lecture").onclick = () => { if (son.paused) { arretA = null; son.play(); } else son.pause(); };
+$("vitesse").onchange = () => son.playbackRate = +$("vitesse").value;
+$("st").onchange = () => suivre(true);
+$("pas").onchange = () => ouvrir(+$("pas").value);
+$("precedent").onclick = () => ouvrir(rang - 1);
+$("suivant").onclick = () => ouvrir(rang + 1);
+$("relu").onchange = () => { P.relu = $("relu").checked ? (P.relu || "oui") : ""; P.reluChange = true; marquer(); };
+$("annuler").onclick = annuler;
+$("enregistrer").onclick = enregistrer;
+
+function annuler() {
+  const e = pile.pop(); if (!e) return;
+  const p = C.pas.find(x => x.id === e.id); p.phrases = e.phrases; p.apparitions = e.apparitions; p.objets = e.objets || []; modifies.add(p.id); choisi = null;
+  if (p !== P) ouvrir(C.pas.indexOf(p)); else { dessiner(); suivre(true); }
+  etat();
+}
+
+async function enregistrer() {
+  if (!modifies.size) { message("Rien à enregistrer"); return true; }
+  const envoi = {};
+  for (const id of modifies) { const p = C.pas.find(x => x.id === id); envoi[id] = { phrases: p.phrases, apparitions: Object.fromEntries(p.apparitions.map(a => [a.id, a.debut_s])), objets: p.objets }; if (p.reluChange) envoi[id].relu = !!p.relu; }
+  try {
+    const r = await (await fetch("/api/pas", { method: "POST", body: JSON.stringify(envoi) })).json();
+    if (!r.ok) { message(r.message || "Enregistrement impossible", true); return false; }
+    for (const id of modifies) { const p = C.pas.find(x => x.id === id); p.prepare = false; p.reluChange = false; p.phrases = p.phrases.filter(ph => ph.texte.trim()); }
+    modifies.clear(); etat(); listePas(); dessiner(); suivre(true);
+    message(r.erreurs && r.erreurs.length ? r.message + " — " + r.erreurs.length + " erreur(s) signalée(s) par « verifier »" : r.message, r.erreurs && r.erreurs.length);
+    return true;
+  } catch (e) { message("Le serveur ne répond pas : la fenêtre « capsuleforge relire » est-elle encore ouverte ?", true); return false; }
+}
+async function quitter() {
+  if (!(await enregistrer())) return;
+  son.pause(); fini = true;
+  try { await fetch("/api/fin", { method: "POST" }); } catch (e) {}
+  $("fini").style.display = "flex"; window.close();
+}
+$("quitter").onclick = quitter;
+
+document.addEventListener("keydown", e => {
+  const dansTexte = e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT";
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); enregistrer(); }
+  else if (e.key === "Escape" && outil) { e.preventDefault(); choisirOutil(null); }
+  else if (e.key === "Escape" || ((e.ctrlKey || e.metaKey) && e.code === "Space")) { e.preventDefault(); if (P.audio) $("lecture").click(); }
+  else if ((e.key === "Delete" || e.key === "Backspace") && choisi && !dansTexte) { e.preventDefault(); supprimerObjet(choisi); }
+  else if (e.code === "Space" && !dansTexte && e.target.tagName !== "BUTTON" && e.target.tagName !== "SELECT") { e.preventDefault(); $("lecture").click(); }
+  else if (e.altKey && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+    e.preventDefault(); const l = e.target.closest ? e.target.closest(".phrase") : null;
+    const i = (l ? +l.dataset.i : Math.max(0, actif)) + (e.key === "ArrowDown" ? 1 : -1);
+    if (i >= 0 && i < P.phrases.length) { jouerPhrase(i); const t = $("phrases").querySelector(`.phrase[data-i="${i}"] textarea`); if (t && dansTexte) t.focus(); }
+  }
+  else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !dansTexte) { e.preventDefault(); annuler(); }
+});
+window.addEventListener("beforeunload", e => { if (modifies.size && !fini) { e.preventDefault(); e.returnValue = ""; } });
+window.addEventListener("pagehide", () => { if (!fini) navigator.sendBeacon("/api/depart", ""); });
+window.addEventListener("resize", () => document.querySelectorAll(".phrase textarea").forEach(hauteur));
+requestAnimationFrame(boucle);
+charger();
+</script>
+</body>
+</html>

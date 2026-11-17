@@ -1,0 +1,225 @@
+# ExoForge — fiche d'exemple (moteur générique)
+# Effet de la contrainte moyenne : diagramme de Haigh, droite de Goodman, coefficient de sécurité.
+# Exercice court et guidé (≈ 15 min), données tirées au hasard.
+#
+# Rappel de la syntaxe : {=expr} = valeur calculée ; les formules LaTeX ($…$) ne contiennent que des symboles,
+# les nombres sont écrits hors formule (virgule décimale à la française).
+
+id: fatigue_haigh_goodman
+titre: "Exercice : effet de la contrainte moyenne"
+cours: "Fatigue & Fiabilité — Fatigue polycyclique : contrainte moyenne"
+auteur: "Benoit Delattre"
+version: "0.1"
+profil: Delattre
+
+# ---------------------------------------------------------------- données
+donnees:
+  mode: aleatoire
+  tirage:
+    Rm: {parmi: [600, 700, 800, 900, 1000]}            # MPa, résistance à la rupture
+    rD: {parmi: [0.45, 0.5]}                           # sigma_D / Rm (acier : environ 0,5)
+    fm: {parmi: [0.1, 0.15, 0.2, 0.25, 0.3, 0.35]}     # sigma_m / Rm
+    fa: {parmi: [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}   # sigma_a / sigma_D
+  calculs:
+    sigD: "round(rD*Rm/10)*10"          # limite d'endurance en traction-compression alternée symétrique
+    sm: "round(fm*Rm/5)*5"
+    sa: "round(fa*sigD/5)*5"
+    smax: "sm + sa"
+    smin: "sm - sa"
+    saeq: "sa/(1 - sm/Rm)"              # amplitude alternée symétrique équivalente (Goodman)
+    ns: "sigD/saeq"                     # coefficient de sécurité, charge proportionnelle
+  rejeter_si: "ns >= 0.93 && ns <= 1.07"   # évite un verdict trop proche de 1
+  fixe: {Rm: 800, sigD: 400, sm: 200, sa: 250}   # n = 1,2
+
+# ---------------------------------------------------------------- encadré permanent
+rappel:
+  titre: "Énoncé"
+  texte: >-
+    Une pièce en acier est soumise à une contrainte normale qui oscille entre σ<sub>min</sub> et σ<sub>max</sub>.
+    Les caractéristiques du matériau sont données ci-dessous.
+    <b id="question">La pièce a-t-elle une durée de vie illimitée ? Avec quel coefficient de sécurité ?</b>
+  tableau:
+    id: tableau
+    entetes: ["Grandeur", "Valeur"]
+    lignes: >-
+      [["Résistance à la rupture R<sub>m</sub>", Rm + ' MPa'],
+       ["Limite d'endurance σ<sub>D</sub> (alternée symétrique)", sigD + ' MPa'],
+       ["Contrainte maximale σ<sub>max</sub>", smax + ' MPa'],
+       ["Contrainte minimale σ<sub>min</sub>", smin + ' MPa']]
+  graphique:
+    id: haigh
+    alt: "Diagramme de Haigh : amplitude de contrainte en fonction de la contrainte moyenne, avec la droite de Goodman"
+    x: {titre: "Contrainte moyenne σ<sub>m</sub> (MPa)", min: 0, max: "Rm", pas: 100}
+    y: {titre: "σ<sub>a</sub> (MPa)", min: 0, max: "ceil(1.2*sigD/100)*100", pas: 100}
+    courbes:
+      - id: goodman
+        y: "sigD*(1 - x/Rm)"
+        etiquette: "Goodman"
+        position_etiquette: 0.55
+      - id: rayon                       # charge proportionnelle : de l'origine jusqu'à la droite
+        y: "x <= Rm*sigD*sm/(sa*Rm + sigD*sm) ? sa/sm*x : NaN"
+        cachee: true
+        pointilles: true
+    points:
+      id: charge                        # élément charge1 (cible)
+      x: "[sm]"
+      y: "[sa]"
+      etiquette: "(σ<sub>m</sub>, σ<sub>a</sub>)"
+      apparait: revele                  # affiché une fois σa et σm calculés
+      position_etiquette: gauche
+      lecture: {x: "[sm]"}              # pointillés vers les deux axes
+    description:
+      texte: >-
+        Diagramme de Haigh : en abscisse la contrainte moyenne, en ordonnée l'amplitude.
+        La droite de Goodman relie σ<sub>D</sub> sur l'axe des amplitudes à R<sub>m</sub> sur l'axe des contraintes moyennes.
+        Un point de fonctionnement situé sous la droite correspond à une durée de vie illimitée.
+
+accessibilite:
+  lecture_vocale: true
+
+# ---------------------------------------------------------------- étapes
+etapes:
+  - id: presentation
+    type: info
+    titre: "Objectif"
+    audio: presentation
+    contenu:
+      - texte: >-
+          Les limites d'endurance sont mesurées en traction-compression **alternée symétrique** : contrainte moyenne nulle.
+          Une pièce réelle travaille souvent autour d'une contrainte moyenne non nulle (précharge, poids, serrage).
+      - texte: >-
+          Vous allez décomposer le chargement en une amplitude et une moyenne, le placer dans le diagramme de Haigh,
+          puis utiliser la droite de Goodman pour conclure sur la tenue en fatigue.
+
+  - id: intuition
+    type: choix
+    titre: "Question 1 : quel effet ?"
+    audio: intuition
+    enonce: "À amplitude égale, quel est l'effet d'une contrainte moyenne de **traction** sur la tenue en fatigue ?"
+    options:
+      - texte: "Elle la diminue."
+        correct: true
+      - texte: "Elle ne change rien : seule l'amplitude compte."
+        retour: >-
+          L'amplitude est le premier facteur, mais pas le seul : une traction moyenne ouvre les fissures et accélère leur propagation.
+      - texte: "Elle l'améliore."
+        retour: >-
+          C'est une contrainte moyenne de **compression** qui est plutôt favorable (d'où le grenaillage, qui crée des contraintes résiduelles de compression).
+    tentatives: 2
+    points_par_tentative: [1, 0.5]
+    explication: >-
+      Une contrainte moyenne de traction diminue l'amplitude admissible : c'est ce que décrit le diagramme de Haigh.
+      Les critères de Goodman (droite) et de Gerber (parabole) relient σ<sub>D</sub>, à moyenne nulle, à R<sub>m</sub>, où l'amplitude admissible s'annule.
+
+  - id: amplitude
+    type: numerique
+    titre: "Question 2 : amplitude"
+    audio: amplitude
+    enonce: "Calculez l'amplitude de contrainte σ<sub>a</sub> (en MPa)."
+    aide:
+      texte: "$\\sigma_a = \\dfrac{\\sigma_{max} - \\sigma_{min}}{2}$ : la demi-étendue de la contrainte."
+    attendu: "sa"
+    erreurs:
+      - si: "smax - smin"
+        message: "Vous avez calculé l'étendue Δσ = σ<sub>max</sub> − σ<sub>min</sub>. L'amplitude en est la moitié."
+      - si: "sm"
+        message: "C'est la contrainte moyenne. L'amplitude mesure l'écart de part et d'autre de la moyenne."
+      - si: "smax"
+        message: "σ<sub>max</sub> est la contrainte maximale, pas l'amplitude."
+    indice: "Calculez (σ<sub>max</sub> − σ<sub>min</sub>) / 2, en respectant le signe de σ<sub>min</sub> = {=smin} MPa."
+    solution: "σ<sub>a</sub> = (σ<sub>max</sub> − σ<sub>min</sub>) / 2 = ({=smax} − {=smin < 0 ? '(' + fmt(smin) + ')' : fmt(smin)}) / 2 = <b>{=sa} MPa</b>"
+
+  - id: moyenne
+    type: numerique
+    titre: "Question 3 : contrainte moyenne"
+    audio: moyenne
+    enonce: "Calculez la contrainte moyenne σ<sub>m</sub> (en MPa), puis repérez le point (σ<sub>m</sub>, σ<sub>a</sub>) dans le diagramme de Haigh."
+    aide:
+      texte: "$\\sigma_m = \\dfrac{\\sigma_{max} + \\sigma_{min}}{2}$"
+    attendu: "sm"
+    erreurs:
+      - si: "sa"
+        message: "C'est l'amplitude, calculée à la question précédente. La moyenne est la demi-somme."
+      - si: "smax + smin"
+        message: "Vous avez oublié de diviser par 2 : la moyenne est la demi-somme."
+      - si: "smax - sa*2"
+        message: "C'est σ<sub>min</sub>. La moyenne est au milieu de σ<sub>min</sub> et σ<sub>max</sub>."
+    indice: "Calculez (σ<sub>max</sub> + σ<sub>min</sub>) / 2."
+    solution: "σ<sub>m</sub> = (σ<sub>max</sub> + σ<sub>min</sub>) / 2 = ({=smax} + {=smin < 0 ? '(' + fmt(smin) + ')' : fmt(smin)}) / 2 = <b>{=sm} MPa</b>. Le point de fonctionnement est placé dans le diagramme."
+    fin:
+      graphique: {revele: 0}
+    focus_rappel: haigh
+
+  - id: equivalente
+    type: numerique
+    titre: "Question 4 : amplitude équivalente"
+    audio: equivalente
+    enonce: >-
+      Avec la droite de Goodman, calculez l'amplitude **alternée symétrique équivalente** σ<sub>a,eq</sub> (en MPa) :
+      l'amplitude qui, à contrainte moyenne nulle, aurait le même effet en fatigue.
+    aide:
+      texte: "Droite de Goodman : $\\dfrac{\\sigma_a}{\\sigma_{a,eq}} + \\dfrac{\\sigma_m}{R_m} = 1$, d'où $\\sigma_{a,eq} = \\dfrac{\\sigma_a}{1 - \\sigma_m/R_m}$."
+    attendu: "saeq"
+    erreurs:
+      - si: "sa*(1 - sm/Rm)"
+        message: "Vous avez multiplié par (1 − σ<sub>m</sub>/R<sub>m</sub>) au lieu de diviser : l'amplitude équivalente doit être plus grande que σ<sub>a</sub>, puisque la moyenne de traction est défavorable."
+      - si: "sa/(1 - sm/sigD)"
+        message: "Dans la droite de Goodman, la contrainte moyenne est rapportée à R<sub>m</sub>, pas à σ<sub>D</sub>."
+      - si: "sa/(1 - (sm/Rm)**2)"
+        message: "C'est la parabole de Gerber. La question demande la droite de Goodman : (σ<sub>m</sub>/R<sub>m</sub>) n'est pas au carré."
+      - si: "sa"
+        message: "Vous n'avez pas corrigé l'effet de la contrainte moyenne : à moyenne nulle, il faudrait une amplitude plus grande pour produire le même dommage."
+      - si: "sa + sm"
+        message: "Additionner amplitude et moyenne donne σ<sub>max</sub>, pas une amplitude équivalente."
+    indice: "Divisez σ<sub>a</sub> = {=sa} MPa par (1 − σ<sub>m</sub>/R<sub>m</sub>), avec σ<sub>m</sub> = {=sm} MPa et R<sub>m</sub> = {=Rm} MPa."
+    solution: "σ<sub>a,eq</sub> = σ<sub>a</sub> / (1 − σ<sub>m</sub>/R<sub>m</sub>) = {=sa} / (1 − {=sm}/{=Rm}) = <b>{=saeq} MPa</b>"
+
+  - id: securite
+    type: numerique
+    titre: "Question 5 : coefficient de sécurité"
+    audio: securite
+    enonce: >-
+      Le chargement augmente proportionnellement : σ<sub>a</sub> et σ<sub>m</sub> sont multipliés par le même facteur.
+      Quel est le coefficient de sécurité n vis-à-vis de la durée de vie illimitée, selon Goodman ?
+    aide:
+      texte: >-
+        On multiplie σ<sub>a</sub> et σ<sub>m</sub> par n jusqu'à atteindre la droite :
+        $\dfrac{n\,\sigma_a}{\sigma_D} + \dfrac{n\,\sigma_m}{R_m} = 1$, d'où $n = \dfrac{1}{\sigma_a/\sigma_D + \sigma_m/R_m} = \dfrac{\sigma_D}{\sigma_{a,eq}}$.
+      graphique: {montre: rayon}
+    attendu: "ns"
+    erreurs:
+      - si: "saeq/sigD"
+        message: "Vous avez calculé l'inverse : un coefficient de sécurité supérieur à 1 signifie que la charge peut encore être augmentée."
+      - si: "sigD/sa"
+        message: "Ce rapport ignore la contrainte moyenne. Utilisez σ<sub>a,eq</sub> (question 4), ou les deux termes de la droite de Goodman."
+      - si: "Rm/smax"
+        message: "C'est un coefficient de sécurité statique (rupture), pas en fatigue."
+    indice: "Calculez σ<sub>D</sub> / σ<sub>a,eq</sub> = {=sigD} / σ<sub>a,eq</sub>."
+    solution: "n = σ<sub>D</sub> / σ<sub>a,eq</sub> = {=sigD} / {=saeq} = <b>{=ns}</b>. Dans le diagramme, n est le rapport entre la distance de l'origine à la droite de Goodman et la distance de l'origine au point de fonctionnement, le long du rayon de charge."
+    fin:
+      graphique: {montre: rayon}
+
+  - id: verdict
+    type: choix
+    titre: "Conclusion"
+    audio: verdict
+    enonce: "Avec n = {=ns}, la pièce a-t-elle une durée de vie illimitée selon Goodman ?"
+    options: ["Oui", "Non"]
+    correct: "ns >= 1 ? 0 : 1"
+    tentatives: 1
+    retour_juste: "Exact : n = {=ns} {=ns >= 1 ? '≥' : '<'} 1, le point est {=ns >= 1 ? 'sous' : 'au-dessus de'} la droite de Goodman : {=ns >= 1 ? 'durée de vie illimitée' : 'durée de vie limitée'}."
+    retour_faux: "Non : la durée de vie est illimitée si n ≥ 1, c'est-à-dire si le point est sous la droite. Ici n = {=ns} : {=ns >= 1 ? 'durée de vie illimitée' : 'durée de vie limitée'}."
+    explication: >-
+      Goodman est un critère prudent pour les aciers ; la parabole de Gerber, plus proche des essais, est moins conservative.
+      Il faut aussi vérifier la tenue statique : σ<sub>max</sub> = {=smax} MPa doit rester sous la limite d'élasticité (critère de Soderberg).
+
+conclusion:
+  titre: "Bilan"
+  recommencer: "Recommencer avec de nouvelles données"
+
+defauts:
+  tentatives: 3
+  points_par_tentative: [1, 0.75, 0.5]
+  tolerance: 0.02
+  ordre_options: fixe
+  suite: auto

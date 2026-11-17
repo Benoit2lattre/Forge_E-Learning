@@ -1,0 +1,204 @@
+# ExoForge — fiche d'exemple (moteur générique), version 0.2 de l'exercice de cumul de Miner
+# Cumul linéaire de Miner sur un signal à 3 blocs. Contenu repris de miner_cumul.yaml (v0.1, ancien moteur).
+#
+# Nouveautés du moteur générique utilisées ici :
+#   donnees      : valeurs fixes, tirées au hasard, puis calculées (expressions JavaScript)
+#   {=expr}      : dans un texte, remplacé par la valeur calculée (ex. {=n[k]}) ; les accolades LaTeX ne sont pas touchées
+#   rappel       : texte, tableau et graphique calculés, toujours visibles à gauche
+#   numerique    : réponse numérique, tolérance, diagnostic des erreurs, indice, aide sur demande
+#   repeter      : étape répétée (k = 0, 1, 2 ; i = k + 1) ; emplacements audio bloc1, bloc2, bloc3
+#   note: false  : question non notée (estimation, confiance) ; pose / aller_a : choix du parcours
+#   mises_en_evidence : cadre lumineux synchronisé avec l'audio (cibles : courbe, tableau, question, bloc1…)
+# Expressions : sum, prod, round, floor, log10, abs, min, max, sqrt, fmt… ; listes : .map, .filter, .length.
+
+id: miner_cumul_generique
+titre: "Exercice : cumul linéaire"
+cours: "Fatigue & Fiabilité — Fatigue polycyclique limitée"
+auteur: "Benoit Delattre"
+version: "0.2"
+profil: Delattre
+
+# ---------------------------------------------------------------- données
+# Courbe de Wöhler semi-logarithmique : sigma = sigma_ref - pente * (log10(N) - 3)
+# (50 MPa à 10^3 cycles, 10 MPa à 10^7 cycles, comme la version ActivePresenter)
+donnees:
+  mode: aleatoire                 # aleatoire | fixe (index.html?mode=fixe force les données fixes)
+  constantes:
+    sigma_ref: 50                 # MPa, amplitude à N = 1000 cycles
+    pente: 10                     # MPa par décade
+    s: [40, 30, 20]               # MPa, un bloc par niveau
+  tirage:
+    f: {parmi: [0.1, 0.2, 0.25, 0.3, 0.4, 0.5], nombre: 3}    # n_i / N_i de chaque bloc
+  calculs:                        # dans l'ordre
+    N: "s.map(x => round(10**(3 + (sigma_ref - x)/pente)))"
+    n: "f.map((x, j) => round(x*N[j]))"
+    D: "n.map((x, j) => x/N[j])"
+    Dtot: "sum(D)"
+  rejeter_si: "Dtot >= 0.93 && Dtot <= 1.07"   # évite un verdict trop proche de 1 (nouveau tirage)
+  fixe:                           # données de la version d'origine (mode fixe)
+    n: [5000, 25000, 100000]
+
+# ---------------------------------------------------------------- encadré permanent
+rappel:
+  titre: "Énoncé"
+  texte: >-
+    Un signal est constitué de trois blocs de cycles d'amplitude constante.
+    La courbe de Wöhler du matériau est donnée ci-dessous.
+    <b id="question">La pièce va-t-elle tenir ?</b>
+  tableau:
+    id: tableau
+    entetes: ["Bloc", "Cycles appliqués n", "Amplitude σ<sub>a</sub>"]
+    lignes: "s.map((x, j) => [j + 1, n[j], x + ' MPa'])"
+  graphique:
+    id: wohler
+    alt: "Courbe de Wöhler : amplitude de contrainte en fonction du nombre de cycles à rupture, échelle logarithmique"
+    x: {titre: "Nombre de cycles à rupture N", log: true, min: 1.0e+3, max: 1.0e+7}
+    y: {titre: "σ<sub>a</sub> (MPa)", min: 10, max: 60, pas: 10}
+    courbes:
+      - id: courbe
+        y: "sigma_ref - pente*(log10(x) - 3)"
+    points:                       # un point par bloc : (n, s) ; éléments bloc1, bloc2, bloc3
+      id: bloc
+      x: n
+      y: s
+      etiquette: "bloc {=j + 1}"
+      lecture:                    # pointillés de lecture : de l'axe σ à la courbe, puis à l'axe N
+        x: N
+        etiquette: "N{=j + 1} = {=N[j]}"
+    description:                  # accessibilité : texte affiché, voix lue par la synthèse vocale
+      texte: >-
+        La courbe de Wöhler est une droite en échelle semi-logarithmique (cycles en échelle log).
+        Elle passe par 50 MPa à 10<sup>3</sup> cycles et par 10 MPa à 10<sup>7</sup> cycles.
+        Les trois blocs du signal sont placés sous la courbe, à 40, 30 et 20 MPa.
+      voix: >-
+        La courbe de Wöhler est une droite en échelle semi-logarithmique, les cycles étant en échelle log.
+        Elle passe par 50 mégapascals à 10 puissance 3 cycles, et par 10 mégapascals à 10 puissance 7 cycles.
+        Les trois blocs du signal sont placés sous la courbe, à 40, 30 et 20 mégapascals.
+    # lecteur:                    # aménagement d'examen : lire N pour une contrainte donnée
+    #   invite: "σa en MPa"
+    #   calcul: "round(10**(3 + (sigma_ref - v)/pente))"
+    #   reponse: "À {=v} MPa, la courbe donne N ≈ {=r} cycles."
+
+accessibilite:
+  lecture_vocale: true            # bouton « Écouter » (synthèse vocale) sur les cartes sans enregistrement
+
+# ---------------------------------------------------------------- étapes
+etapes:
+  - id: presentation
+    type: info
+    titre: "Présentation de l'exercice"
+    audio: presentation           # media/miner_cumul_generique/presentation.mp3 (= ancien miner_intro.mp3)
+    contenu:
+      - "Écoutez la présentation de l'énoncé et de la courbe (environ 50 s)."
+    mises_en_evidence:            # repères de la diapo 1 ActivePresenter (secondes)
+      - {t: 4.92,  fin: 7.78,  cible: courbe}
+      - {t: 7.78,  fin: 11.84, cible: tableau}
+      - {t: 11.84, fin: 13.36, cible: bloc1}
+      - {t: 13.36, fin: 14.84, cible: bloc2}
+      - {t: 14.84, fin: 16.62, cible: bloc3}
+      - {t: 20.06, fin: 29.74, cible: question}
+    sous_titres:
+      - {t: 30.45, texte: "Avant de dérouler la démonstration, prenez le temps (10 min) d'essayer de trouver la réponse par vous-même."}
+    suite_auto: true              # à la fin de l'audio, l'étape suivante s'ouvre
+
+  - id: estimation
+    type: choix
+    note: false                   # pré-test : estimation avant calcul, non notée
+    titre: "Estimation"
+    enonce: "Avant de calculer : selon vous, la pièce va-t-elle tenir ?"
+    options: ["Oui, elle tient", "Non, elle casse", "Je ne sais pas"]
+
+  - id: parcours
+    type: choix
+    note: false
+    titre: "Comment voulez-vous travailler ?"
+    enonce: "Prenez le temps (environ 10 min) d'essayer par vous-même avant de demander de l'aide."
+    options:
+      - texte: "Je calcule seul le dommage total"
+        pose: {guide: false}
+        aller_a: total
+      - texte: "Je veux suivre la démarche pas à pas"
+        pose: {guide: true}
+
+  # Étape répétée pour chaque bloc, avec un guidage qui s'estompe :
+  # bloc 1 : rappel + pointillés sur la courbe ; bloc 2 : rappel seul ; bloc 3 : pas d'aide
+  - id: bloc
+    type: numerique
+    repeter: 3
+    audio: bloc
+    titre: "Étape {=i} — bloc {=i}"
+    enonce: "Quel est le dommage partiel D<sub>{=i}</sub> du bloc {=i} ({=n[k]} cycles à {=s[k]} MPa) ?"
+    graphique: {actif: k}         # le bloc en cours est entouré sur la courbe
+    aide:
+      si: "k < 2"
+      texte: "D<sub>{=i}</sub> = n<sub>{=i}</sub> / N<sub>{=i}</sub>, où N<sub>{=i}</sub> est le nombre de cycles à rupture lu sur la courbe à {=s[k]} MPa."
+      graphique: {si: "k == 0", lecture: k}
+    attendu: "n[k] / N[k]"
+    erreurs:
+      - si: "N[k] / n[k]"
+        message: "Vous avez inversé le rapport. Le dommage partiel vaut n<sub>{=i}</sub> / N<sub>{=i}</sub> : cycles appliqués divisés par cycles à rupture. Un dommage partiel supérieur à 1 voudrait dire que ce bloc seul casse la pièce."
+      - si: "n[k]"
+        message: "Vous avez donné un nombre de cycles. Le dommage partiel est un rapport sans unité, compris entre 0 et 1 pour un bloc qui ne casse pas la pièce à lui seul."
+      - si: "N[k]"
+        message: "Vous avez donné N<sub>{=i}</sub>, le nombre de cycles à rupture. Il reste à le comparer au nombre de cycles appliqués n<sub>{=i}</sub> = {=n[k]}."
+      - si: "[n[k] / (N[k]*10), n[k] / (N[k]/10)]"
+        message: "Votre N<sub>{=i}</sub> est décalé d'une décade : lu au mauvais niveau de contrainte, ou mal lu sur l'échelle logarithmique (chaque graduation principale vaut 10 fois la précédente). Relisez N<sub>{=i}</sub> à {=s[k]} MPa."
+      - si: "N.filter((x, j) => j != k).map(x => n[k] / x)"
+        message: "Vous avez lu N sur la courbe au mauvais niveau de contrainte. Pour ce bloc, lisez N<sub>{=i}</sub> à {=s[k]} MPa."
+    indice: "Lisez N<sub>{=i}</sub> sur la courbe à {=s[k]} MPa, puis calculez n<sub>{=i}</sub> / N<sub>{=i}</sub>."
+    solution: "D<sub>{=i}</sub> = n<sub>{=i}</sub> / N<sub>{=i}</sub> = {=n[k]} / {=N[k]} = <b>{=D[k]}</b>"
+    fin:
+      graphique: {revele: k, actif: -1}   # pointillés et valeur de N affichés une fois l'étape finie
+
+  - id: total
+    type: numerique
+    audio: total
+    titre: "{=guide ? 'Étape ' + (s.length + 1) + ' — dommage total' : 'Dommage total'}"
+    enonce: "Quel est le dommage total D du signal ?"
+    aide:
+      si: guide
+      texte: "Règle de Miner : D = D<sub>1</sub> + D<sub>2</sub> + D<sub>3</sub>."
+    attendu: "sum(D)"
+    erreurs:
+      - si: "prod(D)"
+        message: "Vous avez multiplié les dommages partiels. La règle de Miner les additionne."
+      - si: "sum(D) / D.length"
+        message: "Vous avez fait la moyenne des dommages partiels. La règle de Miner les additionne : chaque bloc consomme une part de la durée de vie."
+      - si: "sum(n) / sum(N)"
+        message: "Vous avez divisé le total des cycles par le total des cycles à rupture. Calculez chaque dommage partiel n<sub>i</sub> / N<sub>i</sub> à son niveau de contrainte, puis additionnez."
+    indice: "Calculez chaque dommage partiel D<sub>i</sub> = n<sub>i</sub> / N<sub>i</sub> (N<sub>i</sub> lu sur la courbe au niveau du bloc), puis additionnez-les."
+    solution: "D = {=D.map(fmt).join(' + ')} = <b>{=Dtot}</b>"
+    fin:
+      graphique: {revele: "s.map((x, j) => j)"}
+
+  - id: verdict
+    type: choix
+    titre: "Conclusion"
+    audio: verdict
+    enonce: "Avec D = {=Dtot}, la pièce va-t-elle tenir ?"
+    options: ["Oui, elle tient", "Non, elle casse"]
+    correct: "Dtot < 1 ? 0 : 1"   # numéro de la bonne option (0 = la première), calculé
+    tentatives: 1
+    retour_juste: "Exact : D = {=Dtot} {=Dtot >= 1 ? '≥' : '<'} 1, donc {=Dtot >= 1 ? 'la pièce casse' : 'la pièce tient'} selon la règle de Miner."
+    retour_faux: "Non : la règle de Miner prédit la rupture quand D atteint 1. Ici D = {=Dtot} {=Dtot >= 1 ? '≥' : '<'} 1, donc {=Dtot >= 1 ? 'la pièce casse' : 'la pièce tient'}."
+    explication: "Attention : la règle de Miner est une règle moyenne et la dispersion en fatigue est importante. Un dommage proche de 1 ne garantit pas la tenue."
+
+  - id: confiance
+    type: choix
+    note: false
+    type_scorm: likert
+    titre: "Pour finir"
+    enonce: "Quelle confiance avez-vous dans votre réponse ?"
+    options: ["Faible", "Moyenne", "Forte"]
+
+conclusion:
+  titre: "Bilan"
+  recommencer: "Recommencer avec de nouvelles données"
+
+# Comportement par défaut des étapes (surchargeable dans chaque étape)
+defauts:
+  tentatives: 3
+  points_par_tentative: [1, 0.75, 0.5]
+  tolerance: 0.02                 # écart relatif accepté pour une réponse numérique
+  ordre_options: fixe
+  suite: auto                     # auto : l'étape suivante s'ouvre dès la correction affichée | bouton : « Continuer »

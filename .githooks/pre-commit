@@ -1,0 +1,10 @@
+#!/bin/sh
+# Contrôle avant commit : refuse les données personnelles, les fichiers lourds et les dossiers locaux.
+# Activation (une fois) : git config core.hooksPath .githooks
+for py in .venv/Scripts/python.exe .venv/bin/python py python python3; do
+  if "$py" -c "import sys" >/dev/null 2>&1; then
+    exec "$py" scripts/commun/verifier_depot.py --index
+  fi
+done
+echo "verifier_depot : Python introuvable, contrôle non effectué (commit refusé)" >&2
+exit 1

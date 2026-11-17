@@ -1,0 +1,124 @@
+# Forge E-Learning — configuration du site (Jupyter Book 1.x, moteur Sphinx)
+#
+# La racine du livre est la racine du dépôt : les modes d'emploi (outils/), la bibliographie
+# (reference/) et les skills (skills/) sont lus là où ils vivent, sans copie.
+# Construction, depuis la racine du dépôt :
+#   jupyter-book build . --config site/_config.yml --toc site/_toc.yml --path-output site
+# Sortie : site/_build/html/index.html
+
+title: Forge E-Learning
+author: Benoit Delattre
+copyright: "2026"
+logo: _static/identite/logos/forge_e-learning_logo_jour.png
+language: fr
+only_build_toc_files: false
+
+exclude_patterns:
+  - _build
+  - "**/_build"
+  - .venv
+  - "**/.venv"
+  - venv
+  - "**/.ipynb_checkpoints"
+  - .pytest_cache
+  - data
+  - _legacy
+  - _brouillons
+  - _pilotage
+  - dist
+  - donnees
+  - "Claude outputs"
+  - .github
+  - README.md
+  - LICENSE
+  - LICENSE-contenus
+  - "scripts/**/README.md"
+  - "scripts/**/*.html"
+  - "**/node_modules"
+  - _static/README.md
+  - site/README.md
+  - "skills/*/**"
+  - "outils/*/exemples/**"
+
+execute:
+  execute_notebooks: "off"
+
+parse:
+  myst_enable_extensions:
+    - amsmath
+    - colon_fence
+    - deflist
+    - dollarmath
+    - html_admonition
+    - html_image
+    - linkify
+    - replacements
+    - smartquotes
+    - substitution
+    - tasklist
+  myst_url_schemes: [mailto, http, https]
+
+bibtex_bibfiles:
+  - reference/forge.bib
+
+repository:
+  url: https://github.com/Benoit2lattre/Forge_E-Learning
+  branch: main
+
+html:
+  favicon: _static/identite/icones/forge_e-learning_icone_jour_favicon.svg
+  use_repository_button: true
+  use_issues_button: true
+  use_edit_page_button: false
+  home_page_in_navbar: true
+  extra_footer: >-
+    <p>Forge E-Learning — Benoit Delattre ·
+    <a href="https://github.com/Benoit2lattre/Forge_E-Learning">dépôt GitHub</a> ·
+    code sous GPL v3, contenus sous CC BY-NC-SA 4.0</p>
+
+sphinx:
+  extra_extensions:
+    - autoapi.extension
+    - sphinx.ext.napoleon
+    - sphinxcontrib.mermaid
+  config:
+    html_theme: sphinx_book_theme
+    language: fr
+    html_static_path: ["site/_static_site", "_static"]   # _static du dépôt : icônes appelées en HTML par les modes d'emploi
+    html_css_files: ["forge.css"]
+    html_last_updated_fmt: "%d/%m/%Y"
+    myst_heading_anchors: 3
+    numfig: true
+    numfig_format:
+      figure: "Figure %s"
+      table: "Tableau %s"
+      code-block: "Code %s"
+      section: "Section %s"
+    html_theme_options:
+      logo:
+        image_light: _static/identite/logos/forge_e-learning_logo_jour.png
+        image_dark: _static/identite/logos/forge_e-learning_logo_nuit.png
+      announcement: >-
+        <div class="forge-bandeau">
+        <svg class="only-light" width="28" height="28" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><path d="M20 0H48V96H20A20 20 0 0 1 0 76V20A20 20 0 0 1 20 0Z" fill="#14213d"/><path d="M48 0H76A20 20 0 0 1 96 20V76A20 20 0 0 1 76 96H48Z" fill="#f5e6cc"/><path d="M38 18L48 23.833V40.167L38 46Z" fill="#f5e6cc"/><path d="M48 23.833L62 32L48 40.167Z" fill="#14213d"/><path d="M14 56H48V82H24V76H32V70L26 64H22Q16 62 14 56Z" fill="#f5e6cc"/><path d="M48 56H78V64H70L64 70V76H72V82H48Z" fill="#14213d"/></svg>
+        <svg class="only-dark" width="28" height="28" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><path d="M20 0H48V96H20A20 20 0 0 1 0 76V20A20 20 0 0 1 20 0Z" fill="#e0b989"/><path d="M48 0H76A20 20 0 0 1 96 20V76A20 20 0 0 1 76 96H48Z" fill="#1c2d4d"/><path d="M38 18L48 23.833V40.167L38 46Z" fill="#14213d"/><path d="M48 23.833L62 32L48 40.167Z" fill="#e0b989"/><path d="M14 56H48V82H24V76H32V70L26 64H22Q16 62 14 56Z" fill="#14213d"/><path d="M48 56H78V64H70L64 70V76H72V82H48Z" fill="#e0b989"/></svg>
+        <span class="forge-bandeau-titre">Forge E-Learning</span>
+        <span class="forge-bandeau-texte">v0.2 — des outils libres pour passer du cours à l'activité en ligne</span>
+        </div>
+      use_download_button: true
+      use_fullscreen_button: true
+      use_repository_button: true
+      use_issues_button: true
+      repository_url: https://github.com/Benoit2lattre/Forge_E-Learning
+      repository_branch: main
+      path_to_docs: ""
+    # Référence API : lecture statique du code (rien n'est importé ni exécuté)
+    autoapi_dirs: ["scripts"]
+    autoapi_root: site/api
+    autoapi_ignore: ["*vendor*", "*moteur*", "*/outils/promotion_fictive.py"]
+    autoapi_add_toctree_entry: false
+    autoapi_keep_files: false
+    autoapi_python_use_implicit_namespaces: true
+    autoapi_options: [members, undoc-members, show-module-summary]
+    autoapi_member_order: bysource
+    suppress_warnings: ["myst.header"]

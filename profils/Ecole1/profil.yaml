@@ -1,0 +1,81 @@
+# Profil d'établissement d'exemple : Ecole1, école d'ingénieurs fictive (modèle pour créer le profil de votre école)
+# Utilisé par QuizForge (--profil Ecole1) et ExoForge (--profil Ecole1).
+# Les options données sur la ligne de commande l'emportent sur ce fichier.
+# Toute clé absente reprend la valeur par défaut de l'outil.
+
+nom: Ecole1
+# Autres noms acceptés pour --profil (la première lettre suffit aussi : E, D)
+alias: [ecole, E1]
+# true : profil utilisé quand --profil n'est pas donné (un seul profil à true)
+defaut: false
+description: "Ecole1 — exemple d'établissement : Moodle de l'école, cours en français et en anglais (groupes FR/EN)"
+
+# Racine de catégorie Moodle par défaut (vide : <classeur>/<onglet>)
+categorie: ""
+
+langues:
+  base: fr          # langue des colonnes sans suffixe
+  mode: separe      # separe : un test par langue (groupes FR/EN) ; multilang : filtre Moodle requis
+
+# Fichiers produits par « convertir » : xml (import Moodle), gift (ActivePresenter, Moodle), yaml (banque lisible)
+formats: [xml, gift, yaml]
+
+# Types de questions autorisés ; une question d'un autre type est exclue et signalée dans le rapport.
+# Possibles : vf, qcm, appariement, courte, numerique, essai, schema (glisser-déposer sur image, projets du pointeur), trous (texte à trous)
+types: [vf, qcm, appariement, courte, numerique, essai, schema, trous]
+
+# Tags ajoutés à chaque question (filtres de Moodle pour les questions aléatoires)
+tags:
+  fixes: []                 # ex. [Ecole1] ; ceux d'un cours ou d'une séance se donnent plutôt avec --tags "MEF;S1"
+  automatiques: [type]      # type (VF, QCM, Schema…), onglet, classeur
+
+bareme:
+  note: 1                     # note par défaut de chaque question
+  penalite:                   # retrait par nouvel essai (mode « interactif avec essais multiples »)
+    vf: 1                     # 1 = un seul essai utile en vrai/faux
+    defaut: 0.3333333         # autres types ; valeurs Moodle : 1, 0.5, 0.3333333, 0.25, 0.2, 0.1, 0
+  qcm:
+    melanger: true            # mélanger les options
+    numerotation: abc         # abc, ABCD, 123, iii, IIII, none
+    mauvaise_option: negative # QCM à plusieurs réponses : negative (-1/t par mauvaise case), equilibree (-1/(n-t) : cocher tout vaut 0) ou zero (déconseillé)
+  appariement:
+    melanger: true
+  numerique:
+    penalite_unite: 0         # retrait si l'unité est fausse (0 à 1)
+
+quiz:                         # composition des quiz de séance (convertir --seance n ; lu par DiagForge)
+  tirage: partiel             # partiel (k questions tirées sur N par catégorie), commun (mêmes questions pour tous,
+                              # ordre mélangé) ou mixte (séance en commun, rappels des séances précédentes tirés)
+  part_tiree: 0.33            # part des questions d'une catégorie tirée (partiel), au moins 1
+  max_tire: 10                # au plus par catégorie
+  rappel: 0.3                 # part des rappels des séances précédentes dans le quiz
+
+# Charte graphique de l'établissement
+charte:
+  latex_couleurs: Ecole1_ColorScheme.tex    # jeu de couleurs LaTeX (\TB, \TV…) pour les formules ExoForge, rangé dans ce dossier
+  police_titres: "Playfair Display"
+  police_texte: "Montserrat"
+  # chargement des polices dans les exercices ExoForge (en ligne)
+  polices_url: "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Playfair+Display:wght@900&display=swap"
+  couleurs:
+    rouge: DF231D
+    violet: 470A68
+    turquoise: 64CCC9
+    bleu: 5461C8
+    jaune: FFCD00
+    bordeaux: 9B2743
+    encre: 1D1D1D
+    gris_clair: DDDDDD
+    violet_clair: F4EEF8      # fond doux (non issu du thème)
+    orange: FBAE40            # mises en évidence
+  # Rôle de chaque couleur dans les exercices et quiz
+  roles:
+    principal: violet         # titres de cartes, boutons
+    principal_clair: violet_clair
+    erreur: rouge
+    texte: encre
+  # Encadré de la rétroaction générale dans Moodle (XML seulement). Supprimez ce bloc pour un texte brut.
+  retroaction:
+    cadre: violet
+    fond: violet_clair
+    titre: ""                 # ex. "Pour aller plus loin"

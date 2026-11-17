@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuizForge — Pointeur de zones</title>
+<style>
+:root{--navy:#14213D;--navy2:#28406B;--slate:#748CAB;--slate-l:#D3DDEC;--sand:#E0B989;--fond:#F7F6F4;--bord:#CDC9C0;
+  --texte:#1A1815;--texte2:#615C52;--ok:#5C8A66;--ok-l:#D7E6DA;--ko:#B85C50;--ko-l:#EFD9D5}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--texte);background:var(--fond)}
+header{background:var(--navy);color:#fff;padding:10px 16px;display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
+header h1{font-size:18px;margin:0}
+header span{opacity:.8;font-size:13px}
+main{display:grid;grid-template-columns:340px 1fr;gap:12px;padding:12px;align-items:start}
+@media (max-width:900px){main{grid-template-columns:1fr}}
+.panneau{background:#fff;border:1px solid var(--bord);border-radius:10px;padding:12px;margin-bottom:12px}
+.panneau h2{font-size:14px;margin:0 0 8px;color:var(--navy)}
+label.l{display:block;font-size:12px;color:var(--texte2);margin:8px 0 2px}
+input[type=text],textarea,select,input[type=number]{width:100%;font:inherit;padding:5px 7px;border:1px solid var(--bord);border-radius:6px;background:#fff}
+textarea{min-height:52px;resize:vertical}
+button{font:inherit;padding:5px 10px;border:1px solid var(--navy2);border-radius:6px;background:#fff;color:var(--navy);cursor:pointer}
+button:hover{background:var(--slate-l)}
+button.primaire{background:var(--navy);color:#fff;border-color:var(--navy)}
+button.primaire:hover{background:var(--navy2)}
+button.actif{background:var(--navy);color:#fff}
+button:disabled{opacity:.45;cursor:default}
+.ligne{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.outils button{flex:1 1 auto}
+.etiq img.vign{max-height:28px;max-width:70px;border:1px solid var(--bord);background:#fff;vertical-align:middle}
+.etiq{display:grid;grid-template-columns:18px 16px 1fr auto auto auto;gap:6px;align-items:center;padding:4px;border-radius:6px;margin:2px 0}
+.etiq.sel{background:var(--slate-l)}
+.pastille{width:14px;height:14px;border-radius:3px}
+.badge{font-size:11px;padding:1px 6px;border-radius:9px;background:var(--fond);border:1px solid var(--bord);color:var(--texte2);white-space:nowrap}
+.badge.leurre{background:#F5E6CC;border-color:var(--sand)}
+.aide{font-size:12px;color:var(--texte2);margin:6px 0 0}
+.alerte{font-size:12px;color:var(--ko);margin:4px 0 0}
+#scene{background:#fff;border:1px solid var(--bord);border-radius:10px;padding:10px;overflow:auto;min-height:300px}
+#cadre{position:relative;display:inline-block;line-height:0;touch-action:none}
+#cadre img{display:block;user-select:none;-webkit-user-drag:none}
+#cadre svg{position:absolute;inset:0}
+#depot{border:2px dashed var(--bord);border-radius:10px;padding:40px;text-align:center;color:var(--texte2)}
+#depot.survol{border-color:var(--navy2);background:var(--slate-l)}
+.barre{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px;font-size:13px;color:var(--texte2)}
+#coord{font-family:ui-monospace,Consolas,monospace}
+#jetons{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;line-height:1.3}
+.jeton img{display:block;max-height:100px}
+.jeton{border:1px solid #888;border-radius:4px;padding:4px 8px;background:#fff;cursor:pointer;font-size:15px}
+.jeton.sel{outline:3px solid var(--sand)}
+.jeton.pose{opacity:.4}
+#resultat{margin-top:8px;font-size:13px}
+#sortie{width:100%;min-height:110px;font:12px ui-monospace,Consolas,monospace;margin-top:6px}
+#mesure{position:absolute;visibility:hidden;left:-9999px;top:0;line-height:normal}
+#mesure .d{display:inline-block;font-size:15px;padding:5px 8px;border:1px solid #000;white-space:nowrap}
+</style>
+</head>
+<body>
+<header><h1>Pointeur de zones</h1><span>Glisser-déposer sur image et marqueurs Moodle — l'image ne quitte pas votre ordinateur</span></header>
+<main>
+<div>
+  <div class="panneau">
+    <h2>1. Question</h2>
+    <label class="l">Type Moodle</label>
+    <select id="type">
+      <option value="ddimageortext">Glisser-déposer sur image (cases à remplir)</option>
+      <option value="ddmarker">Marqueurs (zones à viser)</option>
+    </select>
+    <label class="l">Titre</label><input type="text" id="titre" value="Schéma-1">
+    <label class="l">Énoncé (HTML permis)</label><textarea id="enonce"></textarea>
+    <div class="ligne" style="margin-top:4px"><button id="imgEnonce">Insérer une image dans l'énoncé…</button>
+      <input type="file" id="fichierEnonce" accept="image/png,image/jpeg,image/gif" hidden><span id="listeMedias" class="aide"></span></div>
+    <label class="l">Rétroaction générale</label><textarea id="feedback"></textarea>
+    <div class="ligne" style="margin-top:8px">
+      <button id="ouvrir">Ouvrir une image…</button>
+      <input type="file" id="fichier" accept="image/png,image/jpeg,image/gif" hidden>
+      <button id="charger">Reprendre un projet…</button>
+      <input type="file" id="fichierJson" accept=".json" hidden>
+    </div>
+    <label class="l">Largeur de l'image de fond dans Moodle</label>
+    <select id="largeur">
+      <option value="600">600 px</option><option value="700" selected>700 px (recommandé)</option>
+      <option value="800">800 px</option><option value="0">taille d'origine</option>
+    </select>
+    <p class="aide">Moodle réduit les grandes images pour les faire tenir dans la page, mais pas les cases ni les marqueurs : à 1 200 px, ils paraissent minuscules. L'image est donc ramenée à cette largeur (zones comprises).</p>
+  </div>
+
+  <div class="panneau">
+    <h2 id="titreEtiq">2. Étiquettes</h2>
+    <div id="listeEtiq"></div>
+    <div class="ligne" style="margin-top:6px">
+      <input type="text" id="nouvelle" placeholder="Nouvelle étiquette (Entrée)" style="flex:1">
+      <button id="ajouter">Ajouter</button>
+    </div>
+    <p class="aide" id="aideEtiq"></p>
+    <div class="ligne" id="optFormules" style="margin-top:6px">Hauteur des formules
+      <input type="number" id="hFormule" value="34" min="16" max="90" style="width:64px"> px</div>
+  </div>
+
+  <div class="panneau">
+    <h2>3. Zones</h2>
+    <div class="ligne outils" id="outils"></div>
+    <div id="optGrille" class="ligne" style="margin-top:8px" hidden>
+      Lignes <input type="number" id="nl" value="6" min="1" style="width:64px">
+      Colonnes <input type="number" id="nc" value="6" min="1" style="width:64px">
+    </div>
+    <p class="aide" id="aideOutil"></p>
+    <div class="ligne" style="margin-top:6px">
+      <button id="suppr" disabled>Supprimer la zone choisie</button>
+      <button id="vider">Tout effacer</button>
+    </div>
+    <div id="alertes"></div>
+  </div>
+
+  <div class="panneau">
+    <h2>4. Récupérer</h2>
+    <div class="ligne">
+      <button class="primaire" id="xml">Fichier Moodle XML</button>
+      <button id="lignes">Lignes pour Excel</button>
+      <button id="sauver">Enregistrer le projet</button>
+    </div>
+    <textarea id="sortie" readonly placeholder="Les lignes pour l'onglet « Schéma » apparaîtront ici (copiées dans le presse-papiers)."></textarea>
+  </div>
+</div>
+
+<div id="scene">
+  <div class="barre">
+    <span>Zoom</span><input type="range" id="zoom" min="50" max="200" value="100" step="10"><span id="zoomVal">100 %</span>
+    <span id="dims"></span><span id="coord"></span>
+    <span style="flex:1"></span>
+    <button id="test">Tester comme un étudiant</button>
+  </div>
+  <div id="depot">Glissez une image ici (PNG ou JPEG), ou utilisez « Ouvrir une image… ».<br>
+    Les coordonnées sont toujours celles de l'image réelle, quel que soit le zoom.</div>
+  <div id="cadre" hidden><img id="image" alt=""><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  <div id="jetons" hidden></div>
+  <div id="resultat"></div>
+</div>
+</main>
+<div id="mesure"></div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const COULEURS = ["#28406B","#BD7A5C","#5C8A66","#C98A3E","#748CAB","#9B2743","#4D6B57","#470A68","#2E86AB","#8A6D3B"];
+const SVGNS = "http://www.w3.org/2000/svg";
+
+let S = nouvelEtat();
+let selEtiq = null, selZone = null, outil = "case", poly = null, glisse = null, test = null, plage = null;
+
+function nouvelEtat(){
+  return {type:"ddimageortext", titre:"Schéma-1", enonce:"", feedback:"", image:null, original:null, largeur:700,
+          medias:{}, etiquettes:[], zones:[], grille:null, prochain:1};
+}
+function id(){ return S.prochain++; }
+function couleur(eid){ const i = S.etiquettes.findIndex(e => e.id === eid); return i < 0 ? "#999" : COULEURS[i % COULEURS.length]; }
+function texteBrut(h){ const d = document.createElement("div"); d.innerHTML = h.replace(/<br\s*\/?>/gi, " / "); return d.textContent; }
+
+/* ------------------------------------------------------------ taille des cases Moodle */
+function tailleCase(){
+  // Moodle dimensionne toutes les cases d'un groupe sur l'étiquette la plus grande
+  const m = $("mesure"); m.innerHTML = "";
+  let w = 40, h = 24;
+  for (const e of S.etiquettes){
+    if (e.image){ w = Math.max(w, e.image.w + 10); h = Math.max(h, e.image.h + 10); continue; }
+    const d = document.createElement("span"); d.className = "d"; d.innerHTML = e.texte; m.appendChild(d);
+    const r = d.getBoundingClientRect(); w = Math.max(w, Math.ceil(r.width)); h = Math.max(h, Math.ceil(r.height));
+  }
+  return {w, h};
+}
+
+/* ------------------------------------------------------------ image */
+function lireUrl(f){ return new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(f); }); }
+function imageDe(url){ return new Promise(ok => { const im = new Image(); im.onload = () => ok(im); im.src = url; }); }
+async function reduire(url, largeurMax, hauteurMax){
+  // rééchantillonne une image (PNG) pour qu'elle tienne dans largeurMax × hauteurMax
+  const im = await imageDe(url);
+  const k = Math.min(1, (largeurMax || 1e9) / im.naturalWidth, (hauteurMax || 1e9) / im.naturalHeight);
+  if (k >= 1) return {url, w: im.naturalWidth, h: im.naturalHeight};
+  const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
+  const g = c.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(im, 0, 0, c.width, c.height);
+  return {url: c.toDataURL("image/png"), w: c.width, h: c.height};
+}
+async function chargerImage(f){
+  const url = await lireUrl(f), im = await imageDe(url);
+  S.original = {nom: f.name.replace(/\.\w+$/, ".png"), url, w: im.naturalWidth, h: im.naturalHeight};
+  S.image = null; S.zones = []; S.grille = null;
+  await appliquerLargeur();
+}
+async function appliquerLargeur(){
+  if (!S.original) return;
+  const ancien = S.image ? S.image.w : null;
+  const r = S.largeur ? await reduire(S.original.url, S.largeur) : {url: S.original.url, w: S.original.w, h: S.original.h};
+  S.image = {nom: S.original.nom, ...r};
+  if (ancien && ancien !== r.w) mettreAEchelle(r.w / ancien);
+  afficher();
+}
+function mettreAEchelle(k){
+  const R = v => Math.round(v * k);
+  for (const z of S.zones){
+    if (z.forme === "poly") z.pts = z.pts.map(([x, y]) => [R(x), R(y)]);
+    else { z.x = R(z.x); z.y = R(z.y); if (z.w !== undefined && z.forme !== "case"){ z.w = R(z.w); z.h = R(z.h); } if (z.r !== undefined) z.r = R(z.r); }
+  }
+  const g = S.grille; if (g){ g.xs = g.xs.map(R); g.ys = g.ys.map(R); }
+}
+$("largeur").onchange = () => { S.largeur = +$("largeur").value; appliquerLargeur(); };
+
+/* image(s) dans l'énoncé : intégrées au fichier XML (@@PLUGINFILE@@) */
+$("imgEnonce").onclick = () => $("fichierEnonce").click();
+$("fichierEnonce").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = await reduire(await lireUrl(f), 800);
+  const nom = f.name.replace(/\.\w+$/, "").replace(/[^\w-]+/g, "_") + ".png";
+  S.medias = S.medias || {}; S.medias[nom] = r.url;
+  S.enonce += `\n<p><img src="@@PLUGINFILE@@/${nom}" alt="" width="${r.w}" height="${r.h}" style="max-width:100%;height:auto"></p>`;
+  e.target.value = ""; afficher();
+};
+
+$("ouvrir").onclick = () => $("fichier").click();
+$("fichier").onchange = e => e.target.files[0] && chargerImage(e.target.files[0]);
+const dep = $("scene");
+dep.addEventListener("dragover", e => { e.preventDefault(); $("depot").classList.add("survol"); });
+dep.addEventListener("dragleave", () => $("depot").classList.remove("survol"));
+let jetonGlisse = null;     // étiquette tirée depuis la réserve en mode test (ne pas la prendre pour une nouvelle image)
+dep.addEventListener("drop", e => {
+  e.preventDefault(); $("depot").classList.remove("survol");
+  if (jetonGlisse !== null){
+    const r = $("svg").getBoundingClientRect();
+    if (test && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom){
+      test.choisi = jetonGlisse; clicTest(point(e));
+    }
+    jetonGlisse = null; return;
+  }
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith("image/")) chargerImage(f);
+  else if (f && f.name.endsWith(".json")) lireProjet(f);
+});
+$("zoom").oninput = () => { $("zoomVal").textContent = $("zoom").value + " %"; dessiner(); };
+
+/* ------------------------------------------------------------ question */
+for (const k of ["titre","enonce","feedback"]) $(k).oninput = () => { S[k] = $(k).value; };
+$("type").onchange = () => {
+  if (S.zones.length && !confirm("Changer de type efface les zones déjà placées. Continuer ?")){ $("type").value = S.type; return; }
+  S.type = $("type").value; S.zones = []; S.grille = null; outil = S.type === "ddimageortext" ? "case" : "rect"; afficher();
+};
+
+/* ------------------------------------------------------------ étiquettes */
+function ajouterEtiquette(){
+  const t = $("nouvelle").value.trim(); if (!t) return;
+  const e = {id: id(), texte: t}; S.etiquettes.push(e); selEtiq = e.id; $("nouvelle").value = "";
+  formules().then(afficher);
+}
+function choisirImageEtiquette(e){
+  const f = document.createElement("input"); f.type = "file"; f.accept = "image/*";
+  f.onchange = async () => { if (!f.files[0]) return;
+    e.image = await reduire(await lireUrl(f.files[0]), 150, 100); e.formule = false; afficher(); };
+  f.click();
+}
+
+/* étiquettes en LaTeX : $…$ -> image PNG (MathJax, chargé à la demande, connexion nécessaire) */
+let mathjax = null;
+function chargerMathJax(){
+  if (mathjax) return mathjax;
+  window.MathJax = {tex: {packages: {"[+]": ["ams"]}}, svg: {fontCache: "none"}, startup: {typeset: false}};
+  mathjax = new Promise((ok, ko) => {
+    const sc = document.createElement("script");
+    sc.src = "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg-full.js";
+    sc.onload = () => MathJax.startup.promise.then(ok); sc.onerror = () => { mathjax = null; ko(); };
+    document.head.appendChild(sc);
+  });
+  return mathjax;
+}
+async function texVersPng(tex, hauteur){
+  const sv = MathJax.tex2svg(tex, {display: false}).querySelector("svg");
+  const vb = sv.getAttribute("viewBox").split(/\s+/).map(Number);
+  // hauteur demandée = hauteur d'une ligne de texte (~1,6 em) ; 1 em = 1000 unités MathJax
+  const echelle = hauteur / 1600;
+  let w = vb[2] * echelle, h = vb[3] * echelle;
+  const k = Math.min(1, 140 / w, 90 / h); w *= k; h *= k;          // limite Moodle des étiquettes images
+  sv.setAttribute("width", w); sv.setAttribute("height", h); sv.setAttribute("style", "color:#000");
+  const src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(sv));
+  const im = await imageDe(src), pad = 4, f = 2;                     // rendu à 2x puis réduit : bords nets
+  const c = document.createElement("canvas"); c.width = Math.ceil(w + 2 * pad) * f; c.height = Math.ceil(h + 2 * pad) * f;
+  const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+  g.drawImage(im, pad * f, pad * f, w * f, h * f);
+  return reduire(c.toDataURL("image/png"), c.width / f, c.height / f);
+}
+async function formules(){
+  const hf = +$("hFormule").value;
+  const aFaire = S.etiquettes.filter(e => /^\s*\$[^$]+\$\s*$/.test(e.texte) && (!e.image || e.formule && e.image.h0 !== hf));
+  if (!aFaire.length) return;
+  try { await chargerMathJax(); }
+  catch (err){ alert("Impossible de charger MathJax : une connexion Internet est nécessaire pour les formules."); return; }
+  for (const e of aFaire){ e.image = await texVersPng(e.texte.trim().slice(1, -1), hf); e.image.h0 = hf; e.formule = true; }
+}
+$("hFormule").onchange = () => formules().then(afficher);
+$("ajouter").onclick = ajouterEtiquette;
+$("nouvelle").onkeydown = e => { if (e.key === "Enter") ajouterEtiquette(); };
+
+function listeEtiquettes(){
+  const L = $("listeEtiq"); L.innerHTML = "";
+  const mk = S.type === "ddmarker";
+  $("titreEtiq").textContent = mk ? "2. Marqueurs" : "2. Étiquettes";
+  $("aideEtiq").innerHTML = mk
+    ? "Choisissez un marqueur, puis tracez sa ou ses zones. Tout ce qui n'est pas une zone sert de leurre : cases vides, zones colorées inutiles."
+    : "Choisissez une étiquette, puis cliquez sur l'image pour poser sa case. Une étiquette sans case est un leurre. HTML permis : <code>&lt;br&gt;</code>, <code>&lt;sub&gt;</code>, <code>&lt;sup&gt;</code>. Une étiquette écrite <code>$…$</code> est une formule LaTeX, transformée en image ; le bouton « image » remplace le texte par un fichier.";
+  $("optFormules").hidden = mk;
+  for (const e of S.etiquettes){
+    const n = S.zones.filter(z => z.etiq === e.id).length;
+    const d = document.createElement("div"); d.className = "etiq" + (e.id === selEtiq ? " sel" : "");
+    const r = document.createElement("input"); r.type = "radio"; r.name = "etq"; r.checked = e.id === selEtiq;
+    r.onchange = () => { selEtiq = e.id; afficher(); };
+    const p = document.createElement("span"); p.className = "pastille"; p.style.background = couleur(e.id);
+    const t = document.createElement("input"); t.type = "text"; t.value = e.texte;
+    t.onchange = async () => { e.texte = t.value; if (e.formule){ delete e.image; e.formule = false; } await formules(); afficher(); };
+    t.onfocus = () => { if (selEtiq !== e.id){ selEtiq = e.id; listeEtiquettes(); } };
+    const im = document.createElement("span");
+    if (e.image){ const v = document.createElement("img"); v.className = "vign"; v.src = e.image.url; v.title = `${e.image.w} × ${e.image.h} px`; im.appendChild(v); }
+    const bi = document.createElement("button"); bi.textContent = e.image ? "texte" : "image"; bi.title = e.image ? "Revenir au texte" : "Remplacer par une image (fichier)";
+    bi.onclick = () => { if (e.image){ delete e.image; e.formule = false; afficher(); } else choisirImageEtiquette(e); };
+    if (!e.formule) im.appendChild(bi);
+    const b = document.createElement("span");
+    b.className = "badge" + (n ? "" : " leurre");
+    b.textContent = n ? (mk ? n + " zone" + (n > 1 ? "s" : "") : "case posée") : (mk ? "aucune zone" : "leurre");
+    const x = document.createElement("button"); x.textContent = "×"; x.title = "Supprimer";
+    if (mk) im.hidden = true;
+    const nb = document.createElement("select"); nb.title = "Nombre de marqueurs à disposition de l'étudiant";
+    for (const [v, t] of [["auto", "auto"], ["0", "∞"], ...[1,2,3,4,5,6].map(k => [String(k), "× " + k])]){
+      const o = document.createElement("option"); o.value = v; o.textContent = t; nb.appendChild(o);
+    }
+    nb.value = String(e.nombre ?? "auto"); nb.style.width = "62px"; nb.hidden = !mk;
+    nb.onchange = () => { e.nombre = nb.value === "auto" ? "auto" : +nb.value; afficher(); };
+    x.onclick = () => { S.etiquettes = S.etiquettes.filter(y => y !== e); S.zones = S.zones.filter(z => z.etiq !== e.id);
+      if (selEtiq === e.id) selEtiq = null; afficher(); };
+    d.append(r, p, t, mk ? nb : im, b, x); L.appendChild(d);
+  }
+}
+
+/* ------------------------------------------------------------ outils */
+const OUTILS = {
+  ddimageortext: [["case","Poser une case"],["deplacer","Choisir / déplacer"]],
+  ddmarker: [["rect","Rectangle"],["cercle","Cercle"],["poly","Polygone"],["grille","Définir une grille"],["cellule","Case de grille"],["deplacer","Choisir / déplacer"]],
+};
+const AIDES = {
+  case: "Cliquez où doit se trouver le centre de la case de l'étiquette choisie. Recliquer ailleurs la déplace.",
+  rect: "Tirez un rectangle à la souris.",
+  cercle: "Cliquez au centre et tirez jusqu'au rayon voulu.",
+  poly: "Cliquez chaque sommet ; double-clic (ou clic sur le premier sommet) pour fermer. Échap annule.",
+  grille: "Indiquez lignes et colonnes, puis tirez du coin haut-gauche au coin bas-droit de la matrice. Grille irrégulière : tirez ensuite chaque trait orange sur le trait de la matrice.",
+  cellule: "Cliquez dans une case : elle devient une zone du marqueur choisi. Tirez sur plusieurs cases pour les remplir d'un coup (les cases déjà prises ne changent pas) : pratique pour un marqueur « 0 » illimité.",
+  deplacer: "Cliquez une zone pour la choisir (Suppr pour l'effacer), tirez-la pour la déplacer.",
+};
+function barreOutils(){
+  const B = $("outils"); B.innerHTML = "";
+  for (const [k, nom] of OUTILS[S.type]){
+    const b = document.createElement("button"); b.textContent = nom; if (k === outil) b.className = "actif";
+    b.onclick = () => { outil = k; poly = null; afficher(); };
+    B.appendChild(b);
+  }
+  $("aideOutil").textContent = AIDES[outil] || "";
+    $("optGrille").hidden = outil !== "grille";
+  $("suppr").disabled = !selZone;
+}
+
+/* ------------------------------------------------------------ coordonnées */
+function point(ev){
+  const r = $("svg").getBoundingClientRect();
+  return {x: Math.round((ev.clientX - r.left) * S.image.w / r.width), y: Math.round((ev.clientY - r.top) * S.image.h / r.height)};
+}
+function borne(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+function dans(z, p){
+  if (z.forme === "case" || z.forme === "rect") return p.x >= z.x && p.x <= z.x + z.w && p.y >= z.y && p.y <= z.y + z.h;
+  if (z.forme === "cercle") return (p.x - z.x) ** 2 + (p.y - z.y) ** 2 <= z.r ** 2;
+  if (z.forme === "poly"){
+    let c = false; const P = z.pts;
+    for (let i = 0, j = P.length - 1; i < P.length; j = i++){
+      if ((P[i][1] > p.y) !== (P[j][1] > p.y) && p.x < (P[j][0] - P[i][0]) * (p.y - P[i][1]) / (P[j][1] - P[i][1]) + P[i][0]) c = !c;
+    }
+    return c;
+  }
+  return false;
+}
+
+/* ------------------------------------------------------------ souris */
+const svg = $("svg");
+svg.addEventListener("pointermove", ev => {
+  if (!S.image) return;
+  const p = point(ev); $("coord").textContent = `x ${p.x}  y ${p.y}`;
+  if (test) return;
+  if (glisse){ glisse.bouger(p); dessiner(); }
+  else if (outil === "poly" && poly){ poly.souris = p; dessiner(); }
+});
+svg.addEventListener("pointerdown", ev => {
+  if (!S.image) return;
+  const p = point(ev);
+  if (test){ clicTest(p); return; }
+  svg.setPointerCapture(ev.pointerId);
+  const exige = () => { if (!selEtiq){ alert(S.type === "ddmarker" ? "Choisissez d'abord un marqueur." : "Choisissez d'abord une étiquette."); return false; } return true; };
+
+  if (outil === "case"){
+    if (!exige()) return;
+    const t = tailleCase();
+    let z = S.zones.find(z => z.etiq === selEtiq);
+    if (!z){ z = {id: id(), etiq: selEtiq, forme: "case"}; S.zones.push(z); }
+    z.x = borne(p.x - Math.round(t.w / 2), 0, S.image.w - t.w); z.y = borne(p.y - Math.round(t.h / 2), 0, S.image.h - t.h);
+    z.w = t.w; z.h = t.h; selZone = z.id;
+    glisse = deplacement(z, p);
+  } else if (outil === "rect"){
+    if (!exige()) return;
+    const z = {id: id(), etiq: selEtiq, forme: "rect", x: p.x, y: p.y, w: 0, h: 0}; S.zones.push(z); selZone = z.id;
+    glisse = {bouger: q => { z.x = Math.min(p.x, q.x); z.y = Math.min(p.y, q.y); z.w = Math.abs(q.x - p.x); z.h = Math.abs(q.y - p.y); },
+              fin: () => { if (z.w < 4 || z.h < 4) S.zones = S.zones.filter(y => y !== z); }};
+  } else if (outil === "cercle"){
+    if (!exige()) return;
+    const z = {id: id(), etiq: selEtiq, forme: "cercle", x: p.x, y: p.y, r: 0}; S.zones.push(z); selZone = z.id;
+    glisse = {bouger: q => { z.r = Math.round(Math.hypot(q.x - p.x, q.y - p.y)); },
+              fin: () => { if (z.r < 4) S.zones = S.zones.filter(y => y !== z); }};
+  } else if (outil === "poly"){
+    if (!exige()) return;
+    if (!poly) poly = {pts: [[p.x, p.y]], souris: p};
+    else {
+      const [x0, y0] = poly.pts[0];
+      if (poly.pts.length >= 3 && Math.hypot(p.x - x0, p.y - y0) < 8) fermerPoly();
+      else poly.pts.push([p.x, p.y]);
+    }
+  } else if (outil === "grille"){
+    const g = S.grille, tol = 7 * S.image.w / svg.getBoundingClientRect().width;
+    const ix = g ? g.xs.findIndex(x => Math.abs(x - p.x) < tol) : -1, iy = g ? g.ys.findIndex(y => Math.abs(y - p.y) < tol) : -1;
+    const dansG = g && p.x > g.xs[0] - tol && p.x < g.xs[g.xs.length - 1] + tol && p.y > g.ys[0] - tol && p.y < g.ys[g.ys.length - 1] + tol;
+    if (dansG && (ix >= 0 || iy >= 0)){
+      // déplacer un trait de la grille (grille irrégulière)
+      glisse = {bouger: q => { if (ix >= 0) g.xs[ix] = q.x; else g.ys[iy] = q.y; },
+                fin: () => { g.xs.sort((a, b) => a - b); g.ys.sort((a, b) => a - b); }};
+    } else {
+      const nl = +$("nl").value || 1, nc = +$("nc").value || 1, q0 = p;
+      const ng = {xs: [], ys: []}; S.grille = ng;
+      const regle = (a, b, n) => Array.from({length: n + 1}, (_, i) => Math.round(a + i * (b - a) / n));
+      glisse = {bouger: q => { ng.xs = regle(Math.min(q0.x, q.x), Math.max(q0.x, q.x), nc); ng.ys = regle(Math.min(q0.y, q.y), Math.max(q0.y, q.y), nl); },
+                fin: () => { if (!ng.xs.length || ng.xs[nc] - ng.xs[0] < 10 || ng.ys[nl] - ng.ys[0] < 10) S.grille = null; }};
+    }
+  } else if (outil === "cellule"){
+    if (!exige()) return;
+    const g = S.grille; if (!g){ alert("Définissez d'abord la grille."); return; }
+    const caseDe = q => [g.ys.findIndex((y, i) => i < g.ys.length - 1 && q.y >= y && q.y < g.ys[i + 1]),
+                         g.xs.findIndex((x, i) => i < g.xs.length - 1 && q.x >= x && q.x < g.xs[i + 1])];
+    const [l0, c0] = caseDe(p);
+    if (c0 < 0 || l0 < 0) return;
+    // clic = une case ; tirer = toute la plage de cases (les cases déjà occupées sont laissées telles quelles)
+    plage = {l0, c0, l1: l0, c1: c0};
+    glisse = {bouger: q => { const [l, c] = caseDe(q); if (l >= 0 && c >= 0){ plage.l1 = l; plage.c1 = c; } },
+              fin: () => {
+                const occupe = new Set(S.zones.filter(z => z.cellule).map(z => z.cellule.join(",")));
+                let n = 0;
+                for (let l = Math.min(plage.l0, plage.l1); l <= Math.max(plage.l0, plage.l1); l++)
+                  for (let c = Math.min(plage.c0, plage.c1); c <= Math.max(plage.c0, plage.c1); c++){
+                    if (occupe.has(`${l + 1},${c + 1}`)) continue;
+                    const z = {id: id(), etiq: selEtiq, forme: "rect", x: g.xs[c] + 2, y: g.ys[l] + 2,
+                               w: g.xs[c + 1] - g.xs[c] - 4, h: g.ys[l + 1] - g.ys[l] - 4, cellule: [l + 1, c + 1]};
+                    S.zones.push(z); selZone = z.id; n++;
+                  }
+                plage = null;
+              }};
+  } else if (outil === "deplacer"){
+    const z = [...S.zones].reverse().find(z => dans(z, p));
+    selZone = z ? z.id : null;
+    if (z) glisse = deplacement(z, p);
+  }
+  afficher();
+});
+svg.addEventListener("pointerup", () => { if (glisse){ glisse.fin && glisse.fin(); glisse = null; afficher(); } });
+svg.addEventListener("dblclick", () => { if (outil === "poly" && poly && poly.pts.length >= 3) fermerPoly(); });
+function fermerPoly(){
+  // le double-clic ajoute deux fois le dernier point : on retire les doublons
+  const P = poly.pts.filter((q, i, a) => i === 0 || q[0] !== a[i - 1][0] || q[1] !== a[i - 1][1]);
+  if (P.length >= 3){ const z = {id: id(), etiq: selEtiq, forme: "poly", pts: P}; S.zones.push(z); selZone = z.id; }
+  poly = null; afficher();
+}
+function deplacement(z, p0){
+  const orig = JSON.parse(JSON.stringify(z));
+  return {bouger: q => {
+    const dx = q.x - p0.x, dy = q.y - p0.y;
+    if (z.forme === "poly") z.pts = orig.pts.map(([x, y]) => [x + dx, y + dy]);
+    else { z.x = orig.x + dx; z.y = orig.y + dy; }
+    if (z.forme === "case"){ z.x = borne(z.x, 0, S.image.w - z.w); z.y = borne(z.y, 0, S.image.h - z.h); }
+  }};
+}
+document.addEventListener("keydown", ev => {
+  if (ev.target.tagName === "INPUT" || ev.target.tagName === "TEXTAREA") return;
+  if (ev.key === "Escape"){ poly = null; afficher(); }
+  if ((ev.key === "Delete" || ev.key === "Backspace") && selZone){ supprimerZone(); ev.preventDefault(); }
+});
+function supprimerZone(){ S.zones = S.zones.filter(z => z.id !== selZone); selZone = null; afficher(); }
+$("suppr").onclick = supprimerZone;
+$("vider").onclick = () => { if (confirm("Effacer toutes les zones ?")){ S.zones = []; S.grille = null; selZone = null; afficher(); } };
+
+/* ------------------------------------------------------------ dessin */
+function el(nom, att, parent){
+  const e = document.createElementNS(SVGNS, nom); for (const k in att) e.setAttribute(k, att[k]); if (parent) parent.appendChild(e); return e;
+}
+function dessiner(){
+  if (!S.image) return;
+  const z = +$("zoom").value / 100, W = S.image.w, H = S.image.h;
+  $("image").style.width = W * z + "px"; $("image").style.height = H * z + "px";
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("width", W * z); svg.setAttribute("height", H * z);
+  svg.innerHTML = "";
+  const g = S.grille;
+  if (g && g.xs && g.xs.length && !test){
+    const st = {stroke: "#C98A3E", "stroke-width": 2, "stroke-dasharray": "5 3"};
+    for (const x of g.xs) el("line", {x1: x, x2: x, y1: g.ys[0], y2: g.ys[g.ys.length - 1], ...st}, svg);
+    for (const y of g.ys) el("line", {y1: y, y2: y, x1: g.xs[0], x2: g.xs[g.xs.length - 1], ...st}, svg);
+  }
+  for (const zn of S.zones){
+    if (test && S.type === "ddmarker" && !test.verifie) continue;      // zones invisibles pour l'étudiant
+    const c = couleur(zn.etiq), choisie = zn.id === selZone && !test;
+    const st = {fill: c, "fill-opacity": test ? 0.15 : 0.22, stroke: c, "stroke-width": choisie ? 3 : 1.5};
+    let cx, cy;
+    if (zn.forme === "case"){
+      const r = el("rect", {x: zn.x, y: zn.y, width: zn.w, height: zn.h, ...st, fill: "#fff", "fill-opacity": .85}, svg);
+      cx = zn.x + zn.w / 2; cy = zn.y + zn.h / 2;
+      if (test){
+        const pose = test.poses[zn.id];
+        r.setAttribute("stroke", test.verifie ? (pose === zn.etiq ? "#5C8A66" : "#B85C50") : "#555");
+        r.setAttribute("stroke-width", test.verifie ? 3 : 1);
+        if (pose){ const e = S.etiquettes.find(e => e.id === pose);
+          if (e.image) el("image", {href: e.image.url, x: cx - e.image.w / 2, y: cy - e.image.h / 2, width: e.image.w, height: e.image.h}, svg);
+          else texte(texteBrut(e.texte), cx, cy, "#1A1815"); }
+        r.onclick = null;
+        continue;
+      }
+    } else if (zn.forme === "rect"){ el("rect", {x: zn.x, y: zn.y, width: zn.w, height: zn.h, ...st}, svg); cx = zn.x + zn.w / 2; cy = zn.y + zn.h / 2; }
+    else if (zn.forme === "cercle"){ el("circle", {cx: zn.x, cy: zn.y, r: zn.r, ...st}, svg); cx = zn.x; cy = zn.y; }
+    else if (zn.forme === "poly"){ el("polygon", {points: zn.pts.map(p => p.join(",")).join(" "), ...st}, svg);
+      cx = zn.pts.reduce((s, p) => s + p[0], 0) / zn.pts.length; cy = zn.pts.reduce((s, p) => s + p[1], 0) / zn.pts.length; }
+    const e = S.etiquettes.find(e => e.id === zn.etiq);
+    if (e && e.image && zn.forme === "case") el("image", {href: e.image.url, x: cx - e.image.w / 2, y: cy - e.image.h / 2, width: e.image.w, height: e.image.h, opacity: .8}, svg);
+    else if (e) texte(texteBrut(e.texte), cx, cy, c);
+  }
+  if (plage && S.grille){
+    const g = S.grille, la = Math.min(plage.l0, plage.l1), lb = Math.max(plage.l0, plage.l1),
+          ca = Math.min(plage.c0, plage.c1), cb = Math.max(plage.c0, plage.c1);
+    el("rect", {x: g.xs[ca], y: g.ys[la], width: g.xs[cb + 1] - g.xs[ca], height: g.ys[lb + 1] - g.ys[la],
+      fill: couleur(selEtiq), "fill-opacity": .15, stroke: couleur(selEtiq), "stroke-width": 2, "stroke-dasharray": "6 3"}, svg);
+  }
+  if (poly && !test){
+    const P = [...poly.pts, [poly.souris.x, poly.souris.y]];
+    el("polyline", {points: P.map(p => p.join(",")).join(" "), fill: "none", stroke: couleur(selEtiq), "stroke-width": 2, "stroke-dasharray": "4 3"}, svg);
+    for (const [x, y] of poly.pts) el("circle", {cx: x, cy: y, r: 3, fill: couleur(selEtiq)}, svg);
+  }
+  if (test && S.type === "ddmarker"){
+    for (const m of test.marques){
+      const ok = test.verifie ? S.zones.some(z => z.etiq === m.etiq && dans(z, m)) : null;
+      const c = ok === null ? "#14213D" : ok ? "#5C8A66" : "#B85C50";
+      el("circle", {cx: m.x, cy: m.y, r: 7, fill: "none", stroke: c, "stroke-width": 2}, svg);
+      el("line", {x1: m.x - 10, x2: m.x + 10, y1: m.y, y2: m.y, stroke: c, "stroke-width": 1.5}, svg);
+      el("line", {y1: m.y - 10, y2: m.y + 10, x1: m.x, x2: m.x, stroke: c, "stroke-width": 1.5}, svg);
+      texte(texteBrut(S.etiquettes.find(e => e.id === m.etiq).texte), m.x + 12, m.y - 12, c, "start");
+    }
+  }
+}
+function texte(t, x, y, c, ancre){
+  const lignes = t.split(" / ");
+  lignes.forEach((l, i) => {
+    const e = el("text", {x, y: y + (i - (lignes.length - 1) / 2) * 14 + 4, "text-anchor": ancre || "middle", "font-size": 12,
+      fill: c, "font-family": "system-ui,sans-serif", "paint-order": "stroke", stroke: "#fff", "stroke-width": 3, "pointer-events": "none"}, svg);
+    e.textContent = l;
+  });
+}
+
+/* ------------------------------------------------------------ contrôles */
+function alertes(){
+  const A = [], t = tailleCase();
+  if (!S.image) return;
+  if (S.type === "ddimageortext"){
+    const poses = S.zones.length;
+    if (S.etiquettes.length && poses === S.etiquettes.length) A.push("Pas de leurre : autant d'étiquettes que de cases. Ajoutez une étiquette sans case.");
+    for (const z of S.zones){
+      if (z.w !== t.w || z.h !== t.h){ z.x += Math.round((z.w - t.w) / 2); z.y += Math.round((z.h - t.h) / 2); z.w = t.w; z.h = t.h; }
+      if (z.x < 0 || z.y < 0 || z.x + z.w > S.image.w || z.y + z.h > S.image.h) A.push(`La case de « ${texteBrut(S.etiquettes.find(e => e.id === z.etiq).texte)} » dépasse de l'image.`);
+    }
+    for (let i = 0; i < S.zones.length; i++) for (let j = i + 1; j < S.zones.length; j++){
+      const a = S.zones[i], b = S.zones[j];
+      if (a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h) A.push("Deux cases se chevauchent.");
+    }
+    A.push(`Taille des cases estimée : ${t.w} × ${t.h} px (étiquette la plus longue).`);
+    if (S.original && S.largeur && S.original.w > S.largeur) A.push(`Image ramenée de ${S.original.w} à ${S.image.w} px de large.`);
+  } else {
+    if (S.etiquettes.some(e => e.image)) A.push("Les marqueurs ne peuvent être que du texte : les étiquettes images seront exportées en texte.");
+    if (S.original && S.largeur && S.original.w > S.largeur) A.push(`Image ramenée de ${S.original.w} à ${S.image.w} px de large.`);
+    for (const e of S.etiquettes) if (!S.zones.some(z => z.etiq === e.id)) A.push(`« ${texteBrut(e.texte)} » n'a aucune zone.`);
+    for (const e of S.etiquettes){ const n = nombreMarqueurs(e), k = S.zones.filter(z => z.etiq === e.id).length;
+      if (n && n < k) A.push(`« ${texteBrut(e.texte)} » : ${n} marqueur(s) pour ${k} zones, la note maximale est impossible.`); }
+    for (const z of S.zones) if (z.forme === "rect" && (z.w < 25 || z.h < 25) || z.forme === "cercle" && z.r < 13)
+      A.push("Une zone fait moins de 25 px : difficile à viser.");
+  }
+  $("alertes").innerHTML = [...new Set(A)].map(a => `<p class="${a.startsWith("Taille") || a.startsWith("Image ramenée") ? "aide" : "alerte"}">${a}</p>`).join("");
+}
+
+function afficher(){
+  $("largeur").value = String(S.largeur ?? 700);
+  $("listeMedias").textContent = Object.keys(S.medias || {}).length ? "Images de l'énoncé : " + Object.keys(S.medias).join(", ") : "";
+  $("type").value = S.type; $("titre").value = S.titre; $("enonce").value = S.enonce; $("feedback").value = S.feedback;
+  if (!OUTILS[S.type].some(([k]) => k === outil)) outil = OUTILS[S.type][0][0];
+  listeEtiquettes(); barreOutils();
+  if (S.image){
+    $("depot").hidden = true; $("cadre").hidden = false;
+    if ($("image").getAttribute("src") !== S.image.url) $("image").src = S.image.url;
+  }
+  $("dims").textContent = S.image ? `Image : ${S.image.w} × ${S.image.h} px` : "";
+  alertes(); dessiner();
+}
+
+/* ------------------------------------------------------------ test étudiant */
+$("test").onclick = () => {
+  if (!S.image) return;
+  if (test){ test = null; $("test").textContent = "Tester comme un étudiant"; $("jetons").hidden = true; $("resultat").textContent = ""; afficher(); return; }
+  test = {poses: {}, marques: [], choisi: null, verifie: false};
+  $("test").textContent = "Revenir à l'édition";
+  jetons(); dessiner();
+};
+function jetons(){
+  const J = $("jetons"); J.hidden = false; J.innerHTML = "";
+  const ordre = [...S.etiquettes].sort(() => Math.random() - .5);
+  for (const e of ordre){
+    const b = document.createElement("span"); b.className = "jeton"; b.dataset.id = e.id;
+    if (e.image && S.type === "ddimageortext") b.innerHTML = `<img src="${e.image.url}" width="${e.image.w}" height="${e.image.h}" alt="">`; else b.innerHTML = e.texte;
+    if (S.type === "ddmarker") b.innerHTML = "⌖ " + e.texte;
+    b.onclick = () => { test.choisi = e.id; [...J.children].forEach(c => c.classList.toggle("sel", +c.dataset.id === e.id)); };
+    // glisser-déposer comme dans Moodle (en plus du clic puis clic)
+    b.draggable = true;
+    b.querySelectorAll("img").forEach(i => i.draggable = false);
+    b.ondragstart = ev => { jetonGlisse = e.id; ev.dataTransfer.setData("text/plain", "etiquette"); ev.dataTransfer.effectAllowed = "move"; };
+    b.ondragend = () => { jetonGlisse = null; };
+    J.appendChild(b);
+  }
+  const v = document.createElement("button"); v.className = "primaire"; v.textContent = "Vérifier";
+  v.onclick = () => { test.verifie = true; bilan(); dessiner(); };
+  const r = document.createElement("button"); r.textContent = "Recommencer";
+  r.onclick = () => { test = {poses: {}, marques: [], choisi: null, verifie: false}; $("resultat").textContent = ""; jetons(); dessiner(); };
+  J.append(v, r);
+  $("resultat").textContent = S.type === "ddmarker"
+    ? "Cliquez un marqueur, puis l'endroit de l'image où le déposer. Les zones sont invisibles, comme pour l'étudiant."
+    : "Cliquez une étiquette, puis la case où la déposer.";
+}
+function nombreMarqueurs(e){
+  // nombre de marqueurs proposés : auto = autant que de zones ; 0 = infini (Moodle)
+  if (e.nombre === undefined || e.nombre === "auto") return Math.max(1, S.zones.filter(z => z.etiq === e.id).length);
+  return e.nombre;
+}
+function clicTest(p){
+  if (test.verifie || !test.choisi) return;
+  if (S.type === "ddimageortext"){
+    const z = S.zones.find(z => dans(z, p)); if (!z) return;
+    for (const k in test.poses) if (test.poses[k] === test.choisi) delete test.poses[k];
+    test.poses[z.id] = test.choisi;
+  } else {
+    const max = nombreMarqueurs(S.etiquettes.find(e => e.id === test.choisi)) || Infinity;
+    const deja = test.marques.filter(m => m.etiq === test.choisi);
+    if (deja.length >= max) test.marques = test.marques.filter(m => m !== deja[0]);
+    test.marques.push({etiq: test.choisi, x: p.x, y: p.y});
+  }
+  dessiner();
+}
+function bilan(){
+  let bon = 0, tot = 0;
+  if (S.type === "ddimageortext"){ for (const z of S.zones){ tot++; if (test.poses[z.id] === z.etiq) bon++; } }
+  else {
+    for (const z of S.zones){ tot++; if (test.marques.some(m => m.etiq === z.etiq && dans(z, m))) bon++; }
+  }
+  $("resultat").textContent = `${bon} / ${tot} zone(s) correcte(s). Les zones justes sont maintenant affichées.`;
+}
+
+/* ------------------------------------------------------------ export */
+function cdata(s){ return "<![CDATA[" + (s || "") + "]]>"; }
+function esc(s){ return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function coords(z){
+  if (z.forme === "case") return `${z.x},${z.y}`;
+  if (z.forme === "rect") return `${z.x},${z.y};${z.w},${z.h}`;
+  if (z.forme === "cercle") return `${z.x},${z.y};${z.r}`;
+  return z.pts.map(p => p.join(",")).join(";");
+}
+const FORME_MOODLE = {rect: "rectangle", cercle: "circle", poly: "polygon"};
+
+function exportXml(){
+  if (!S.image){ alert("Ouvrez d'abord une image."); return; }
+  const b64 = S.image.url.split(",")[1], nom = S.image.nom.replace(/[^\w.-]+/g, "_");
+  const L = ['<?xml version="1.0" encoding="UTF-8"?>', "<!-- Généré par le pointeur QuizForge -->", "<quiz>",
+    `  <question type="${S.type}">`, `    <name><text>${esc(S.titre)}</text></name>`,
+    `    <questiontext format="html"><text>${cdata(S.enonce)}</text>` +
+      Object.entries(S.medias || {}).filter(([n]) => S.enonce.includes("@@PLUGINFILE@@/" + n))
+        .map(([n, u]) => `\n      <file name="${n}" path="/" encoding="base64">${u.split(",")[1]}</file>`).join("") + "</questiontext>",
+    `    <generalfeedback format="html"><text>${cdata(S.feedback)}</text></generalfeedback>`,
+    "    <defaultgrade>1</defaultgrade>", "    <penalty>0.3333333</penalty>", "    <hidden>0</hidden>", "    <shuffleanswers/>",
+    '    <correctfeedback format="html"><text>Votre réponse est correcte.</text></correctfeedback>',
+    '    <partiallycorrectfeedback format="html"><text>Votre réponse est partiellement correcte.</text></partiallycorrectfeedback>',
+    '    <incorrectfeedback format="html"><text>Votre réponse est incorrecte.</text></incorrectfeedback>',
+    "    <shownumcorrect/>"];
+  if (S.type === "ddmarker") L.push("    <showmisplaced/>");
+  L.push(`    <file name="${nom}" path="/" encoding="base64">${b64}</file>`);
+  S.etiquettes.forEach((e, i) => {
+    if (S.type === "ddimageortext"){
+      const fichier = e.image ? `<file name="etiquette_${i + 1}.png" path="/" encoding="base64">${e.image.url.split(",")[1]}</file>` : "";
+      const alt = e.image ? esc(e.formule ? e.texte.trim() : (texteBrut(e.texte) || `étiquette ${i + 1}`)) : null;
+      L.push(`    <drag><no>${i + 1}</no><text>${e.image ? alt : cdata(e.texte)}</text><draggroup>1</draggroup>${fichier}</drag>`);
+    }
+    else L.push(`    <drag><no>${i + 1}</no><text>${esc(texteBrut(e.texte))}</text><noofdrags>${nombreMarqueurs(e)}</noofdrags></drag>`);
+  });
+  S.zones.forEach((z, i) => {
+    const choix = S.etiquettes.findIndex(e => e.id === z.etiq) + 1;
+    if (S.type === "ddimageortext") L.push(`    <drop><text></text><no>${i + 1}</no><choice>${choix}</choice><xleft>${z.x}</xleft><ytop>${z.y}</ytop></drop>`);
+    else L.push(`    <drop><no>${i + 1}</no><shape>${FORME_MOODLE[z.forme]}</shape><coords>${coords(z)}</coords><choice>${choix}</choice></drop>`);
+  });
+  L.push("  </question>", "</quiz>");
+  telecharger(L.join("\n") + "\n", (S.titre || "schema").replace(/[^\w-]+/g, "_") + "_moodle.xml", "application/xml");
+}
+$("xml").onclick = exportXml;
+
+function lignesExcel(){
+  // une ligne par étiquette et par zone, prête à coller dans l'onglet « Schéma »
+  const T = ["Titre\tImage\tType\tÉtiquette\tForme\tCoordonnées"];
+  const typ = S.type === "ddimageortext" ? "cases" : "marqueurs";
+  const FR = {case: "case", rect: "rectangle", cercle: "cercle", poly: "polygone"};
+  for (const e of S.etiquettes){
+    const zs = S.zones.filter(z => z.etiq === e.id);
+    if (!zs.length) T.push([S.titre, S.image ? S.image.nom : "", typ, e.texte, "leurre", ""].join("\t"));
+    for (const z of zs) T.push([S.titre, S.image ? S.image.nom : "", typ, e.texte, FR[z.forme], coords(z)].join("\t"));
+  }
+  const s = T.join("\n"); $("sortie").value = s;
+  if (navigator.clipboard) navigator.clipboard.writeText(s).catch(() => {});
+}
+$("lignes").onclick = lignesExcel;
+
+$("sauver").onclick = () => telecharger(JSON.stringify(S), (S.titre || "schema").replace(/[^\w-]+/g, "_") + "_pointeur.json", "application/json");
+$("charger").onclick = () => $("fichierJson").click();
+$("fichierJson").onchange = e => e.target.files[0] && lireProjet(e.target.files[0]);
+function lireProjet(f){
+  const r = new FileReader();
+  r.onload = () => { try { S = Object.assign(nouvelEtat(), JSON.parse(r.result)); if (!S.original && S.image) S.original = {...S.image}; selEtiq = selZone = null; test = null;
+    if (S.largeur && S.image && S.image.w > S.largeur) appliquerLargeur(); else afficher(); } catch (e){ alert("Fichier de projet illisible."); } };
+  r.readAsText(f);
+}
+function telecharger(texte, nom, type){
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([texte], {type})); a.download = nom;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+afficher();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+Cas plantés à retrouver dans le bilan :
+- Maillage fin : très facile (réussite ≈ 90 %).
+- Unité fréquence : réponse fausse « 2π √(k/m) » plus choisie que la bonne ; leurre « k/m » jamais choisi.
+- Conditions de Dirichlet : peu discriminante (réussite indépendante du niveau).
+- Domaines : très difficile.
+- Corps rigide : 8 copies laissées à corriger.
+- Dommage Miner : erreur fréquente 2 (rapport inversé).
+- Miner : trou 3, « 0 » souvent à la place de « 1 ».
+- Vecteur contrainte : zone 2, tenseur σ̲̲ souvent à la place de σ.
+- Éléments SDOF : Masse -> Rigidité infinie.
+- Étudiants 59 et 60 : tentatives très rapides au hasard.
+- Étudiants 01 à 10 : deux tentatives (la seconde meilleure).
+- Groupe SMB : plus faible sur les textes à trous (Miner, Domaines).

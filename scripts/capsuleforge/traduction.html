@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Relecture de la traduction — CapsuleForge</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{--navy:#14213D;--navy2:#28406B;--slate:#748CAB;--slate-l:#D3DDEC;--sand:#E0B989;--fond:#F7F6F4;--carte:#fff;--bord:#CDC9C0;
+  --texte:#1A1815;--texte2:#615C52;--ok:#5C8A66;--focus:#FFCD00}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--texte);background:var(--fond);display:flex;flex-direction:column}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+header{background:var(--navy);color:#fff;padding:8px 14px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;flex:none}
+header h1{font-size:16px;margin:0;font-weight:600;flex:1;min-width:200px}
+header h1 small{font-weight:400;opacity:.8;margin-left:8px}
+header label{font-size:13px;display:flex;gap:6px;align-items:center}
+header button{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.45);border-radius:6px;padding:4px 10px}
+header button.principal{background:var(--sand);border-color:var(--sand);color:var(--navy);font-weight:600}
+#progres{display:flex;align-items:center;gap:8px;font-size:13px;min-width:200px}
+#progres .rail{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,.25);overflow:hidden;min-width:90px}
+#progres .rail i{display:block;height:100%;background:var(--sand);width:0;transition:width .3s}
+main{flex:1;display:flex;min-height:0}
+nav{flex:none;width:330px;background:var(--carte);border-right:1px solid var(--bord);overflow:auto;padding:8px 6px 30px}
+nav h2{font-size:12px;letter-spacing:.03em;text-transform:uppercase;color:var(--texte2);margin:12px 8px 4px;font-weight:600}
+nav button{display:grid;grid-template-columns:16px 1fr;gap:8px;width:100%;text-align:left;background:none;border:0;border-radius:6px;padding:4px 8px;color:inherit;font-size:13px;align-items:start}
+nav button:hover{background:var(--slate-l)}
+nav button.ici{background:#FBF3E7;box-shadow:inset 3px 0 0 var(--sand)}
+nav button .etat{width:12px;height:12px;border-radius:50%;border:2px solid var(--slate);margin-top:3px}
+nav button.relu .etat{background:var(--ok);border-color:var(--ok)}
+nav button.relu{color:var(--texte2)}
+nav button span:last-child{overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+#zone{flex:1;min-width:0;overflow:auto;padding:14px 20px 30px;display:flex;flex-direction:column;align-items:center}
+.carte{width:100%;max-width:980px;background:var(--carte);border:1px solid var(--bord);border-radius:10px;padding:14px 18px}
+#ctx{font-size:13px;color:var(--texte2);margin-bottom:8px;display:flex;gap:10px;flex-wrap:wrap}
+#ctx b{color:var(--navy)}
+#ctx .statut{margin-left:auto}
+#ctx .statut.relu{color:var(--ok);font-weight:600}
+#image{display:block;max-width:100%;max-height:34vh;margin:0 auto 10px;border-radius:6px;box-shadow:0 1px 6px rgba(20,33,61,.15)}
+#image[hidden]{display:none}
+.voisine{color:#9A958A;font-size:14px;margin:4px 0}
+.bloc{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:8px 0}
+@media (max-width:900px){.bloc{grid-template-columns:1fr}nav{width:240px}}
+.bloc h3{font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:var(--texte2);margin:0 0 4px;display:flex;gap:8px;align-items:center}
+#source{font-size:17px;line-height:1.5;background:var(--fond);border-radius:8px;padding:10px 12px;min-height:84px}
+#cible{width:100%;font-size:17px;line-height:1.5;border:2px solid var(--slate);border-radius:8px;padding:10px 12px;resize:vertical;min-height:84px}
+#cible:focus{border-color:var(--navy2);outline:none;box-shadow:0 0 0 3px rgba(40,64,107,.2)}
+h3 button{font-size:12px;text-transform:none;letter-spacing:0;border:1px solid var(--navy2);background:#fff;color:var(--navy);border-radius:5px;padding:1px 8px}
+h3 button[hidden]{display:none}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.actions button{border:1px solid var(--navy2);background:#fff;color:var(--navy);border-radius:8px;padding:8px 16px;font-size:15px}
+.actions button.principal{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:600;min-width:120px}
+.actions button:hover{filter:brightness(.96)}
+.actions .esp{flex:1}
+.aide{font-size:12px;color:var(--texte2);margin-top:12px;max-width:980px;width:100%}
+kbd{border:1px solid var(--bord);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:#fff;font:12px ui-monospace,Consolas,monospace}
+#msg{font-size:13px;color:var(--texte2);min-height:1.4em;margin-top:8px;max-width:980px;width:100%}
+#fin{max-width:980px;width:100%;text-align:center;padding:30px}
+#fin[hidden]{display:none}
+#fin button{border:0;border-radius:8px;background:var(--sand);color:var(--navy);font-weight:600;padding:10px 20px;font-size:16px;margin:6px}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="titre">Relecture de la traduction</h1>
+  <div id="progres" title="Textes relus"><span id="compte">0 / 0</span><div class="rail"><i id="barre"></i></div></div>
+  <label><input type="checkbox" id="filtre" checked> Non relus seulement</label>
+  <button id="b-importer" class="principal" title="Recopier les traductions dans chapitre.yaml">Importer dans le chapitre</button>
+  <button id="b-quitter" title="Enregistrer et arrêter le serveur">Enregistrer et quitter</button>
+</header>
+<main>
+  <nav id="liste" aria-label="Textes à traduire"></nav>
+  <div id="zone">
+    <div class="carte" id="carte">
+      <div id="ctx"></div>
+      <img id="image" alt="Diapositive au moment de la phrase" hidden>
+      <div class="voisine" id="avant"></div>
+      <div class="bloc">
+        <div><h3>Original <button id="b-orig" hidden title="Écouter la phrase d'origine (Échap)">▶ Écouter</button></h3><div id="source" lang="fr"></div></div>
+        <div><h3><span id="l-cible">Traduction</span> <button id="b-voix" hidden title="Écouter la voix de synthèse de cette phrase">▶ Voix</button></h3>
+          <textarea id="cible" rows="3" spellcheck="true" aria-labelledby="l-cible"></textarea></div>
+      </div>
+      <div class="voisine" id="apres"></div>
+      <div class="actions">
+        <button id="b-prec" title="Texte précédent (Ctrl+←)">← Précédent</button>
+        <span class="esp"></span>
+        <button id="b-arelire" title="Remettre ce texte à relire">↺ À relire</button>
+        <button id="b-zap" title="Passer au suivant sans changer le statut (Ctrl+→)">Zap ↷</button>
+        <button id="b-fait" class="principal" title="Valider la traduction et passer au suivant (Ctrl+Entrée)">✓ Fait</button>
+      </div>
+    </div>
+    <div id="fin" hidden><p id="fin-texte"></p><button id="b-importer2">Importer dans le chapitre</button></div>
+    <div id="msg" role="status"></div>
+    <div class="aide"><kbd>Ctrl</kbd>+<kbd>Entrée</kbd> fait · <kbd>Ctrl</kbd>+<kbd>→</kbd> zap · <kbd>Ctrl</kbd>+<kbd>←</kbd> précédent · <kbd>Échap</kbd> écouter l'original. Tout est enregistré au fur et à mesure dans traductions/&lt;langue&gt;.yaml&#8239;; «&nbsp;Importer&nbsp;» le recopie dans le chapitre.</div>
+  </div>
+</main>
+<audio id="son" preload="none"></audio>
+<script>
+"use strict";
+const $ = id => document.getElementById(id), son = $("son");
+let D = null, E = [], i = 0, aEnvoyer = {}, minuteur = 0, finSon = null;
+const NOMS = { fr: "français", en: "anglais", es: "espagnol", de: "allemand", it: "italien", pt: "portugais" };
+const media = r => "/media/" + r.split("/").map(encodeURIComponent).join("/");
+function message(t) { $("msg").textContent = t || ""; }
+async function poster(chemin, corps) {
+  const r = await fetch(chemin, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corps || {}) });
+  return r.json();
+}
+function noter(e) { aEnvoyer[e.cle] = { cle: e.cle, cible: e.cible, relu: !!e.relu }; clearTimeout(minuteur); minuteur = setTimeout(envoyer, 800); }
+async function envoyer() {
+  clearTimeout(minuteur); const lot = Object.values(aEnvoyer); if (!lot.length) return; aEnvoyer = {};
+  try { const r = await poster("/api/enregistrer", { elements: lot }); if (!r.ok) { message("Erreur\u00a0: " + r.message); lot.forEach(x => aEnvoyer[x.cle] = x); } }
+  catch (e) { message("Serveur injoignable\u00a0: la fenêtre de commande est-elle encore ouverte\u202f?"); lot.forEach(x => aEnvoyer[x.cle] = x); }
+}
+const visible = e => !$("filtre").checked || !e.relu;
+function progres() {
+  const n = E.filter(e => e.relu).length; $("compte").textContent = n + " / " + E.length + " relus"; $("barre").style.width = (E.length ? 100 * n / E.length : 0) + "%";
+}
+function liste() {
+  const z = $("liste"); z.textContent = ""; let g = null;
+  E.forEach((e, k) => {
+    if (!visible(e) && k !== i) return;
+    if (e.contexte.groupe !== g) { g = e.contexte.groupe; const h = document.createElement("h2"); h.textContent = g || "—"; z.appendChild(h); }
+    const b = document.createElement("button"); b.className = (e.relu ? "relu" : "") + (k === i ? " ici" : "");
+    b.innerHTML = "<span class='etat'></span><span></span>"; b.children[1].textContent = e.cible || e.source;
+    b.title = e.source; b.onclick = () => aller(k); z.appendChild(b);
+    if (k === i) setTimeout(() => b.scrollIntoView({ block: "nearest" }), 0);
+  });
+  progres();
+}
+function voisine(k) { const e = E[k]; return e && E[i] && e.contexte.groupe === E[i].contexte.groupe && e.cle.startsWith("pas/") ? e.source : ""; }
+function afficher() {
+  const e = E[i]; if (!e) return;
+  $("carte").hidden = false; $("fin").hidden = true;
+  const c = e.contexte, ctx = $("ctx"); ctx.textContent = "";
+  const b = document.createElement("b"); b.textContent = c.groupe || ""; ctx.append(b, " · " + (c.quoi || ""));
+  const st = document.createElement("span"); st.className = "statut" + (e.relu ? " relu" : ""); st.textContent = (e.relu ? "✓ relu" : "à relire") + (e.moteur ? " · " + e.moteur : ""); ctx.appendChild(st);
+  const im = $("image"); if (c.image) { im.hidden = false; if (im.dataset.f !== c.image) { im.dataset.f = c.image; im.src = media(c.image); } } else im.hidden = true;
+  $("avant").textContent = voisine(i - 1) ? "… " + voisine(i - 1) : ""; $("apres").textContent = voisine(i + 1) ? voisine(i + 1) + " …" : "";
+  $("source").textContent = e.source;
+  $("cible").value = e.cible || ""; $("cible").lang = D.langue; hauteur();
+  $("b-orig").hidden = !(c.audio && c.debut_s != null); $("b-voix").hidden = !c.voix;
+  $("b-voix").textContent = e.modifie ? "▶ Voix (avant correction)" : "▶ Voix";
+  $("b-arelire").disabled = !e.relu;
+  stop(); liste(); $("cible").focus(); const t = $("cible"); t.setSelectionRange(t.value.length, t.value.length);
+}
+function hauteur() { const t = $("cible"); t.style.height = "auto"; t.style.height = Math.max(84, t.scrollHeight + 4) + "px"; }
+function aller(k) { if (k < 0 || k >= E.length) return; i = k; afficher(); }
+function suivant() {
+  for (let k = i + 1; k < E.length; k++) if (visible(E[k])) return aller(k);
+  if ($("filtre").checked) for (let k = 0; k < i; k++) if (!E[k].relu) return aller(k);
+  envoyer(); $("carte").hidden = true; $("fin").hidden = false; liste();
+  const n = E.filter(e => !e.relu).length;
+  $("fin-texte").textContent = n ? n + " texte(s) restent à relire (décochez «\u00a0Non relus seulement\u00a0» pour tout revoir)." : "Tout est relu. Il reste à importer la traduction dans le chapitre.";
+}
+function fait() { const e = E[i]; if (!e) return; if (!e.cible.trim()) { message("Traduction vide\u00a0: écrivez-la, ou «\u00a0Zap\u00a0» pour la laisser."); return; } e.relu = true; noter(e); suivant(); }
+function zap() { suivant(); }
+function stop() { son.pause(); finSon = null; $("b-orig").textContent = "▶ Écouter"; }
+function jouer(audio, d, f, bouton) {
+  if (!son.paused && finSon) { stop(); return; }
+  const u = new URL(media(audio), location.href).href; if (son.src !== u) son.src = u;
+  const go = () => { son.currentTime = Math.max(0, d - 0.1); finSon = f + 0.25; son.play(); if (bouton) bouton.textContent = "⏸ Arrêter"; };
+  if (son.readyState >= 1) go(); else { son.preload = "auto"; son.addEventListener("loadedmetadata", go, { once: true }); son.load(); }
+}
+son.ontimeupdate = () => { if (finSon && son.currentTime >= finSon) stop(); };
+$("b-orig").onclick = () => { const c = E[i].contexte; jouer(c.audio, c.debut_s, c.fin_s, $("b-orig")); };
+$("b-voix").onclick = () => { const v = E[i].contexte.voix; jouer(v.audio, v.debut_s, v.fin_s, null); };
+$("cible").oninput = () => { const e = E[i]; e.cible = $("cible").value; e.modifie = true; noter(e); hauteur(); liste(); };
+$("b-fait").onclick = fait; $("b-zap").onclick = zap; $("b-prec").onclick = () => { for (let k = i - 1; k >= 0; k--) if (visible(E[k])) return aller(k); };
+$("b-arelire").onclick = () => { const e = E[i]; e.relu = false; noter(e); afficher(); };
+$("filtre").onchange = () => liste();
+document.addEventListener("keydown", ev => {
+  if (ev.ctrlKey && ev.key === "Enter") { ev.preventDefault(); fait(); }
+  else if (ev.ctrlKey && ev.key === "ArrowRight") { ev.preventDefault(); zap(); }
+  else if (ev.ctrlKey && ev.key === "ArrowLeft") { ev.preventDefault(); $("b-prec").click(); }
+  else if (ev.key === "Escape") { ev.preventDefault(); if (!$("b-orig").hidden) $("b-orig").click(); }
+});
+async function importer() {
+  await envoyer(); message("Import…");
+  const r = await poster("/api/importer"); message(r.ok ? r.message + " — reconstruire le lecteur pour voir le résultat." : "Erreur\u00a0: " + r.message);
+}
+$("b-importer").onclick = importer; $("b-importer2").onclick = importer;
+$("b-quitter").onclick = async () => { await envoyer(); try { await poster("/api/fin"); } catch (e) {} document.body.innerHTML = "<p style='padding:30px'>Enregistré. Le serveur est arrêté : vous pouvez fermer cet onglet.</p>"; };
+addEventListener("pagehide", () => { const lot = Object.values(aEnvoyer);
+  if (lot.length) navigator.sendBeacon("/api/enregistrer", new Blob([JSON.stringify({ elements: lot })], { type: "application/json" }));
+  navigator.sendBeacon("/api/depart", new Blob(["{}"], { type: "application/json" })); });
+(async () => {
+  try { D = await (await fetch("/api/chapitre")).json(); } catch (e) { message("Serveur injoignable."); return; }
+  if (!D.ok) { message("Erreur : " + D.message); return; }
+  E = D.elements.map(e => Object.assign(e, { cible: e.cible || "" }));
+  $("titre").innerHTML = ""; $("titre").append(D.titre || D.dossier); const sm = document.createElement("small");
+  sm.textContent = "traduction " + (NOMS[D.source] || D.source) + " → " + (NOMS[D.langue] || D.langue); $("titre").appendChild(sm);
+  $("l-cible").textContent = "Traduction (" + (NOMS[D.langue] || D.langue) + ")"; $("source").lang = D.source;
+  const k = E.findIndex(e => !e.relu); if (k < 0) { $("filtre").checked = false; aller(0); } else aller(k);
+})();
+</script>
+</body>
+</html>

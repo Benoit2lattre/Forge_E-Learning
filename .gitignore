@@ -1,0 +1,48 @@
+# ---------------------------------------------------------------------------
+# Forge E-Learning — ce qui ne part jamais en ligne
+# ---------------------------------------------------------------------------
+
+# Dossiers locaux (voir README, section « Dossiers non suivis »)
+_legacy/
+_brouillons/
+_pilotage/
+data/
+Claude outputs/
+.venv/
+venv/
+
+# Générés
+__pycache__/
+*.pyc
+dist/
+*_QuizForge/
+bilan_*.xlsx
+*_fiche_prof.html
+*_images/
+site/_build/
+site/api/
+profils/index_profils.json
+
+# Lourds ou personnels, par type
+*.mp4
+*.mov
+*.aup3
+*.approj
+*.pptx
+*.wav
+*.m4a
+reference/**/*.pdf
+
+# Fichiers temporaires
+~$*
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Exceptions : médias d'exemple courts, autorisés dossier par dossier
+!outils/*/exemples/**/*.mp3
+
+# ExoForge : script d'enregistrement régénéré à chaque construction
+script_enregistrement.md

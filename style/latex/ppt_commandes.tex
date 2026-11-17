@@ -1,0 +1,161 @@
+%%%%%%%%%%%%%%%%%%%%%%%%
+% Package a rajouter   %
+%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage[centertags,intlimits]{amsmath}
+\usepackage{amssymb,amsfonts}
+\usepackage{mathrsfs}
+\usepackage{bbm}
+\usepackage{color}
+\usepackage{xcolor}
+\usepackage{tikz}
+% Pie chart drawing library 
+\usepackage{pgf-pie}  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Macros specifiques (meca) %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+% ENVIRONNEMENTS
+%
+\newcommand {\bea}{\begin{eqnarray*}}
+\newcommand {\eea}{\end{eqnarray*}}
+\newcommand {\dps}{\displaystyle}
+%
+% OPERATEURS TENSORIELS
+%
+\newcommand {\norm}[1]{\left|\!\left| {#1} \right|\!\right|} % norme de ...
+\newcommand {\abs}[1]{\left|\:{#1}\:\right|} % valeur absolue de ...
+\newcommand {\vect}[1]{\underline{#1}} % tenseur d'ordre 1 de ...
+\newcommand {\ten}[1]{\underline{\underline{#1}}} % tenseur d'ordre 2 de ...
+\newcommand {\tran} [1] { \stackrel{t}{\rule{0.07cm}{0.cm}
+\rule{0.cm}{0.15cm} }\hspace{-0.75ex}#1} % transpose de ...
+\newcommand {\tr}[1]{\mbox{Tr}\left( #1\right)} % Trace 
+
+\newcommand {\psc} {.} % produit scalaire
+\newcommand {\pdc} {:} % produit doublement contracte
+
+\newcommand {\dete} {\mbox{det}} % determinant
+\newcommand {\nab}[1]{\vect{\nabla #1}} % gradient lagrangien
+\newcommand {\grad}[1]{\vect{\mbox{grad} #1}} % gradient eulerien
+\newcommand {\Div} { \mbox{Div} } % divergence lagrangienne
+\newcommand {\dive} { \mbox{div} } % divergence eulerienne
+
+\newcommand {\dsaut} {  [\![ } % saut a gauche 
+\newcommand {\fsaut} {  ]\!]} % saut a droite 
+\newcommand {\saut} [1] {\dsaut #1 \fsaut} % saut a travers
+\newcommand {\rest} [2] {\left. #1 \right|_{#2}} % restriction sur ??
+\newcommand {\moy} [1] {\left\langle #1 \right\rangle} % moyenne
+
+%
+% DERIVEES
+%
+\newcommand {\der}[2]{\frac{\partial #1}{\partial #2}} % darivae partielle simple
+\newcommand {\deri}[3]{\frac{\partial^{#3} #1}{\partial #2^{#3}}} % iame darivae partielle 
+\newcommand {\derd}[3]{\frac{\partial^2 #1}{\partial #2\partial #3}} % darivae partielle croisae d'ordre 2
+
+%
+%FONCTIONS PARTICULIERES
+%
+%\newcommand {\uni} {\ten{\rm 1\hspace{-0.59ex}I}} % Tenseur unita
+\newcommand {\uni} {\ten{\mathbbm 1}} % Tenseur unita avec \usepackage{bbm}
+\newcommand {\demi} {\frac{1}{2}} % demi (sic!)
+\newcommand {\R} {\mathbb R} % espace des raels
+\newcommand {\Ci} [1] {\mathscr{C}^{#1}}  % Espace de continuita C_i
+%\newcommand {\ca} {\mathscr{CA}}  % Cinamatiquement admissibles
+%\newcommand {\sa} {\mathscr{SA}}  % Statiquement admissibles
+\newcommand {\ca} {\mbox{CA}}  % Cinamatiquement admissibles
+\newcommand {\sa} {\mbox{SA}}  % Statiquement admissibles
+
+\newcommand {\J} {\mbox{J}} % Fonctionnelle
+
+%
+% TOUTES COORDONNEES
+%
+\newcommand {\Ve}  {\vect{e}} % vecteur de base eulerien 
+\newcommand {\VE}  {\vect{E}} % vecteur de base lagrangien
+\newcommand {\nn} {\vect{n}} % normale a \dDom
+\newcommand {\nt} {\vect{t}} % tangente a \dDom
+\newcommand {\nb} {\vect{b}} % binormale a \dDom
+
+%
+% DOMAINES, FRONTIERES
+%
+
+\newcommand {\Dom} {\Omega} % Domaine
+\newcommand {\dDom} {\partial\Omega } % bord du domaine
+\newcommand {\Do}[1] {\Omega_{#1}} % Domaine  i
+\newcommand {\dDo}[1] {\partial\Omega_{#1} } % bord du domaine i
+\newcommand {\dDof}[1] {S_{T_#1} } % bord a condition de Neumann en i
+\newcommand {\dDou}[1] {S_{\xi_#1} } % bord a condition de Dirichlet en i
+
+%
+%QUANTITES MECANIQUES
+%
+\newcommand {\pl} {\vect{X}} % vecteur position lagrangien
+\newcommand {\pe} {\vect{x}} % vecteur position eulerien
+\newcommand {\T} {\vect{\Phi}} % transformation du systeme
+\newcommand {\F}{\ten F} % gradient de la transformation
+\newcommand {\dep} {\vect{\xi}} % champ de deplacements
+
+
+\newcommand {\C}{\ten C} % dilatations de Cauchy-Green
+\newcommand {\e}{\ten \varepsilon} % deformations de Green-Lagrange
+\newcommand {\sig}{\ten \sigma} % contraintes de Cauchy
+\newcommand {\pio}{\ten \pi} % contraintes de Piola-Kirchhoff
+\newcommand {\B}{\ten B} % contraintes de Boussinesq
+
+\newcommand {\K}{\mathbb K} % Matrice de rigidite
+\newcommand {\FG}{\mathbb F} % Force generalisee
+\newcommand {\CT}{\mathbb C} % Matrice de capacite
+\newcommand {\tg}{\mathbb T} % Temperature generalisee
+
+\newcommand {\ener} {w} % energie libre volumique
+\newcommand {\Ep} {\mathscr{E}^p} % energie Potentielle totale
+\newcommand {\El} {\mathscr{E}} % energie libre totale
+\newcommand {\La} {\mathscr{L}} % Lagrangien du systeme
+\newcommand {\D} {\mathscr{D}} % Disipation du systeme
+\newcommand {\Pe} {\mathscr{P}_e} % Puissance exterieure
+\newcommand {\Pui} {\mathscr{P}_i} % Puissance interieure
+\newcommand {\W} {\mbox{W}} % energie elastique
+
+%
+% VITESSES, TAUX DE QUANTITES MECANIQUES
+%
+\newcommand {\vit}[1] {\dot{#1}} % vitesse de ...
+\newcommand {\acc}[1] {\ddot{#1}} % acceleration de ...
+\newcommand {\vdep} {\vit{\dep}} % champ de vitesse
+\newcommand {\adep} {\vect{\gamma}} % champ d'acceleration
+\newcommand {\vd} {\dep^*} % champ de vitesse CA
+
+%
+% ELEMENTS DIFFERENTIELS
+%
+\newcommand {\dv} {\,d\Omega} % volumique
+\newcommand {\ds} {\,ds} % surfacique eulerienne
+\newcommand {\dS} {\,dS} % surfacique lagrangienne
+\newcommand {\da} {\,da} % surfacique
+\newcommand {\dl} {\,d\ell} % lineique
+\newcommand {\dz} {\,d\z} % en z
+\newcommand {\dt} {\,dt} % en temps
+
+%
+% INTEGRALES
+%
+\newcommand {\intv} { \int_{\Dom} } % sur le domaine
+\newcommand {\ints} { \int_{\dDom} } % sur le bord du domaine
+\newcommand {\intvi}[1] { \int_{\Do{#1}}} % sur le Domaine  i
+\newcommand {\intsi}[1] { \int_{\dDo{#1}}} %  sur le bord du Domaine  i
+\newcommand {\intsu} { \int_{\dDou i} } % sur le dommane en Dirichlet dans la direction i
+\newcommand {\intst} { \int_{\dDof i} } % sur le dommane en Neumann dans la direction i
+
+%
+% Palette de couleur
+%
+\include{New_BD_ColorScheme}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\newcommand {} {}
+
+%

@@ -1,0 +1,95 @@
+/* ExoForge — feuille de style des exercices (style générique).
+   Injectée dans chaque exercice à la construction (scripts/exoforge/generique.py), dans le <style> de moteur/exercice.html.
+   Les couleurs passent toutes par les variables de rôle de :root ; le profil choisi (--profil) les remplace
+   et change les polices (voir style/README.md). Licence : GPL v3 (code). */
+:root{
+  /* couleurs par rôle ; un profil les remplace (charte.roles dans profils/<nom>/profil.yaml) */
+  --principal:#470A68; --principal-clair:#F4EEF8;   /* bandeau, titres, boutons ; fond doux */
+  --succes:#2E7D32; --succes-clair:#E8F5E9;          /* réponse juste */
+  --erreur:#B3161B; --erreur-clair:#FDECEC;          /* réponse fausse */
+  --texte:#1D1D1D; --texte-secondaire:#5F6368;       /* texte courant ; légendes, compteurs */
+  --fond:#FAFAFB; --carte:#FFFFFF; --bord:#DADCE0;   /* page, cartes, filets */
+  --focus:#FFCD00;                                   /* élément montré pendant l'audio */
+  --graphique:#470A68; --points:#B3161B;             /* courbes ; points et repères des graphiques */
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fond);color:var(--texte);
+  font-family:Montserrat,"Segoe UI",system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.5}
+header{background:var(--principal);color:#fff;padding:14px 24px}
+header h1{margin:0;font-size:22px;font-weight:700}
+header p{margin:2px 0 0;font-size:13px;opacity:.85}
+main{max-width:1240px;margin:0 auto;padding:20px 16px 40px;display:grid;
+  grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:20px;align-items:start}
+main.sans-rappel{grid-template-columns:minmax(0,1fr);max-width:860px}
+@media (max-width:900px){main{grid-template-columns:1fr}}
+.panneau{background:var(--carte);border:1px solid var(--bord);border-radius:10px;padding:14px 16px}
+.gauche{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+@media (max-width:900px){.gauche{position:static;max-height:none}}
+.gauche h2{font-size:15px;margin:0 0 8px;color:var(--principal)}
+.gauche img{display:block;max-width:38%;margin:0 auto 6px}
+.rappel-f{margin:2px 0;overflow-x:auto;overflow-y:hidden;font-size:92%}
+.modele{clear:both;margin-top:12px;border:1px dashed var(--principal);border-radius:8px;padding:8px 10px;transition:box-shadow .4s,background .4s}
+.modele h3{font-size:14px;margin:0 0 4px;color:var(--principal)}
+.modele .vide{font-size:13px;color:var(--texte-secondaire)}
+.focus{box-shadow:0 0 0 4px var(--focus);background:#FFFBEA}
+.exergue{border:2px solid var(--principal);border-radius:8px;padding:6px 8px;margin-top:8px;background:var(--principal-clair)}
+.exergue p{margin:0 0 2px;font-weight:700;color:var(--principal);text-align:center}
+.carte{border:1px solid var(--bord);border-radius:10px;padding:14px 16px;margin-bottom:14px;background:#fff}
+.carte.active{border-color:var(--principal);box-shadow:0 0 0 2px rgba(71,10,104,.12);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--principal) 12%,transparent)}
+.carte h2{font-size:17px;margin:0;color:var(--principal)}
+.entete{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.bloc{margin:8px 0;transition:opacity .5s}
+.avenir{visibility:hidden;opacity:0}            /* à venir dans le commentaire : la place est gardée */
+.choix label{transition:opacity .5s}
+.bloc.legende{font-size:14px;color:var(--texte-secondaire);margin-top:-4px}
+.formule{overflow-x:auto;margin:6px 0}
+.choix{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.choix label{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--bord);border-radius:8px;padding:8px 10px;cursor:pointer;background:#fff}
+.choix label:hover{border-color:var(--principal)}
+.choix input{margin-top:5px;accent-color:var(--principal)}
+.choix label.coche{border-color:var(--principal);background:var(--principal-clair)}
+.choix label.juste{border-color:var(--succes);background:var(--succes-clair)}
+.choix label.faux{border-color:var(--erreur);background:var(--erreur-clair)}
+.choix label.bloque{cursor:default}
+.opt-texte p{margin:0}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--principal);padding:8px 14px;background:var(--principal);color:#fff}
+button.secondaire{background:#fff;color:var(--principal)}
+button:disabled{opacity:.45;cursor:default}
+.retour{margin-top:10px;padding:8px 12px;border-radius:6px;font-size:15px}
+.retour.faux{background:var(--erreur-clair);border-left:4px solid var(--erreur)}
+.retour.juste{background:var(--succes-clair);border-left:4px solid var(--succes)}
+.retour.info{background:var(--principal-clair);border-left:4px solid var(--principal)}
+.tentatives{font-size:13px;color:var(--texte-secondaire);margin-top:6px}
+.lecteur{display:flex;align-items:center;gap:8px;flex:none}
+.lecteur button{padding:4px 10px;font-size:13px}
+.lecteur progress{width:110px;height:8px;accent-color:var(--principal)}
+.lecteur{flex-wrap:wrap;justify-content:flex-end}
+.parties{display:flex;gap:3px;align-items:center;font-size:12px;color:var(--texte-secondaire)}
+.parties button{padding:1px 7px;font-size:12px}
+button.mini{padding:2px 9px;font-size:12px;margin-left:8px;vertical-align:middle}
+#sons{margin-left:8px;padding:1px 8px;font-size:12px}
+details.transcription{margin-top:8px;font-size:14px}
+details.transcription summary{cursor:pointer;color:var(--principal)}
+.bilan{font-size:18px;font-weight:700;color:var(--principal)}
+footer{text-align:center;font-size:12px;color:var(--texte-secondaire);padding:0 16px 24px}
+.auteur{border:2px dashed #C98A3E;background:#FFF8EC;border-radius:8px;padding:8px 10px;margin-top:10px;font-size:13px}
+.auteur code{background:#fff;padding:1px 4px}
+.auteur textarea{width:100%;font:12px ui-monospace,Consolas,monospace;min-height:48px}
+.saisie{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.saisie input{flex:1 1 160px;min-width:0;font:inherit;padding:8px 10px;border:1px solid #999;border-radius:6px}
+.sr{position:absolute;left:-9999px}
+table.donnees{border-collapse:collapse;margin:8px 0;font-size:14px}
+table.donnees th,table.donnees td{border-bottom:1px solid var(--bord);padding:3px 10px;text-align:right}
+table.donnees th:first-child,table.donnees td:first-child{text-align:left}
+.graphique{margin:6px 0}
+.graphique svg{display:block;width:100%;height:auto}
+.gauche .texte p{margin:0 0 6px}
+details.acces{font-size:13px;margin:4px 0}
+details.acces summary{cursor:pointer;color:var(--principal)}
+.soustitre{flex-basis:100%;min-height:0;font-size:14px;color:var(--principal);text-align:left}
+#spot{position:fixed;pointer-events:none;border:3px solid #fff;border-radius:12px;
+  box-shadow:0 0 0 9999px rgba(20,0,35,.45);transition:all .35s ease;display:none;z-index:50}
+button.ecouter{padding:4px 10px;font-size:13px;background:#fff;color:var(--principal)}
+.avert{background:#FFF3CD;border:1px solid #E0B989;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:14px}

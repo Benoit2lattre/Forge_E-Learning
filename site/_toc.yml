@@ -1,0 +1,65 @@
+# Sommaire du site Forge E-Learning (chemins relatifs à la racine du dépôt)
+format: jb-book
+root: site/index
+parts:
+  - caption: Présentation
+    chapters:
+      - file: site/pourquoi
+      - file: site/etat_outils
+      - file: CHANGELOG
+  - caption: Les outils
+    chapters:
+      - file: outils/quizforge/README
+      - file: outils/exoforge/README
+      - file: outils/diagforge/README
+      - file: outils/capsuleforge/README
+        sections:
+          - file: outils/capsuleforge/FORMAT
+      - file: site/communs
+        sections:
+          - file: style/README
+          - file: profils/README
+  - caption: Bibliographie
+    chapters:
+      - file: reference/README
+        sections:
+          - file: reference/fiches_methode
+          - file: reference/A_tests_retroaction/README
+            sections:
+              - glob: reference/A_tests_retroaction/[a-z]*
+          - file: reference/B_conception_qcm/README
+            sections:
+              - glob: reference/B_conception_qcm/[a-z]*
+          - file: reference/C_analyse_items/README
+            sections:
+              - glob: reference/C_analyse_items/[a-z]*
+          - file: reference/D_exemples_guidage/README
+            sections:
+              - glob: reference/D_exemples_guidage/[a-z]*
+          - file: reference/E_multimedia/README
+            sections:
+              - glob: reference/E_multimedia/[a-z]*
+          - file: reference/F_video_interactive/README
+            sections:
+              - glob: reference/F_video_interactive/[a-z]*
+          - file: reference/G_restitution/README
+            sections:
+              - glob: reference/G_restitution/[a-z]*
+          - file: reference/H_specificites_stem/README
+            sections:
+              - glob: reference/H_specificites_stem/[a-z]*
+          - file: reference/I_accessibilite/README
+            sections:
+              - glob: reference/I_accessibilite/[a-z]*
+          - file: site/bibliographie_complete
+  - caption: Pour aller plus loin
+    chapters:
+      - file: skills/README
+        sections:
+          - glob: skills/[a-z]*
+      - file: site/prochaines_etapes
+      - file: site/etat_redaction
+      - file: site/api
+        sections:
+          - glob: site/api/scripts/*/*/index
+          - glob: site/api/scripts/*/*/*/index

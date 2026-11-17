@@ -1,0 +1,94 @@
+# Profil : Benoit Delattre — clients personnels, formations professionnelles pour industriels
+# Charte : design system « Benoit Delattre » (tokens/colors.css, tokens/typography.css).
+# Utilisé par QuizForge (--profil Delattre) et ExoForge (--profil Delattre).
+# Les options de la ligne de commande l'emportent sur ce fichier.
+
+nom: Delattre
+# Autres noms acceptés pour --profil (la première lettre suffit aussi : E, D)
+alias: [perso, pro, formation, BD]
+# true : profil utilisé quand --profil n'est pas donné (un seul profil à true)
+defaut: true
+description: "Benoit Delattre — formations professionnelles (charte navy / sable, Lora + Karla)"
+
+# Racine de catégorie Moodle par défaut, ex. le nom du client (vide : <classeur>/<onglet>)
+categorie: ""
+
+langues:
+  base: fr
+  mode: separe      # un test par langue si une version anglaise est demandée par le client
+
+formats: [xml, gift, yaml]
+
+# Possibles : vf, qcm, appariement, courte, numerique, essai, schema (glisser-déposer sur image, projets du pointeur), trous (texte à trous)
+types: [vf, qcm, appariement, courte, numerique, essai, schema, trous]
+
+# Tags ajoutés à chaque question (filtres de Moodle pour les questions aléatoires)
+tags:
+  fixes: []                 # ex. [Ecole1] ; ceux d'un cours ou d'une séance se donnent plutôt avec --tags "MEF;S1"
+  automatiques: [type]      # type (VF, QCM, Schema…), onglet, classeur
+
+bareme:
+  note: 1
+  penalite:
+    vf: 1
+    defaut: 0.3333333
+  qcm:
+    melanger: true
+    numerotation: abc         # abc, ABCD, 123, iii, IIII, none
+    mauvaise_option: equilibree # negative (-1/t par mauvaise case), equilibree (-1/(n-t) : cocher tout vaut 0) ou zero (déconseillé : cocher tout vaut 100 %)
+  appariement:
+    melanger: true
+  numerique:
+    penalite_unite: 0
+
+quiz:                         # composition des quiz de séance (convertir --seance n ; lu par DiagForge)
+  tirage: partiel             # partiel (k questions tirées sur N par catégorie), commun (mêmes questions pour tous,
+                              # ordre mélangé) ou mixte (séance en commun, rappels des séances précédentes tirés)
+  part_tiree: 0.33            # part des questions d'une catégorie tirée (partiel), au moins 1
+  max_tire: 10                # au plus par catégorie
+  rappel: 0.3                 # part des rappels des séances précédentes dans le quiz
+
+charte:
+  latex_couleurs: New_BD_ColorScheme.tex       # jeu de couleurs LaTeX (\TB, \TV…) pour les formules ExoForge, rangé dans ce dossier
+  police_titres: "Lora"
+  police_texte: "Karla"
+  police_code: "IBM Plex Mono"
+  polices_url: "https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Karla:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+  couleurs:
+    navy_900: 14213D          # couleur principale
+    navy_700: 28406B
+    slate_500: 748CAB         # accent froid, information
+    slate_200: D3DDEC
+    sand_400: E0B989          # unique accent chaud, avec parcimonie
+    sand_200: F5E6CC
+    gray_50: F7F6F4           # fond de page
+    gray_300: CDC9C0          # bordures
+    gray_600: 615C52          # texte secondaire
+    gray_900: 1A1815          # texte
+    clay_500: BD7A5C          # accent terre (points de données)
+    green_500: 5C8A66         # succès
+    green_200: D7E6DA
+    amber_500: C98A3E         # avertissement
+    amber_200: F2E0C4
+    terracotta_500: B85C50    # erreur
+    terracotta_200: EFD9D5
+  roles:
+    principal: navy_900
+    principal_clair: slate_200
+    erreur: terracotta_500
+    succes: green_500
+    texte: gray_900
+    texte_secondaire: gray_600
+    fond: gray_50
+    bord: gray_300
+    succes_clair: green_200
+    erreur_clair: terracotta_200
+    graphique: navy_700       # courbes des exercices
+    points: clay_500          # points de données sur les graphiques
+  # Rétroaction générale dans Moodle : encadré « Callout info » du design system
+  # (fond bleu ardoise clair, coins arrondis, pas de bordure colorée à gauche)
+  retroaction:
+    fond: slate_200
+    arrondi: 10
+    titre: ""                 # ex. "À retenir" ; affiché en navy
+    couleur_titre: navy_900

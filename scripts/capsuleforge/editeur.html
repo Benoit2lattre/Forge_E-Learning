@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CapsuleForge — Éditeur</title>
+<!-- CapsuleForge — éditeur visuel de capsule (servi par editeur.py, sur cet ordinateur seulement). Licence : GPL v3. -->
+<style>
+:root{--navy:#14213D;--navy2:#28406B;--slate:#748CAB;--slate-l:#D3DDEC;--sand:#E0B989;--fond:#F7F6F4;--bord:#CDC9C0;
+  --texte:#1A1815;--texte2:#615C52;--ok:#5C8A66;--ok-l:#D7E6DA;--ko:#B85C50;--ko-l:#EFD9D5;--focus:#FFCD00}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font:13px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--texte);background:var(--fond);
+  display:flex;flex-direction:column;overflow:hidden}
+header{background:var(--navy);color:#fff;padding:7px 14px;display:flex;gap:10px;align-items:center;flex:none}
+header h1{font-size:16px;margin:0;white-space:nowrap}
+header #nom{opacity:.8;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header #etat-enr{font-size:12px;opacity:.85;white-space:nowrap}
+button{font:inherit;padding:4px 9px;border:1px solid var(--navy2);border-radius:6px;background:#fff;color:var(--navy);cursor:pointer}
+button:hover:not(:disabled){background:var(--slate-l)}
+button.primaire{background:var(--sand);border-color:var(--sand);color:var(--navy);font-weight:600}
+button.actif{background:var(--navy);color:#fff}
+button.danger{border-color:var(--ko);color:var(--ko)}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+#app{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:minmax(0,1fr) auto;gap:8px;padding:8px}
+#gauche{min-width:0;min-height:0;display:flex;flex-direction:column;gap:6px}
+.barre{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.barre .sep{flex:1}
+.barre label{display:inline-flex;gap:4px;align-items:center;color:var(--texte2)}
+#scene-cadre{flex:1;min-height:0;overflow:auto;background:#2b2b2b;border-radius:8px}
+#scene{position:relative;margin:0 auto;container-type:inline-size;user-select:none;touch-action:none;background:#111}
+#scene img{position:absolute;inset:0;width:100%;height:100%;display:block;-webkit-user-drag:none;pointer-events:none}
+#scene.dessin{cursor:crosshair}
+#trace{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.masque{position:absolute;border:1px dashed #fff;background:repeating-linear-gradient(45deg,rgba(0,0,0,.55) 0 6px,rgba(80,80,80,.55) 6px 12px);pointer-events:none}
+#bulle{z-index:2}.zone{z-index:3}.marque{z-index:4}      /* une zone reste saisissable sous une bulle */
+.zone{position:absolute;border:2px solid var(--focus);background:rgba(255,205,0,.10);cursor:move}
+.zone .h{position:absolute;width:11px;height:11px;background:#fff;border:2px solid var(--navy)}
+.zone .nw{left:-7px;top:-7px;cursor:nwse-resize}.zone .ne{right:-7px;top:-7px;cursor:nesw-resize}
+.zone .sw{left:-7px;bottom:-7px;cursor:nesw-resize}.zone .se{right:-7px;bottom:-7px;cursor:nwse-resize}
+.zone.ou{border-style:dashed;background:rgba(255,205,0,.05)}
+.zone .num{position:absolute;left:2px;top:-1.5em;font-size:11px;background:var(--focus);color:#000;padding:0 4px;border-radius:3px;white-space:nowrap;pointer-events:none}
+.zone .txt{position:absolute;inset:0;display:none;align-items:center;padding-left:.3em;color:#111;white-space:nowrap;overflow:hidden;pointer-events:none}
+.zone.champ{background:#fff;border-color:var(--navy2)}.zone.champ .txt{display:flex}
+.marque{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;border:3px solid #E5484D;background:rgba(229,72,77,.25);cursor:grab}
+.marque::after{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px;background:#E5484D;border-radius:50%}
+#arrivee{border-color:#2E7D32;background:rgba(46,125,50,.25)}#arrivee::after{background:#2E7D32}
+#bulle{position:absolute;max-width:34%;background:#fff;border:2px solid var(--navy);border-radius:8px;padding:.35em .6em;cursor:grab;
+  font-size:max(11px,1.5cqw);line-height:1.3;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+#bulle b{color:var(--navy2)}
+#bulle.libre{border-style:dashed}
+#dessin{position:absolute;border:2px dashed #fff;background:rgba(255,255,255,.15);pointer-events:none}
+#ecarte{position:absolute;left:8px;top:8px;background:var(--ko);color:#fff;padding:2px 8px;border-radius:4px;pointer-events:none}
+
+#panneau{min-height:0;overflow:auto;background:#fff;border:1px solid var(--bord);border-radius:10px;display:flex;flex-direction:column}
+.onglets{display:flex;border-bottom:1px solid var(--bord);flex:none;position:sticky;top:0;background:#fff;z-index:2}
+.onglets button{flex:1;border:0;border-radius:0;border-bottom:3px solid transparent;padding:7px 4px}
+.onglets button.actif{background:#fff;color:var(--navy);border-bottom-color:var(--navy);font-weight:600}
+#contenu{padding:8px 12px 14px}
+label.l{display:block;font-size:12px;color:var(--texte2);margin:8px 0 2px}
+input[type=text],input[type=number],textarea,select{width:100%;font:inherit;padding:4px 6px;border:1px solid var(--bord);border-radius:6px;background:#fff}
+textarea{min-height:58px;resize:vertical}
+.quatre{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.deux{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.coche{display:flex;gap:6px;align-items:flex-start;margin-top:8px}
+.aide{font-size:12px;color:var(--texte2);margin:4px 0 0}
+.alerte{font-size:12px;color:var(--ko);margin:4px 0 0}
+h3{font-size:13px;margin:14px 0 2px;color:var(--navy);border-top:1px solid var(--bord);padding-top:8px}
+.ligne{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.liste-m{list-style:none;margin:4px 0;padding:0}
+.liste-m li{display:flex;justify-content:space-between;align-items:center;padding:2px 0}
+
+#chrono{grid-column:1 / -1;background:#fff;border:1px solid var(--bord);border-radius:10px;padding:6px 8px;min-width:0}
+#piste{display:flex;gap:6px;overflow-x:auto;padding:6px 0 4px;align-items:stretch}
+.etape{flex:none;border:1px solid var(--bord);border-radius:8px;background:var(--fond);display:flex;flex-direction:column;min-width:90px}
+.etape.sel{border-color:var(--navy);box-shadow:0 0 0 1px var(--navy)}
+.et-tete{padding:3px 6px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:var(--navy);max-width:100%}
+.et-tete small{font-weight:400;color:var(--texte2)}
+.et-narr{height:6px;margin:0 4px;border-radius:3px;background:var(--slate-l);position:relative}
+.et-narr i{display:block;height:100%;border-radius:3px;background:var(--slate)}
+.et-narr.long i{background:var(--ko)}
+.et-pas{display:flex;gap:2px;padding:4px;min-height:74px;align-items:stretch}
+.et-pas.cible-depot{background:var(--slate-l)}
+.bloc{position:relative;flex:none;height:66px;border:2px solid var(--bord);border-radius:5px;background:#3a3a3a center/cover no-repeat;cursor:pointer;overflow:hidden}
+.bloc.sel{border-color:var(--focus);box-shadow:0 0 0 2px var(--navy)}
+.bloc.ajoute{border-style:dashed}
+.bloc.ignore{background:repeating-linear-gradient(45deg,#ddd 0 5px,#f3f3f3 5px 10px);opacity:.75}
+.bloc.depot-g{box-shadow:-4px 0 0 var(--ko)}.bloc.depot-d{box-shadow:4px 0 0 var(--ko)}
+.bloc .pied{position:absolute;left:0;right:0;bottom:0;background:rgba(20,33,61,.82);color:#fff;font-size:10px;padding:0 3px;white-space:nowrap;overflow:hidden}
+.bloc.ignore .pied{background:rgba(120,120,120,.8)}
+.bloc .fixe{position:absolute;right:8px;top:1px;font-size:9px;background:var(--sand);color:var(--navy);border-radius:3px;padding:0 3px}
+.bloc .poignee{position:absolute;right:0;top:0;bottom:0;width:7px;cursor:ew-resize;background:rgba(255,255,255,.35)}
+.bloc .poignee:hover{background:var(--focus)}
+#messages{font-size:12px;color:var(--texte2);max-height:54px;overflow:auto;margin-top:2px}
+#messages .e{color:var(--ko)}
+</style>
+<script>
+window.MathJax = {tex: {packages: {"[+]": ["ams", "color", "mathtools"]}, inlineMath: [["$", "$"], ["\\(", "\\)"]]},
+  svg: {fontCache: "global"}, startup: {typeset: false}};
+</script>
+<script src="/vendor/mathjax.js" async></script>
+</head>
+<body>
+<header>
+  <h1>CapsuleForge — Éditeur</h1><span id="nom"></span>
+  <span id="etat-enr"></span>
+  <button id="b-annuler" title="Annuler (Ctrl+Z)">↶</button>
+  <button id="b-retablir" title="Rétablir (Ctrl+Y)">↷</button>
+  <button id="b-apercu" title="Enregistre, construit le lecteur et l'ouvre sur le pas sélectionné">Aperçu</button>
+  <button id="b-enregistrer" class="primaire" title="Enregistrer capsule.yaml (Ctrl+S)">Enregistrer</button>
+</header>
+<div id="app">
+  <section id="gauche">
+    <div class="barre">
+      <button id="z-ajuste" class="actif">Ajusté</button><button id="z-reel">100 %</button>
+      <button id="o-zone" title="Tracer une nouvelle zone de clic sur l'image">Redessiner la zone</button>
+      <button id="o-masque" title="Tracer une zone floutée sur toutes les images">Nouveau masque</button>
+      <label><input type="checkbox" id="v-trajet"> trajet enregistré</label>
+      <span class="sep"></span><span id="info-pas" class="aide" style="margin:0"></span>
+    </div>
+    <div id="scene-cadre"><div id="scene">
+      <img id="ecran" alt="">
+      <svg id="trace"></svg>
+      <div id="masques"></div>
+      <div id="variantes"></div>
+      <div id="zone" class="zone"><span class="txt"></span><span class="h nw"></span><span class="h ne"></span><span class="h sw"></span><span class="h se"></span></div>
+      <div id="arrivee" class="marque" title="Arrivée du glisser"></div>
+      <div id="point" class="marque" title="Point du clic"></div>
+      <div id="bulle" title="Glisser pour placer la bulle"></div>
+      <div id="dessin" hidden></div>
+      <div id="ecarte" hidden>pas écarté</div>
+    </div></div>
+  </section>
+  <aside id="panneau">
+    <div class="onglets"><button data-o="pas" class="actif">Pas</button><button data-o="etape">Étape</button><button data-o="capsule">Capsule</button></div>
+    <div id="contenu"></div>
+  </aside>
+  <section id="chrono">
+    <div class="barre">
+      <strong>Chronologie</strong>
+      <label for="a-type">Nouveau pas :</label>
+      <select id="a-type" style="width:auto" title="Type du pas à ajouter avant ou après le pas sélectionné">
+        <option value="montrer">Montrer une zone (sans geste)</option>
+        <option value="clic">Clic</option><option value="double_clic">Double-clic</option><option value="clic_droit">Clic droit</option>
+        <option value="saisie">Saisie de texte</option><option value="touche">Touche ou raccourci</option>
+        <option value="glisser">Glisser</option>
+        <option value="image">Image importée (diapositive, capture)…</option>
+      </select>
+      <button id="a-avant" title="Ajouter avant le pas sélectionné">+ avant</button>
+      <button id="a-apres" title="Ajouter après le pas sélectionné">+ après</button>
+      <button id="c-couper" title="Une nouvelle étape commence au pas sélectionné">Couper l'étape ici</button>
+      <button id="c-fusion" title="Réunir cette étape avec la précédente">Fusionner avec la précédente</button>
+      <button id="c-ecarter" title="Écarter ou rétablir le pas (Suppr)">Écarter</button>
+      <button id="c-dupliquer">Dupliquer</button>
+      <button id="c-supprimer" class="danger" title="Supprimer un pas ajouté (un pas enregistré s'écarte)">Supprimer</button>
+      <span class="sep"></span><span id="totaux" class="aide" style="margin:0"></span>
+      <label>échelle <input type="range" id="echelle" min="8" max="110" value="34" style="width:90px"></label>
+    </div>
+    <div id="piste"></div>
+    <div id="messages"></div>
+  </section>
+</div>
+<input type="file" id="f-image" accept="image/png,image/jpeg,image/webp" hidden>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const scene = $("scene"), ecran = $("ecran"), zone = $("zone"), point = $("point"), arrivee = $("arrivee"), bulle = $("bulle");
+let C = null, IMAGES = [], NOM = "", W = 1, H = 1;
+let sel = {ie: 0, ip: 0}, onglet = "pas", outil = null, zoom = "ajuste", pps = 34;
+let hist = [], ih = -1, modifie = false, T = {}, DEP = {};
+
+const LIB = {clic: "Clic", double_clic: "Double-clic", clic_droit: "Clic droit", clic_milieu: "Clic molette", glisser: "Glisser",
+  molette: "Molette", saisie: "Saisie de texte", touche: "Touche ou raccourci", montrer: "Montrer une zone (sans geste)"};
+const ICONE = {clic: "●", double_clic: "◎", clic_droit: "◐", clic_milieu: "◍", glisser: "⇢", molette: "↕", saisie: "⌨", touche: "⏎", montrer: "▭"};
+const BULLE0 = {clic: "Cliquez ici.", double_clic: "Double-cliquez ici.", clic_droit: "Cliquez ici avec le bouton droit.",
+  saisie: "Tapez ****.", touche: "Appuyez sur ****.", glisser: "Faites glisser jusqu'ici.", montrer: ""};
+
+// ---------------------------------------------------------------- outils
+const echap = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const md = s => echap(s || "").replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\n/g, "<br>");
+function maths(el, ensuite) {
+  if (!/\$|\\\(/.test(el.textContent)) return;
+  if (!window.MathJax || !MathJax.typesetPromise) {          // MathJax pas encore chargé : on réessaie (10 s au plus)
+    el._essais = (el._essais || 0) + 1;
+    if (el._essais < 50 && document.querySelector('script[src*="mathjax"]')) setTimeout(() => maths(el, ensuite), 200);
+    return;
+  }
+  el._essais = 0;
+  MathJax.typesetPromise([el]).then(() => ensuite && ensuite()).catch(() => {});
+}
+// Nom affiché d'un pas : E3-P4 (étape 3, 4e pas joué) ; un pas écarté prend une décimale (E3-P4.1).
+// Ce nom suit les déplacements ; l'identifiant (p014, a001) reste fixe et sert au fichier.
+let ETIQ = {};
+function etiqueter() {
+  ETIQ = {};
+  etapes().forEach((e, ie) => { let n = 0, k = 0; e.pas.forEach(p => {
+    if (p.ignorer) ETIQ[p.id] = `E${ie + 1}-P${n}.${++k}`; else { k = 0; ETIQ[p.id] = `E${ie + 1}-P${++n}`; } }); });
+}
+const CLICS = ["clic", "double_clic", "clic_droit", "clic_milieu"];
+const texteBrut = s => (s || "").replace(/\*\*/g, "");
+const pc = (v, tot) => (100 * v / tot) + "%";
+const borne = (v, a, b) => Math.max(a, Math.min(b, v));
+const etapes = () => C.etapes;
+const pasSel = () => (etapes()[sel.ie] || {pas: []}).pas[sel.ip];
+const tousPas = () => etapes().flatMap((e, ie) => e.pas.map((p, ip) => ({p, ie, ip})));
+const duree = s => s >= 60 ? `${Math.floor(s / 60)} min ${String(Math.round(s % 60)).padStart(2, "0")}` : `${Math.round(s * 10) / 10} s`;
+const narrS = e => { const n = (e.narration || "").trim().split(/\s+/).filter(Boolean).length; return n / 2.5; };   // ≈ 150 mots/min
+function placer(el, x, y, l, h) {
+  el.style.left = pc(x, W); el.style.top = pc(y, H);
+  if (l != null) { el.style.width = pc(l, W); el.style.height = pc(h, H); }
+}
+function coords(ev) { const r = scene.getBoundingClientRect(); return [(ev.clientX - r.left) * W / r.width, (ev.clientY - r.top) * H / r.height]; }
+
+// Durées d'un pas en mode Regarder — même calcul que dans lecteur.html (tempsPas).
+const dureeBulle = p => p.bulle ? Math.min(5000, Math.max(1800, 900 + 45 * texteBrut(p.bulle).length)) : 600;
+function tempsPas(p, depuis, sansReglage) {
+  const immobile = ["touche", "saisie", "montrer"].includes(p.action);
+  const d = depuis ? Math.hypot(p.point[0] - depuis[0], p.point[1] - depuis[1]) : 0;
+  let trajet = immobile ? 0 : Math.round(Math.min(1500, Math.max(450, 350 + 1300 * d / W)));
+  const geste = p.action === "saisie" ? 90 * (p.texte || "").length + 700 : p.action === "glisser" ? 900
+    : (immobile || p.action === "molette") ? 0 : 250 + (p.action === "double_clic" ? 160 : 0);
+  let b = dureeBulle(p);
+  if (p.lecture_s > 0 && !sansReglage) {
+    const total = p.lecture_s * 1000;
+    if (trajet) trajet = Math.round(Math.min(trajet, Math.max(200, (total - geste) * 0.4)));
+    b = Math.max(300, total - geste - trajet);
+  }
+  return {trajet, geste, bulle: b, total: trajet + geste + b};
+}
+function calculerTemps() {
+  etiqueter();
+  T = {}; DEP = {}; let pos = null;
+  for (const {p} of tousPas()) {
+    if (p.ignorer) continue;
+    DEP[p.id] = pos;
+    T[p.id] = {reel: tempsPas(p, pos), auto: tempsPas(p, pos, true)};
+    pos = ["touche", "saisie", "montrer"].includes(p.action) ? (pos || p.point) : (p.arrivee || p.point);
+  }
+}
+const totalEtape = e => e.pas.reduce((s, p) => s + (p.ignorer ? 0 : T[p.id].reel.total), 0) / 1000;
+
+// ---------------------------------------------------------------- historique, enregistrement
+function valider(tout) {
+  const s = JSON.stringify(C);
+  if (s !== hist[ih]) { hist.splice(ih + 1); hist.push(s); ih++; if (hist.length > 200) { hist.shift(); ih--; } modifie = true; }
+  if (tout) rendTout(); else { rendChrono(); majScene(); }
+  majEtat();
+}
+function revenir(d) {
+  if (ih + d < 0 || ih + d >= hist.length) return;
+  ih += d; C = JSON.parse(hist[ih]); modifie = true; bornerSel(); rendTout(); majEtat();
+}
+function bornerSel() {
+  sel.ie = borne(sel.ie, 0, etapes().length - 1);
+  sel.ip = borne(sel.ip, 0, Math.max(0, etapes()[sel.ie].pas.length - 1));
+}
+function majEtat(txt) {
+  $("etat-enr").textContent = txt || (modifie ? "modifications non enregistrées" : "enregistré");
+  $("b-annuler").disabled = ih <= 0; $("b-retablir").disabled = ih >= hist.length - 1;
+}
+function messages(r) {
+  const l = [...(r.erreurs || []).map(m => `<div class="e">Erreur : ${echap(m)}</div>`),
+    ...(r.avertissements || []).filter(m => !/bulle générique|sans narration|pas écartés/.test(m)).map(m => `<div>${echap(m)}</div>`)];
+  $("messages").innerHTML = l.join("").replace(/\bpas ([ap]\d+)\b/g, (m, id) => ETIQ[id] ? `${ETIQ[id]} (${id})` : m);
+}
+async function enregistrer() {
+  majEtat("enregistrement…");
+  try {
+    const r = await (await fetch("/api/capsule", {method: "POST", body: JSON.stringify(C)})).json();
+    if (!r.ok) throw new Error(r.message);
+    modifie = false; majEtat(`enregistré à ${r.heure}`); messages(r); return true;
+  } catch (e) { majEtat("échec de l'enregistrement"); $("messages").innerHTML = `<div class="e">Enregistrement impossible : ${echap(e.message)} (la fenêtre de CapsuleForge est-elle encore ouverte ?)</div>`; return false; }
+}
+async function apercu() {
+  const fen = window.open("about:blank");
+  if (!(await enregistrer())) { if (fen) fen.close(); return; }
+  majEtat("construction de l'aperçu…");
+  const r = await (await fetch("/api/apercu", {method: "POST"})).json();
+  if (!r.ok) { if (fen) fen.close(); $("messages").innerHTML = `<div class="e">${echap(r.message)}</div>`; return majEtat(); }
+  const p = pasSel(), id = p && !p.ignorer ? p.id : "";
+  if (fen) fen.location = r.url + "?t=" + Date.now() + "#" + id;
+  majEtat();
+}
+
+// ---------------------------------------------------------------- scène
+function tailleScene() {
+  const c = $("scene-cadre");
+  if (zoom === "reel") { scene.style.width = W + "px"; scene.style.height = H + "px"; return; }
+  const k = Math.min((c.clientWidth - 2) / W, (c.clientHeight - 2) / H);
+  scene.style.width = Math.floor(W * k) + "px"; scene.style.height = Math.floor(H * k) + "px";
+}
+function bulleAuto(p) {
+  const c = (p.cible && p.cible.cadre) || [p.point[0] - 60, p.point[1] - 24, 120, 48];
+  const bw = bulle.offsetWidth * W / scene.clientWidth, bh = bulle.offsetHeight * H / scene.clientHeight;
+  let x = c[0] + c[2] / 2 - bw / 2, y = c[1] + c[3] + H * 0.015;
+  if (y + bh > H * 0.98) y = c[1] - bh - H * 0.015;
+  return [borne(x, W * 0.005, W - bw - W * 0.005), Math.max(H * 0.005, y)];
+}
+let imageCourante = null;
+function majScene() {
+  const p = pasSel();
+  tailleScene();
+  $("masques").innerHTML = (C.masques || []).map(m => `<div class="masque" style="left:${pc(m[0], W)};top:${pc(m[1], H)};width:${pc(m[2], W)};height:${pc(m[3], H)}"></div>`).join("");
+  for (const el of [zone, point, arrivee, bulle]) el.hidden = !p;
+  majVariantes(p);
+  $("ecarte").hidden = !(p && p.ignorer);
+  if (!p) { ecran.removeAttribute("src"); $("trace").innerHTML = ""; $("info-pas").textContent = ""; return; }
+  if (imageCourante !== p.image) { imageCourante = p.image; ecran.src = "/" + p.image; }
+  const c = p.cible && p.cible.cadre;
+  zone.hidden = !c || p.action === "touche"; if (c) placer(zone, c[0], c[1], c[2], c[3]);      // une touche n'a pas de zone
+  zone.classList.toggle("champ", p.action === "saisie");
+  if (c && p.action === "saisie") { const t = zone.querySelector(".txt"); t.textContent = p.texte || ""; t.style.fontSize = Math.max(8, c[3] * scene.clientHeight / H * 0.6) + "px"; }
+  point.hidden = p.action === "montrer" || p.action === "touche"; placer(point, p.point[0], p.point[1]);
+  arrivee.hidden = !(p.action === "glisser" && p.arrivee); if (p.arrivee) placer(arrivee, p.arrivee[0], p.arrivee[1]);
+  bulle.hidden = !p.bulle;
+  if (bulle.dataset.t !== (p.bulle || "")) { bulle.dataset.t = p.bulle || ""; bulle.innerHTML = md(p.bulle); maths(bulle, majScene); }
+  bulle.classList.toggle("libre", !!p.bulle_position);
+  if (p.bulle) { const b = p.bulle_position || bulleAuto(p); placer(bulle, b[0], b[1]); }
+  // tracé : arc rejoué par le lecteur (pointillé), trajet enregistré (option)
+  let svg = "";
+  const dep = DEP[p.id];
+  if (dep && !point.hidden && !p.ignorer) {
+    const a = dep, b = p.point, dx = b[0] - a[0], dy = b[1] - a[1], cx = (a[0] + b[0]) / 2 - dy * 0.12, cy = (a[1] + b[1]) / 2 + dx * 0.12;
+    const rejoue = (p.trajectoire || (C.reglages || {}).trajectoire || "arc") === "enregistree" && p.trajet && p.trajet.length > 2;
+    if (!rejoue) svg += `<path d="M${a[0]} ${a[1]} Q${cx} ${cy} ${b[0]} ${b[1]}" fill="none" stroke="#FFCD00" stroke-width="${W / 500}" stroke-dasharray="${W / 160} ${W / 200}"/>`;
+    if (p.trajet && p.trajet.length > 1 && ($("v-trajet").checked || rejoue))
+      svg += `<polyline points="${p.trajet.map(q => q[0] + "," + q[1]).join(" ")}" fill="none" stroke="${rejoue ? "#FFCD00" : "#7fd"}" stroke-width="${W / 700}" opacity=".8"/>`;
+    svg += `<circle cx="${a[0]}" cy="${a[1]}" r="${W / 300}" fill="#FFCD00"/>`;
+  }
+  if (p.action === "glisser" && p.arrivee) svg += `<line x1="${p.point[0]}" y1="${p.point[1]}" x2="${p.arrivee[0]}" y2="${p.arrivee[1]}" stroke="#2E7D32" stroke-width="${W / 500}"/>`;
+  $("trace").setAttribute("viewBox", `0 0 ${W} ${H}`); $("trace").innerHTML = svg;
+  const t = T[p.id];
+  $("info-pas").textContent = `${ETIQ[p.id]} (${p.id}) · ${LIB[p.action] || p.action}` + (t ? ` · ${duree(t.reel.total / 1000)} à la lecture` : " · écarté");
+}
+
+// glisser un élément de la scène : met à jour le modèle pendant le geste, valide à la fin
+function geste(el, debut, mouv) {
+  el.addEventListener("pointerdown", ev => {
+    if (ev.button || outil) return;
+    ev.preventDefault(); ev.stopPropagation();
+    const p = pasSel(), p0 = coords(ev), ctx = debut(p, ev);
+    el.setPointerCapture(ev.pointerId);
+    const mv = e => { const q = coords(e); mouv(p, q[0] - p0[0], q[1] - p0[1], ctx, q); majScene(); majChampsGeo(); };
+    const up = () => { el.removeEventListener("pointermove", mv); el.removeEventListener("pointerup", up); valider(); };
+    el.addEventListener("pointermove", mv); el.addEventListener("pointerup", up);
+  });
+}
+// Une zone (principale ou variante) : glisser le corps la déplace, les coins la redimensionnent.
+function attacherZone(el, lire, ecrire) {
+  geste(el, p => ({c: [...lire(p)], pt: [...p.point]}), (p, dx, dy, o) => {
+    const c0 = o.c; ecrire(p, [borne(c0[0] + dx, 0, W - c0[2]), borne(c0[1] + dy, 0, H - c0[3]), c0[2], c0[3]].map(Math.round), o, true);
+  });
+  for (const coin of ["nw", "ne", "sw", "se"]) {
+    geste(el.querySelector("." + coin), p => ({c: [...lire(p)]}), (p, dx, dy, o) => {
+      const c0 = o.c; let [x, y, l, h] = c0;
+      if (coin[1] === "w") { x = borne(c0[0] + dx, 0, c0[0] + c0[2] - 8); l = c0[0] + c0[2] - x; } else l = borne(c0[2] + dx, 8, W - x);
+      if (coin[0] === "n") { y = borne(c0[1] + dy, 0, c0[1] + c0[3] - 8); h = c0[1] + c0[3] - y; } else h = borne(c0[3] + dy, 8, H - y);
+      ecrire(p, [x, y, l, h].map(Math.round), o, false);
+    });
+  }
+}
+attacherZone(zone, p => p.cible.cadre, (p, c, o, deplace) => {
+  p.cible.cadre = c; if (p.cible.origine !== "manuelle") p.cible.origine = "manuelle";
+  const c0 = o.c, q = o.pt;                     // la zone emporte le point du clic quand il est dedans
+  if (deplace && q && q[0] >= c0[0] && q[0] <= c0[0] + c0[2] && q[1] >= c0[1] && q[1] <= c0[1] + c0[3]) p.point = [q[0] + c[0] - c0[0], q[1] + c[1] - c0[1]];
+});
+// zones des gestes acceptés en plus du geste principal (p.ou)
+function majVariantes(p) {
+  const cont = $("variantes"), l = p ? (p.ou || []).map((q, i) => [q, i]).filter(([q]) => q.cadre) : [];
+  if (cont.children.length !== l.length || l.some(([, i], k) => +cont.children[k].dataset.i !== i)) {
+    cont.innerHTML = "";
+    for (const [, i] of l) {
+      const d = document.createElement("div"); d.className = "zone ou"; d.dataset.i = i;
+      d.innerHTML = `<span class="num"></span><span class="h nw"></span><span class="h ne"></span><span class="h sw"></span><span class="h se"></span>`;
+      cont.appendChild(d);
+      attacherZone(d, p => p.ou[i].cadre, (p, c) => { p.ou[i].cadre = c; });
+    }
+  }
+  l.forEach(([q, i], k) => { const d = cont.children[k]; placer(d, ...q.cadre); d.querySelector(".num").textContent = `ou : ${(LIB[q.action] || "").toLowerCase()}`; });
+}
+geste(point, p => [...p.point], (p, dx, dy, a) => { p.point = [borne(a[0] + dx, 0, W), borne(a[1] + dy, 0, H)].map(Math.round); });
+geste(arrivee, p => [...p.arrivee], (p, dx, dy, a) => { p.arrivee = [borne(a[0] + dx, 0, W), borne(a[1] + dy, 0, H)].map(Math.round); });
+geste(bulle, p => p.bulle_position || bulleAuto(p), (p, dx, dy, a) => { p.bulle_position = [borne(a[0] + dx, 0, W - 40), borne(a[1] + dy, 0, H - 20)].map(Math.round); });
+
+// tracer une zone ou un masque
+function choisirOutil(o) {
+  outil = outil === o ? null : o;
+  $("o-zone").classList.toggle("actif", outil === "zone"); $("o-masque").classList.toggle("actif", outil === "masque");
+  scene.classList.toggle("dessin", !!outil);
+}
+scene.addEventListener("pointerdown", ev => {
+  if (!outil || ev.button) return;
+  ev.preventDefault();
+  const a = coords(ev), d = $("dessin"); let r = null;
+  scene.setPointerCapture(ev.pointerId);
+  const mv = e => { const b = coords(e); r = [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1])].map(Math.round); d.hidden = false; placer(d, ...r); };
+  const up = () => {
+    scene.removeEventListener("pointermove", mv); scene.removeEventListener("pointerup", up); d.hidden = true;
+    const o = outil; choisirOutil(o);
+    if (!r || r[2] < 6 || r[3] < 6) return;
+    if (o === "masque") { (C.masques = C.masques || []).push(r); onglet = "capsule"; }
+    else {
+      const p = pasSel(); if (!p) return;
+      p.cible = Object.assign({}, p.cible, {cadre: r, origine: "manuelle"});
+      if (p.point[0] < r[0] || p.point[0] > r[0] + r[2] || p.point[1] < r[1] || p.point[1] > r[1] + r[3] || p.action === "montrer")
+        p.point = [Math.round(r[0] + r[2] / 2), Math.round(r[1] + r[3] / 2)];
+    }
+    valider(true);
+  };
+  scene.addEventListener("pointermove", mv); scene.addEventListener("pointerup", up);
+});
+
+// ---------------------------------------------------------------- chronologie
+function rendChrono() {
+  calculerTemps();
+  const piste = $("piste"), gauche = piste.scrollLeft;
+  let html = "", tot = 0, totN = 0;
+  etapes().forEach((e, ie) => {
+    const te = totalEtape(e), tn = narrS(e); tot += Math.max(te, tn); totN += tn;
+    const long = tn > te + 0.5;
+    html += `<div class="etape${ie === sel.ie ? " sel" : ""}" data-ie="${ie}">
+      <div class="et-tete" data-ie="${ie}" title="${echap(e.titre || "")} — cliquer pour modifier l'étape">${ie + 1}. ${echap(e.titre || "Étape")}
+        <small>· ${duree(te)}${tn ? ` · narration ≈ ${duree(tn)}` : ""}</small></div>
+      <div class="et-narr${long ? " long" : ""}" title="${tn ? "Durée estimée de la narration" + (long ? " : plus longue que les pas (onglet Étape › Caler sur la narration)" : "") : "Pas de narration"}"><i style="width:${te ? Math.min(100, 100 * tn / Math.max(te, tn)) : 0}%"></i></div>
+      <div class="et-pas" data-ie="${ie}">`;
+    e.pas.forEach((p, ip) => {
+      const s = ie === sel.ie && ip === sel.ip ? " sel" : "", t = T[p.id];
+      if (p.ignorer) { html += `<div class="bloc ignore${s}" draggable="true" data-ie="${ie}" data-ip="${ip}" style="width:30px" title="${echap(ETIQ[p.id] + " (" + p.id + ") écarté : " + (p.raison || ""))}"><div class="pied">${ETIQ[p.id].split("-P")[1]}</div></div>`; return; }
+      const l = Math.max(30, Math.round(t.reel.total / 1000 * pps));
+      const centre = p.cible && p.cible.cadre && p.action === "montrer" ? [p.cible.cadre[0] + p.cible.cadre[2] / 2, p.cible.cadre[1] + p.cible.cadre[3] / 2] : p.point;
+      const vig = `/vignette/${encodeURIComponent(p.image.replace(/^images\//, ""))}` + (p.action === "montrer" && !(p.cible && p.cible.cadre) ? "" : `?x=${Math.round(centre[0])}&y=${Math.round(centre[1])}`);
+      html += `<div class="bloc${s}${/^a/.test(p.id) ? " ajoute" : ""}" draggable="true" data-ie="${ie}" data-ip="${ip}" style="width:${l}px;background-image:url('${vig}')" title="${echap(ETIQ[p.id] + " (" + p.id + ") — " + texteBrut(p.bulle || LIB[p.action]))}">
+        ${p.lecture_s ? `<span class="fixe" title="Durée réglée à la main (double-clic sur le bord droit : automatique)">${p.lecture_s} s</span>` : ""}
+        <div class="pied">${ICONE[p.action] || "?"} ${ETIQ[p.id].split("-")[1]}${(p.ou || []).length ? " +" + p.ou.length : ""}</div><div class="poignee" title="Tirer : durée du pas à la lecture · double-clic : automatique"></div></div>`;
+    });
+    html += `</div></div>`;
+  });
+  piste.innerHTML = html; piste.scrollLeft = gauche;
+  $("totaux").textContent = `${tousPas().filter(x => !x.p.ignorer).length} pas · ≈ ${duree(tot)}` + (totN ? ` (narration ≈ ${duree(totN)})` : "");
+  const p = pasSel();
+  $("c-ecarter").textContent = p && p.ignorer ? "Rétablir" : "Écarter";
+  $("c-supprimer").disabled = !p || !/^a/.test(p.id);
+  $("c-couper").disabled = !p || sel.ip === 0; $("c-fusion").disabled = sel.ie === 0;
+  for (const b of ["c-ecarter", "c-dupliquer", "a-avant", "a-apres"]) $(b).disabled = !p && b !== "a-apres";
+}
+function selectionner(ie, ip, o) {
+  sel = {ie, ip: ip == null ? sel.ip : ip}; bornerSel(); if (o) onglet = o;
+  rendChrono(); majScene(); rendPanneau();
+  const b = $("piste").querySelector(".bloc.sel"); if (b) b.scrollIntoView({block: "nearest", inline: "nearest"});
+}
+const piste = $("piste");
+piste.addEventListener("click", ev => {
+  const b = ev.target.closest(".bloc"), t = ev.target.closest(".et-tete");
+  if (b) selectionner(+b.dataset.ie, +b.dataset.ip, "pas");
+  else if (t) selectionner(+t.dataset.ie, 0, "etape");
+});
+// durée d'un pas : tirer le bord droit du bloc
+piste.addEventListener("pointerdown", ev => {
+  const po = ev.target.closest(".poignee"); if (!po) return;
+  ev.preventDefault(); ev.stopPropagation();
+  const b = po.parentElement, p = etapes()[+b.dataset.ie].pas[+b.dataset.ip], x0 = ev.clientX, l0 = b.offsetWidth;
+  b.draggable = false; po.setPointerCapture(ev.pointerId);
+  const mini = (T[p.id].auto.geste + 500) / 1000;
+  const mv = e => { p.lecture_s = Math.round(Math.max(mini, (l0 + e.clientX - x0) / pps) * 10) / 10; b.style.width = Math.max(30, p.lecture_s * pps) + "px"; majChampsGeo(); };
+  const up = () => { po.removeEventListener("pointermove", mv); po.removeEventListener("pointerup", up); selectionner(+b.dataset.ie, +b.dataset.ip, "pas"); valider(); rendPanneau(); };
+  po.addEventListener("pointermove", mv); po.addEventListener("pointerup", up);
+});
+piste.addEventListener("dblclick", ev => {
+  const po = ev.target.closest(".poignee"); if (!po) return;
+  const b = po.parentElement; delete etapes()[+b.dataset.ie].pas[+b.dataset.ip].lecture_s; valider(true);
+});
+// déplacer un pas : glisser-déposer dans la chronologie
+let porte = null;
+piste.addEventListener("dragstart", ev => { const b = ev.target.closest(".bloc"); if (!b) return; porte = {ie: +b.dataset.ie, ip: +b.dataset.ip}; ev.dataTransfer.effectAllowed = "move"; ev.dataTransfer.setData("text/plain", b.dataset.ie + "," + b.dataset.ip); });
+function nettoyerDepot() { piste.querySelectorAll(".depot-g,.depot-d,.cible-depot").forEach(e => e.classList.remove("depot-g", "depot-d", "cible-depot")); }
+piste.addEventListener("dragover", ev => {
+  if (!porte) return;
+  const b = ev.target.closest(".bloc"), z = ev.target.closest(".etape"); if (!b && !z) return;
+  ev.preventDefault(); nettoyerDepot();
+  if (b) { const r = b.getBoundingClientRect(); b.classList.add(ev.clientX < r.left + r.width / 2 ? "depot-g" : "depot-d"); }
+  else z.querySelector(".et-pas").classList.add("cible-depot");
+});
+piste.addEventListener("dragleave", nettoyerDepot);
+piste.addEventListener("drop", ev => {
+  if (!porte) return; ev.preventDefault();
+  const b = ev.target.closest(".bloc"), z = ev.target.closest(".etape"); nettoyerDepot();
+  let ie, ip;
+  if (b) { const r = b.getBoundingClientRect(); ie = +b.dataset.ie; ip = +b.dataset.ip + (ev.clientX < r.left + r.width / 2 ? 0 : 1); }
+  else if (z) { ie = +z.dataset.ie; ip = etapes()[ie].pas.length; } else return;
+  const src = porte; porte = null;
+  const p = etapes()[src.ie].pas.splice(src.ip, 1)[0];
+  if (src.ie === ie && src.ip < ip) ip--;
+  etapes()[ie].pas.splice(ip, 0, p);
+  sel = {ie, ip}; retirerEtapesVides(); valider(true);
+});
+piste.addEventListener("dragend", () => { porte = null; nettoyerDepot(); });
+function retirerEtapesVides() {
+  const p = pasSel();
+  C.etapes = etapes().filter(e => e.pas.length || (e.narration || "").trim());
+  if (!C.etapes.length) C.etapes = [{titre: "Étape 1", narration: "", arret: true, pas: []}];
+  if (p) for (const x of tousPas()) if (x.p === p) sel = {ie: x.ie, ip: x.ip};
+  bornerSel();
+}
+
+// ---------------------------------------------------------------- actions de la chronologie
+function nouvelId() { const ids = new Set(tousPas().map(x => x.p.id)); let n = 1; while (ids.has("a" + String(n).padStart(3, "0"))) n++; return "a" + String(n).padStart(3, "0"); }
+function ajouter(type, apres, image) {
+  const ref = pasSel(), e = etapes()[sel.ie];
+  const img = image || (ref ? ref.image : (IMAGES[0] ? "images/" + IMAGES[0] : null));
+  if (!img) return alert("Aucune image dans cette capsule : importer d'abord une image.");
+  const cadre = ref && ref.cible && ref.cible.cadre && !image ? [...ref.cible.cadre] : [W * 0.4, H * 0.42, W * 0.2, H * 0.1].map(Math.round);
+  const p = {id: nouvelId(), action: type, image: img, point: [Math.round(cadre[0] + cadre[2] / 2), Math.round(cadre[1] + cadre[3] / 2)]};
+  if (!image) p.cible = {cadre, origine: "manuelle"};
+  p.bulle = BULLE0[type] || "";
+  if (type === "saisie") p.texte = "";
+  if (type === "touche") p.touches = "";
+  if (type === "glisser") p.arrivee = [borne(p.point[0] + Math.round(W * 0.08), 0, W), p.point[1]];
+  const ip = ref ? sel.ip + (apres ? 1 : 0) : 0;
+  e.pas.splice(ip, 0, p); sel.ip = ip; onglet = "pas"; valider(true);
+}
+function demanderAjout(apres) {
+  const type = $("a-type").value;
+  if (type !== "image") return ajouter(type, apres);
+  const f = $("f-image"); f.value = "";
+  f.onchange = async () => {
+    if (!f.files[0]) return;
+    majEtat("import de l'image…");
+    const r = await (await fetch("/api/image", {method: "POST", body: f.files[0]})).json();
+    if (!r.ok) { majEtat(); return alert("Import impossible : " + r.message); }
+    IMAGES.push(r.nom); ajouter("montrer", apres, "images/" + r.nom);
+  };
+  f.click();
+}
+$("a-avant").onclick = () => demanderAjout(false);
+$("a-apres").onclick = () => demanderAjout(true);
+$("c-couper").onclick = () => {
+  const e = etapes()[sel.ie]; if (sel.ip === 0) return;
+  const suite = e.pas.splice(sel.ip);
+  etapes().splice(sel.ie + 1, 0, {titre: "Nouvelle étape", narration: "", arret: true, pas: suite});
+  sel = {ie: sel.ie + 1, ip: 0}; onglet = "etape"; valider(true);
+};
+function fusionner() {
+  if (sel.ie === 0) return;
+  const e = etapes()[sel.ie], prec = etapes()[sel.ie - 1], n = prec.pas.length;
+  prec.pas.push(...e.pas);
+  prec.narration = [prec.narration, e.narration].map(s => (s || "").trim()).filter(Boolean).join(" ");
+  etapes().splice(sel.ie, 1); sel = {ie: sel.ie - 1, ip: n + sel.ip}; valider(true);
+}
+$("c-fusion").onclick = fusionner;
+function ecarter() { const p = pasSel(); if (!p) return; if (p.ignorer) { delete p.ignorer; delete p.raison; } else { p.ignorer = true; p.raison = p.raison || "écarté dans l'éditeur"; } valider(true); }
+$("c-ecarter").onclick = ecarter;
+$("c-dupliquer").onclick = () => { const p = pasSel(); if (!p) return; const q = JSON.parse(JSON.stringify(p)); q.id = nouvelId(); delete q.trajet; delete q.duree_ms; etapes()[sel.ie].pas.splice(++sel.ip, 0, q); valider(true); };
+$("c-supprimer").onclick = () => { const p = pasSel(); if (!p || !/^a/.test(p.id)) return; etapes()[sel.ie].pas.splice(sel.ip, 1); retirerEtapesVides(); valider(true); };
+$("echelle").oninput = ev => { pps = +ev.target.value; rendChrono(); };
+
+// ---------------------------------------------------------------- panneau des propriétés
+const champ = (lib, k, v, extra = "") => `<label class="l">${lib}</label><input type="text" data-k="${k}" value="${echap(v)}" ${extra}>`;
+const nombre = (k, v, extra = "") => `<input type="number" data-k="${k}" value="${v == null ? "" : v}" ${extra}>`;
+const options = (liste, v) => liste.map(([val, lib]) => `<option value="${echap(val)}"${val === v ? " selected" : ""}>${echap(lib)}</option>`).join("");
+function indiceEffectif(p) { return p.indice != null ? !!p.indice : (!p.cible || p.cible.origine === "aucune" || /^(Cliquez|Double-cliquez) ici/.test(p.bulle || "")); }
+function rendPanneau() {
+  document.querySelectorAll(".onglets button").forEach(b => b.classList.toggle("actif", b.dataset.o === onglet));
+  const c = $("contenu"), p = pasSel(), e = etapes()[sel.ie];
+  if (onglet === "pas") {
+    if (!p) { c.innerHTML = `<p class="aide">Cette étape n'a pas encore de pas : « + après » dans la chronologie en ajoute un.</p>`; return; }
+    const t = T[p.id], cad = p.cible && p.cible.cadre, aGeste = !["montrer", "molette"].includes(p.action);
+    c.innerHTML = `
+      <p class="aide" style="margin:0"><strong style="color:var(--navy);font-size:14px">${ETIQ[p.id]}</strong> · identifiant fixe ${echap(p.id)}</p>
+      ${p.ignorer ? `<p class="alerte">Pas écarté : absent du lecteur. ${echap(p.raison || "")}</p>` : ""}
+      <label class="l">Type</label><select data-k="action">${options(Object.entries(LIB), p.action)}</select>
+      <label class="l">Bulle <span class="aide">(**gras**, $formule$, Entrée pour aller à la ligne ; vide : pas de bulle)</span></label>
+      <textarea data-k="bulle">${echap(p.bulle || "")}</textarea>
+      ${p.bulle_position ? `<div class="ligne"><button data-a="bulle-auto">Replacer la bulle automatiquement</button></div>` : ""}
+      ${p.action === "saisie" ? champ("Texte attendu", "texte", p.texte || "") +
+        champ("Autres réponses acceptées <span class='aide'>(séparées par ; — « 100 mm » et « 100,0 » le sont déjà)</span>", "accepte", (p.accepte || []).join(" ; ")) +
+        `<label class="l">Tolérance relative <span class="aide">(0,01 = 1 %)</span></label>${nombre("tolerance", p.tolerance, 'step="0.001" min="0"')}` : ""}
+      ${p.action === "touche" ? champ("Touche ou raccourci <span class='aide'>(Entrée, Ctrl+S, Échap…)</span>", "touches", p.touches || "") +
+        `<div class="ligne"><button data-a="capturer">Appuyer sur la touche pour la saisir</button></div>` : ""}
+      ${p.action === "touche" ? `<p class="aide">Une touche n'a pas de zone : seule la bulle s'affiche (à glisser sur l'image pour la placer).</p>` : `
+      <h3>${p.action === "montrer" ? "Zone signalée" : p.action === "saisie" ? "Champ de saisie" : "Zone de clic"}</h3>
+      ${cad ? `<div class="quatre">${[0, 1, 2, 3].map(i => nombre("cadre." + i, cad[i], `title="${["x", "y", "largeur", "hauteur"][i]}" min="0"`)).join("")}</div>
+        <p class="aide">x, y, largeur, hauteur en pixels de l'écran enregistré. Sur l'image : glisser la zone ou ses coins.</p>
+        ${champ("Nom du contrôle <span class='aide'>(information)</span>", "cible.nom", p.cible.nom || "")}
+        ${p.action === "montrer" ? `<div class="ligne"><button data-a="sans-zone">Retirer la zone (image seule)</button></div>` : ""}`
+        : `<p class="aide">Pas de zone : l'image entière est montrée.</p><div class="ligne"><button data-a="avec-zone">Ajouter une zone</button></div>`}`}
+      ${CLICS.includes(p.action) || p.action === "touche" ? `
+      <h3>Autres gestes acceptés <span class="aide">(mode « À vous »)</span></h3>
+      ${(p.ou || []).map((q, i) => `<div class="ligne" style="align-items:center;margin-top:4px">${q.action === "touche"
+          ? `<span>ou la touche</span><input type="text" data-k="ou.${i}.touches" value="${echap(q.touches || "")}" style="flex:1;width:auto">`
+          : `<span>ou</span><select data-k="ou.${i}.action" style="flex:1;width:auto">${options(CLICS.slice(0, 3).map(a => [a, LIB[a].toLowerCase() + " dans la zone en pointillé"]), q.action)}</select>`}
+          <button data-a="ou-x" data-i="${i}" class="danger">Retirer</button></div>`).join("")}
+      <div class="ligne"><button data-a="ou-zone" title="Par exemple : le côté du bas aussi bien que celui du haut">+ Autre zone</button>
+        <button data-a="ou-touche" title="Par exemple : la touche Entrée aussi bien que le bouton OK">+ Touche</button></div>
+      <p class="aide">N'importe lequel de ces gestes valide le pas. Le mode Regarder montre le geste principal.</p>` : ""}
+      <h3>À la lecture (mode Regarder)</h3>
+      <div class="deux"><div><label class="l">Durée du pas (s)</label>${nombre("lecture_s", p.lecture_s, `step="0.1" min="0.5" placeholder="${t ? (t.auto.total / 1000).toFixed(1) + " (auto)" : "auto"}"`)}</div>
+      <div><label class="l">Déplacement du curseur</label><select data-k="trajectoire" ${p.trajet && p.trajet.length > 2 ? "" : "disabled"}>${options([["", "arc direct"], ["enregistree", "trajet enregistré"]], p.trajectoire || "")}</select></div></div>
+      <p class="aide">Vide = durée calculée (déplacement + geste + lecture de la bulle). On peut aussi tirer le bord droit du bloc dans la chronologie.</p>
+      ${aGeste ? `<h3>En mode « À vous »</h3>
+        <label class="coche"><input type="checkbox" data-k="observer" ${p.observer ? "checked" : ""}> À regarder seulement (bouton « Continuer » au lieu du geste)</label>
+        <label class="coche"><input type="checkbox" data-k="indice" ${indiceEffectif(p) ? "checked" : ""}> Montrer la zone en pointillé dès la consigne (sinon après ${(C.reglages || {}).essais || 3} essais)</label>
+        <label class="l">Message après la réussite <span class="aide">(explication ; l'étudiant clique « Continuer »)</span></label>
+        <textarea data-k="retour_juste" style="min-height:44px">${echap(p.retour_juste || "")}</textarea>
+        <label class="l">Message en cas d'erreur <span class="aide">(vide : « Pas tout à fait. »)</span></label>
+        <textarea data-k="retour_faux" style="min-height:44px">${echap(p.retour_faux || "")}</textarea>` : ""}
+      <h3>Image</h3>
+      <select data-k="image">${options(IMAGES.map(n => ["images/" + n, n]), p.image)}</select>
+      <p class="aide">${p.duree_ms ? `Enregistré en ${duree(p.duree_ms / 1000)}. ` : ""}${p.processus ? "Programme : " + echap(p.processus) + "." : ""}</p>`;
+  } else if (onglet === "etape") {
+    const te = totalEtape(e), tn = narrS(e), mots = (e.narration || "").trim().split(/\s+/).filter(Boolean).length;
+    c.innerHTML = `
+      ${champ("Titre de l'étape " + (sel.ie + 1), "e.titre", e.titre || "")}
+      <label class="l">Narration <span class="aide">(lue par la voix, affichée au-dessus de l'écran ; **gras** affiché mais non prononcé)</span></label>
+      <textarea data-k="e.narration" style="min-height:150px">${echap(e.narration || "")}</textarea>
+      <p class="aide" id="e-durees">${mots} mots ≈ ${duree(tn)} de voix · pas de l'étape : ${duree(te)}</p>
+      ${tn > te + 0.5 ? `<p class="alerte">La narration dure plus longtemps que les pas : le lecteur attendra la fin de la voix sur le dernier pas.</p>` : ""}
+      <div class="ligne"><button data-a="caler" ${tn > te + 0.5 ? "" : "disabled"} title="Allonge chaque pas dans la même proportion pour que l'étape dure autant que la narration">Caler les pas sur la narration</button>
+        <button data-a="auto" title="Retire les durées réglées à la main dans cette étape">Durées automatiques</button></div>
+      <label class="coche"><input type="checkbox" data-k="e.arret" ${e.arret !== false ? "checked" : ""}> Arrêt en fin d'étape (bouton « Continuer »)</label>
+      <h3>Organisation</h3>
+      <div class="ligne"><button data-a="et-gauche" ${sel.ie === 0 ? "disabled" : ""}>◀ Avancer l'étape</button><button data-a="et-droite" ${sel.ie === etapes().length - 1 ? "disabled" : ""}>Reculer l'étape ▶</button>
+        <button data-a="fusion" ${sel.ie === 0 ? "disabled" : ""}>Fusionner avec la précédente</button></div>
+      <p class="aide">Pour couper une étape : sélectionner le pas qui ouvrira la nouvelle étape, puis « Couper l'étape ici ». Pour déplacer un pas : le glisser dans la chronologie.</p>`;
+  } else {
+    const r = C.reglages || {};
+    c.innerHTML = `
+      ${champ("Titre de la capsule", "c.titre", C.titre || "")}
+      <div class="deux"><div><label class="l">Modes proposés</label><select data-k="c.reglages.mode">${options([["les_deux", "Regarder et À vous"], ["demonstration", "Regarder seulement"], ["pratique", "À vous seulement"]], r.mode || "les_deux")}</select></div>
+      <div><label class="l">Essais avant de montrer la zone</label>${nombre("c.reglages.essais", r.essais == null ? 3 : r.essais, 'min="1" max="10"')}</div></div>
+      <label class="l">Déplacement du curseur par défaut</label>
+      <select data-k="c.reglages.trajectoire">${options([["", "arc direct (conseillé)"], ["enregistree", "trajet enregistré"]], r.trajectoire || "")}</select>
+      <h3>Masques <span class="aide">(zones floutées sur toutes les images)</span></h3>
+      <ul class="liste-m">${(C.masques || []).map((m, i) => `<li><span>${m.join(", ")}</span><button data-a="masque-x" data-i="${i}" class="danger">Retirer</button></li>`).join("") || `<li class="aide">Aucun masque.</li>`}</ul>
+      <div class="ligne"><button data-a="masque">Tracer un masque sur l'image</button></div>
+      <h3>Capsule</h3>
+      <p class="aide">${echap(NOM)} · écran ${W} × ${H} px · ${IMAGES.length} images · ${tousPas().length} pas dont ${tousPas().filter(x => x.p.ignorer).length} écartés.<br>
+      Chaque séance d'édition garde une copie du fichier d'origine dans le dossier « sauvegardes » de la capsule.</p>`;
+  }
+}
+function majChampsGeo() {        // pendant un geste : seuls les champs numériques suivent
+  const p = pasSel(); if (!p || onglet !== "pas") return;
+  if (p.cible && p.cible.cadre) [0, 1, 2, 3].forEach(i => { const el = document.querySelector(`[data-k="cadre.${i}"]`); if (el) el.value = p.cible.cadre[i]; });
+  const d = document.querySelector('[data-k="lecture_s"]'); if (d && document.activeElement !== d) d.value = p.lecture_s == null ? "" : p.lecture_s;
+}
+function ecrireChamp(el) {
+  const k = el.dataset.k, p = pasSel(), e = etapes()[sel.ie];
+  const v = el.type === "checkbox" ? el.checked : el.value;
+  const num = () => v === "" ? null : +String(v).replace(",", ".");
+  if (k.startsWith("e.")) { const n = k.slice(2); if (n === "arret") e.arret = v; else e[n] = v; return n === "arret"; }
+  if (k.startsWith("c.reglages.")) { const n = k.slice(11); C.reglages = C.reglages || {}; if (v === "" || v == null) delete C.reglages[n]; else C.reglages[n] = n === "essais" ? Math.max(1, +v) : v; return true; }
+  if (k === "c.titre") { C.titre = v; return false; }
+  if (!p) return false;
+  if (k.startsWith("cadre.")) { const n = num(); if (n != null && n >= 0) { p.cible.cadre[+k.slice(6)] = Math.round(n); p.cible.origine = "manuelle"; } return false; }
+  if (k.startsWith("ou.")) { const [, i, n] = k.split("."); p.ou[+i][n] = v; return false; }
+  if (k === "retour_juste" || k === "retour_faux") { if (v.trim()) p[k] = v; else delete p[k]; return false; }
+  if (k === "cible.nom") { if (v) p.cible.nom = v; else delete p.cible.nom; return false; }
+  if (k === "accepte") { const l = v.split(";").map(s => s.trim()).filter(Boolean); if (l.length) p.accepte = l; else delete p.accepte; return false; }
+  if (k === "tolerance" || k === "lecture_s") { const n = num(); if (n && n > 0) p[k] = n; else delete p[k]; return false; }
+  if (k === "observer") { if (v) p.observer = true; else delete p.observer; return false; }
+  if (k === "indice") { p.indice = v; return false; }
+  if (k === "trajectoire") { if (v) p.trajectoire = v; else delete p.trajectoire; return false; }
+  if (k === "action") {
+    if (BULLE0[p.action] === p.bulle || !p.bulle) p.bulle = BULLE0[v] || p.bulle || "";
+    p.action = v;
+    if (v === "glisser" && !p.arrivee) p.arrivee = [borne(p.point[0] + Math.round(W * 0.08), 0, W), p.point[1]];
+    if (v !== "glisser") delete p.arrivee;
+    if (v === "saisie" && p.texte == null) p.texte = "";
+    if (v === "touche" && p.touches == null) p.touches = "";
+    if (!CLICS.includes(v) && v !== "touche") delete p.ou;
+    if (v !== "montrer" && !(p.cible && p.cible.cadre)) p.cible = {cadre: [p.point[0] - 60, p.point[1] - 24, 120, 48], origine: "manuelle"};
+    return true;
+  }
+  p[k] = v;
+  if (k === "texte" && /^Tapez \*\*.*\*\*\.?$/.test(p.bulle || "")) { p.bulle = `Tapez **${v}**.`; const b = document.querySelector('[data-k="bulle"]'); if (b) b.value = p.bulle; }
+  return k === "image";
+}
+const contenu = $("contenu");
+contenu.addEventListener("input", ev => {
+  const el = ev.target; if (!el.dataset.k || el.tagName === "SELECT" || el.type === "checkbox") return;
+  ecrireChamp(el); calculerTemps(); majScene();
+  if (el.dataset.k === "e.narration") { const e = etapes()[sel.ie], m = e.narration.trim().split(/\s+/).filter(Boolean).length; $("e-durees").textContent = `${m} mots ≈ ${duree(narrS(e))} de voix · pas de l'étape : ${duree(totalEtape(e))}`; }
+});
+contenu.addEventListener("change", ev => {
+  const el = ev.target; if (!el.dataset.k) return;
+  const refaire = ecrireChamp(el);
+  valider(); if (refaire || el.dataset.k === "e.narration") rendPanneau();
+});
+contenu.addEventListener("click", ev => {
+  const a = ev.target.dataset.a, p = pasSel(), e = etapes()[sel.ie]; if (!a) return;
+  if (a === "bulle-auto") delete p.bulle_position;
+  else if (a === "sans-zone") { delete p.cible; }
+  else if (a === "avec-zone") { p.cible = {cadre: [W * 0.4, H * 0.42, W * 0.2, H * 0.1].map(Math.round), origine: "manuelle"}; p.point = [Math.round(W / 2), Math.round(H * 0.47)]; }
+  else if (a === "ou-zone") {
+    const c = (p.cible && p.cible.cadre) || [p.point[0] - 60, p.point[1] - 24, 120, 48], n = (p.ou || []).length + 1;
+    (p.ou = p.ou || []).push({action: CLICS.includes(p.action) ? p.action : "clic",
+      cadre: [c[0], borne(c[1] + (c[3] + 24) * n, 0, H - c[3]), c[2], c[3]].map(Math.round)});
+  }
+  else if (a === "ou-touche") (p.ou = p.ou || []).push({action: "touche", touches: "Entrée"});
+  else if (a === "ou-x") { p.ou.splice(+ev.target.dataset.i, 1); if (!p.ou.length) delete p.ou; }
+  else if (a === "capturer") { ev.target.textContent = "Appuyez maintenant sur la touche…"; capture = true; return; }
+  else if (a === "caler") {
+    const te = totalEtape(e), tn = narrS(e); if (!(tn > te)) return;
+    for (const q of e.pas) if (!q.ignorer) q.lecture_s = Math.round(T[q.id].reel.total / 1000 * tn / te * 10) / 10;
+  }
+  else if (a === "auto") { for (const q of e.pas) delete q.lecture_s; }
+  else if (a === "et-gauche" || a === "et-droite") { const d = a === "et-gauche" ? -1 : 1; etapes().splice(sel.ie + d, 0, etapes().splice(sel.ie, 1)[0]); sel.ie += d; }
+  else if (a === "fusion") return fusionner();
+  else if (a === "masque") return choisirOutil("masque");
+  else if (a === "masque-x") C.masques.splice(+ev.target.dataset.i, 1);
+  else return;
+  valider(true);
+});
+document.querySelector(".onglets").addEventListener("click", ev => { const o = ev.target.dataset.o; if (o) { onglet = o; rendPanneau(); } });
+
+// ---------------------------------------------------------------- clavier, barre
+let capture = false;
+function libelleTouche(ev) {
+  const noms = {Enter: "Entrée", Tab: "Tab", Escape: "Échap", Delete: "Suppr", Backspace: "Retour arrière", ArrowUp: "Haut", ArrowDown: "Bas",
+    ArrowLeft: "Gauche", ArrowRight: "Droite", Home: "Début", End: "Fin", " ": "Espace"};
+  const k = noms[ev.key] || (ev.key.length === 1 ? ev.key.toUpperCase() : ev.key);
+  return [ev.ctrlKey && "Ctrl", ev.altKey && "Alt", ev.metaKey && "Win", k].filter(Boolean).join("+");
+}
+document.addEventListener("keydown", ev => {
+  if (capture) {
+    if (["Control", "Alt", "Shift", "Meta"].includes(ev.key)) return;
+    ev.preventDefault(); capture = false; const p = pasSel(); p.touches = libelleTouche(ev);
+    if (!p.bulle || p.bulle === BULLE0.touche) p.bulle = `Appuyez sur **${p.touches}**.`;
+    return valider(true);
+  }
+  const ctrl = ev.ctrlKey || ev.metaKey, k = ev.key.toLowerCase();
+  if (ctrl && k === "s") { ev.preventDefault(); if (document.activeElement) document.activeElement.blur(); return enregistrer(); }
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName)) return;
+  if (ctrl && k === "z") { ev.preventDefault(); return revenir(ev.shiftKey ? 1 : -1); }
+  if (ctrl && k === "y") { ev.preventDefault(); return revenir(1); }
+  if (ev.key === "Escape" && outil) return choisirOutil(outil);
+  if (ev.key === "Delete") return ecarter();
+  if (ev.key === "ArrowRight" || ev.key === "ArrowLeft") {
+    const l = tousPas(), i = l.findIndex(x => x.ie === sel.ie && x.ip === sel.ip), j = borne(i + (ev.key === "ArrowRight" ? 1 : -1), 0, l.length - 1);
+    if (l[j]) { ev.preventDefault(); selectionner(l[j].ie, l[j].ip, "pas"); }
+  }
+});
+$("b-enregistrer").onclick = enregistrer; $("b-apercu").onclick = apercu;
+$("b-annuler").onclick = () => revenir(-1); $("b-retablir").onclick = () => revenir(1);
+$("z-ajuste").onclick = () => { zoom = "ajuste"; $("z-ajuste").classList.add("actif"); $("z-reel").classList.remove("actif"); majScene(); };
+$("z-reel").onclick = () => {
+  zoom = "reel"; $("z-reel").classList.add("actif"); $("z-ajuste").classList.remove("actif"); majScene();
+  const p = pasSel(), c = $("scene-cadre"); if (p) { c.scrollLeft = p.point[0] - c.clientWidth / 2; c.scrollTop = p.point[1] - c.clientHeight / 2; }
+};
+$("o-zone").onclick = () => choisirOutil("zone"); $("o-masque").onclick = () => choisirOutil("masque");
+$("v-trajet").onchange = majScene;
+window.addEventListener("resize", majScene);
+window.addEventListener("beforeunload", ev => { if (modifie) { ev.preventDefault(); ev.returnValue = ""; } });
+function rendTout() { rendChrono(); majScene(); rendPanneau(); }
+
+// ---------------------------------------------------------------- démarrage
+(async function () {
+  const r = await (await fetch("/api/capsule")).json();
+  C = r.capsule; IMAGES = r.images; NOM = r.nom; W = C.ecran.largeur; H = C.ecran.hauteur;
+  C.etapes = C.etapes || []; if (!C.etapes.length) C.etapes.push({titre: "Étape 1", narration: "", arret: true, pas: []});
+  $("nom").textContent = `${C.titre || ""} — ${NOM}`; document.title = `Éditeur — ${NOM}`;
+  hist = [JSON.stringify(C)]; ih = 0;
+  const premier = tousPas().find(x => !x.p.ignorer); if (premier) sel = {ie: premier.ie, ip: premier.ip};
+  rendTout(); majEtat(); messages(r);
+})();
+</script>
+</body>
+</html>

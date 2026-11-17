@@ -1,0 +1,100 @@
+% Personnal color scheme with Claude Design
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% PRIMAIRE / ACCENT
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Navy - Navy -900
+% RGB = 20 33 61
+% Hex = #14213D
+\definecolor{Navy}{rgb}{0.078, 0.129, 0.239}
+
+% Navy2 - Navy -700
+% RGB = 40 64 107
+% Hex = #28406B
+\definecolor{Navy2}{rgb}{0.157, 0.251, 0.420}
+
+% Slate - Slate-500
+% RGB = 116 140 171
+% Hex = #748CAB
+\definecolor{Slate}{rgb}{0.455, 0.549, 0.671}
+
+% Sable - Sand 400
+% RGB = 224 185 137
+% Hex = #E0B989
+\definecolor{Sable}{rgb}{0.878, 0.725, 0.537}
+
+% Sable2 - Sand 200
+% RGB = 245 230 204
+% Hex = #F5E6CC
+\definecolor{Sable2}{rgb}{0.961, 0.902, 0.800}
+
+% Sauge - Sage - 500
+% RGB = 111 143 120
+% Hex = #6F8F78
+\definecolor{Sauge}{rgb}{0.435, 0.561, 0.471}
+
+% Sauge2 - Sage -600
+% RGB = 77 107 87
+% Hex = #4D6B57
+\definecolor{Sauge2}{rgb}{0.302, 0.420, 0.341}
+
+% Argile - Clay-500
+% RGB = 189 122 92
+% Hex = #BD7A5C
+\definecolor{Argile}{rgb}{0.741, 0.478, 0.361}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Neutres
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% GrisClair - Gray - 50
+% RGB = 247 246 244
+% Hex = #F7F6F4
+\definecolor{GrisClair}{rgb}{0.969, 0.965, 0.957}
+
+% GrisFonce - Gray - 500
+% RGB = 132 126 113
+% Hex = #847E71
+\definecolor{GrisFonce}{rgb}{0.518, 0.494, 0.443}
+
+% GrisNoir - Gray - 900
+% RGB = 26 24 21
+% Hex = #1A1815
+\definecolor{GrisNoir}{rgb}{0.102, 0.094, 0.082}
+
+
+% Textcolor
+\newcommand {\TW}[1] {\textcolor{white}{#1}} % White
+% \TMC (MainColor) : maintenant dans couleurs_roles.tex (role couleur principale, roleMC = Navy)
+\newcommand {\TR}[1] {\textcolor{Argile}{#1}} % Red
+\newcommand {\TB}[1] {\textcolor{Slate}{#1}} % Blue
+\newcommand {\TJ}[1] {\textcolor{Sable2}{#1}} % Yellow
+\newcommand {\TV}[1] {\textcolor{Sauge}{#1}} % Green
+\newcommand {\TN}[1] {\textcolor{GrisNoir}{#1}} % "Black"
+\newcommand {\TG}[1] {\textcolor{GrisClair}{#1}} % Light Gray
+\newcommand {\TS}[1] {\textcolor{GrisFonce}{#1}} % Dark gray
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% HARMONISATION (proposition v2) - a partir d'ici, memes noms dans tous les jeux
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Les commandes ci-dessus restent valables (anciennes diapos). Attention :
+% \TV = vert ici, mais violet dans Ecole1_ColorScheme : preferer \TVi / \TVe.
+
+% Teintes communes (couleur la plus proche de la palette)
+% Violet : absent de la palette, remplace par Navy2 
+\newcommand {\TVi}[1] {\textcolor{Navy2}{#1}}  % violet
+\newcommand {\TVe}[1] {\textcolor{Sauge}{#1}}  % vert
+% Orange : absent de la palette, remplace par Argile
+\newcommand {\TO}[1] {\textcolor{Sable}{#1}}  % orange
+
+% Couleurs de role (commandes \TDef, \TPro, \TRes, \TAtt, \TMC, \TExg dans couleurs_roles.tex)
+\colorlet{roleDef}{Slate}     % rappel, definition
+\colorlet{rolePro}{Navy2}     % proposition, modele
+\colorlet{roleRes}{Sauge}    % resultat a retenir
+\colorlet{roleAtt}{Argile}    % attention, erreur
+\colorlet{roleExg}{Navy2}      % mise en exergue (encadre)
+\colorlet{roleMC}{Navy}      % couleur principale : bandeau, titres
+\input{couleurs_roles}

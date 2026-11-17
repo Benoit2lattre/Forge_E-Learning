@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="__LANGUE__">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITRE__</title>
+<!-- CapsuleForge — lecteur de capsule de simulation logicielle. Licence : GPL v3 (code). -->
+<style>
+:root{
+  --principal:#470A68; --principal-clair:#F4EEF8;
+  --succes:#2E7D32; --succes-clair:#E8F5E9;
+  --erreur:#B3161B; --erreur-clair:#FDECEC;
+  --texte:#1D1D1D; --texte-secondaire:#5F6368;
+  --fond:#FAFAFB; --carte:#FFFFFF; --bord:#DADCE0;
+  --focus:#FFCD00;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fond);color:var(--texte);
+  font-family:Montserrat,"Segoe UI",system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.45}
+header{background:var(--principal);color:#fff;padding:12px 20px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+header h1{margin:0;font-size:20px;font-weight:700}
+header p{margin:0;font-size:13px;opacity:.85}
+main{max-width:1500px;margin:0 auto;padding:14px 16px 30px;display:grid;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){main{grid-template-columns:1fr}}
+aside{background:var(--carte);border:1px solid var(--bord);border-radius:10px;padding:10px;position:sticky;top:10px}
+aside h2{font-size:14px;margin:2px 4px 8px;color:var(--principal)}
+#chapitres{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+#chapitres button{all:unset;box-sizing:border-box;width:100%;display:flex;gap:8px;align-items:flex-start;cursor:pointer;
+  padding:7px 8px;border-radius:7px;border:1px solid transparent;font-size:14px}
+#chapitres button:hover{background:var(--principal-clair)}
+#chapitres button:focus-visible{outline:3px solid var(--focus)}
+#chapitres button.courant{border-color:var(--principal);background:var(--principal-clair)}
+#chapitres .num{flex:none;width:22px;height:22px;border-radius:50%;background:var(--bord);color:var(--texte);
+  display:grid;place-items:center;font-size:12px;font-weight:700}
+#chapitres .fait .num{background:var(--succes);color:#fff}
+#chapitres .courant .num{background:var(--principal);color:#fff}
+#chapitres small{display:block;color:var(--texte-secondaire);font-size:12px}
+.panneau-texte{background:var(--carte);border:1px solid var(--bord);border-radius:10px;padding:8px 14px;margin-bottom:10px;min-height:42px}
+.panneau-texte h2{margin:0;font-size:16px;color:var(--principal)}
+.panneau-texte p{margin:2px 0 0}
+#scene{position:relative;width:100%;container-type:inline-size;background:#222;border-radius:8px;overflow:hidden;user-select:none;
+  box-shadow:0 1px 3px rgba(0,0,0,.25)}
+#scene img.ecran{position:absolute;inset:0;width:100%;height:100%;display:block}
+#scene.pratique{cursor:crosshair}
+.cadre{position:absolute;border:3px solid var(--focus);border-radius:4px;box-shadow:0 0 0 2000px rgba(0,0,0,.18);
+  pointer-events:none;transition:opacity .25s;opacity:0}
+.cadre.visible{opacity:1}
+.cadre.indice{border-style:dashed;box-shadow:none;border-color:var(--principal)}
+.bulle{position:absolute;max-width:34%;background:#fff;color:var(--texte);border:2px solid var(--principal);border-radius:8px;
+  padding:.35em .6em;font-size:max(11px,1.5cqw);line-height:1.3;box-shadow:0 2px 8px rgba(0,0,0,.25);pointer-events:none;
+  opacity:0;transition:opacity .25s}
+.bulle.visible{opacity:1}
+.bulle b{color:var(--principal)}
+#curseur{position:absolute;width:2.2%;min-width:14px;pointer-events:none;transform:translate(-8%,-4%);z-index:5;filter:drop-shadow(1px 1px 1px rgba(0,0,0,.5))}
+.onde{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;border:3px solid var(--focus);
+  pointer-events:none;animation:onde .6s ease-out forwards;z-index:4}
+.onde.faux{border-color:var(--erreur)}
+.onde.juste{border-color:var(--succes)}
+@keyframes onde{from{transform:scale(.3);opacity:1}to{transform:scale(1.4);opacity:0}}
+.saisie{position:absolute;box-sizing:border-box;background:#fff;color:#111;border:2px solid var(--principal);border-radius:3px;
+  font:inherit;padding:0 .3em;z-index:6;display:flex;align-items:center;white-space:nowrap;overflow:hidden}
+.carte-fin{position:absolute;inset:0;background:rgba(20,20,30,.62);display:grid;place-items:center;z-index:10}
+.carte-fin > div{background:#fff;border-radius:12px;padding:18px 22px;max-width:520px;width:88%;text-align:center}
+.carte-fin h3{margin:0 0 6px;color:var(--principal)}
+.carte-fin p{margin:4px 0 12px}
+button.b{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--principal);padding:7px 13px;background:var(--principal);color:#fff}
+button.b.secondaire{background:#fff;color:var(--principal)}
+button.b:disabled{opacity:.45;cursor:default}
+button.b:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.barre{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.barre .sep{flex:1}
+.modes{display:inline-flex;border:1px solid var(--principal);border-radius:7px;overflow:hidden}
+.modes button{all:unset;cursor:pointer;padding:6px 12px;color:var(--principal);font-size:14px}
+.modes button[aria-pressed=true]{background:var(--principal);color:#fff}
+.modes button:focus-visible{outline:3px solid var(--focus)}
+#compteur{color:var(--texte-secondaire);font-size:13px}
+#message{min-height:24px;margin-top:8px;font-size:15px}
+#message.faux{color:var(--erreur)} #message.juste{color:var(--succes)}
+.progression{height:5px;background:var(--bord);border-radius:3px;margin-top:8px;overflow:hidden}
+.progression div{height:100%;background:var(--principal);width:0;transition:width .3s}
+label.opt{display:inline-flex;gap:5px;align-items:center;font-size:14px;color:var(--texte-secondaire)}
+</style>
+<script>
+// Formules LaTeX ($…$) dans les bulles et la narration : MathJax embarqué par construire.py quand la capsule en contient.
+window.MathJax = {tex: {packages: {"[+]": ["ams", "color", "mathtools"]}, inlineMath: [["$", "$"], ["\\(", "\\)"]]},
+  svg: {fontCache: "global"}, startup: {typeset: false}};
+</script>
+__MATHJAX__
+</head>
+<body>
+<header><h1 id="titre"></h1><p id="sous-titre"></p></header>
+<main>
+  <aside aria-label="Étapes">
+    <h2>Étapes</h2>
+    <ol id="chapitres"></ol>
+  </aside>
+  <section>
+    <div class="panneau-texte" aria-live="polite"><h2 id="titre-etape"></h2><p id="narration"></p></div>
+    <div id="scene" tabindex="0" aria-label="Écran de l'application">
+      <img class="ecran" id="ecran" alt="">
+      <div class="cadre" id="cadre"></div>
+      <div class="bulle" id="bulle" role="status"></div>
+      <svg id="curseur" viewBox="0 0 24 36" aria-hidden="true"><path d="M1 1 L1 29 L8 22 L13 34 L18 32 L13 20 L23 20 Z" fill="#fff" stroke="#000" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="progression"><div id="barre-prog"></div></div>
+    <div class="barre">
+      <button class="b secondaire" id="b-prec" title="Pas précédent (flèche gauche)">◀</button>
+      <button class="b" id="b-lecture" title="Lecture / pause (espace)">▶ Lecture</button>
+      <button class="b secondaire" id="b-suiv" title="Pas suivant (flèche droite)">▶▶</button>
+      <div class="modes" role="group" aria-label="Mode">
+        <button id="m-demo" aria-pressed="true">Regarder</button>
+        <button id="m-prat" aria-pressed="false">À vous</button>
+      </div>
+      <span class="sep"></span>
+      <label class="opt"><input type="checkbox" id="o-rapide"> 1,25×</label>
+      <label class="opt" id="o-voix-l"><input type="checkbox" id="o-voix"> voix (aperçu)</label>
+      <span id="compteur"></span>
+    </div>
+    <div id="message" aria-live="assertive"></div>
+  </section>
+</main>
+<script id="donnees" type="application/json">__CAPSULE_JSON__</script>
+<script>
+"use strict";
+const C = JSON.parse(document.getElementById("donnees").textContent);
+const W = C.ecran.largeur, H = C.ecran.hauteur;
+const REG = Object.assign({mode: "les_deux", essais: 3}, C.reglages || {});
+const $ = id => document.getElementById(id);
+const scene = $("scene"), ecran = $("ecran"), cadre = $("cadre"), bulle = $("bulle"), curseur = $("curseur");
+
+// liste plate des pas, avec leur étape
+const PAS = [];
+C.etapes.forEach((et, ie) => et.pas.forEach((p, ip) => PAS.push(Object.assign({ie, ip, dernier: ip === et.pas.length - 1}, p))));
+const debutEtape = ie => PAS.findIndex(p => p.ie === ie);
+
+const etat = {i: 0, mode: REG.mode === "pratique" ? "pratique" : "demo", lecture: false, jeton: 0,
+  pos: null, vues: new Set(), traces: {}, essais: 0, attenteSaisie: null};
+window.capsuleTraces = etat.traces;      // lu plus tard par le paquet SCORM / DiagForge
+
+// ---------------------------------------------------------------- outils
+const pc = (v, tot) => (100 * v / tot) + "%";
+const vitesse = () => $("o-rapide").checked ? 1.25 : 1;
+const echap = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const md = s => echap(s || "").replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\n/g, "<br>");
+// rend les formules d'un élément, puis rappelle `ensuite` (la taille a changé)
+function maths(el, ensuite) {
+  if (!/\$|\\\(/.test(el.textContent)) return;
+  if (!window.MathJax || !MathJax.typesetPromise) {          // MathJax pas encore chargé : on réessaie (10 s au plus)
+    el._essais = (el._essais || 0) + 1;
+    if (el._essais < 50 && document.querySelector('script[src*="mathjax"]')) setTimeout(() => maths(el, ensuite), 200);
+    return;
+  }
+  el._essais = 0;
+  MathJax.typesetPromise([el]).then(() => ensuite && ensuite()).catch(() => {});
+}
+// champ de saisie posé exactement sur la zone du pas
+function poserChamp(champ, c) {
+  placer(champ, c[0], c[1], Math.max(c[2], 60), c[3]);
+  champ.style.fontSize = Math.max(11, c[3] * scene.clientHeight / H * 0.6) + "px";
+}
+const texteBrut = s => (s || "").replace(/\*\*/g, "");
+function placer(el, x, y, l, h) {
+  el.style.left = pc(x, W); el.style.top = pc(y, H);
+  if (l != null) { el.style.width = pc(l, W); el.style.height = pc(h, H); }
+}
+function attendre(ms, jeton) {
+  return new Promise(res => {
+    let reste = ms, t = performance.now();
+    (function boucle() {
+      if (jeton !== etat.jeton) return res(false);
+      const n = performance.now();
+      if (etat.lecture) reste -= (n - t) * vitesse();
+      t = n;
+      if (reste <= 0) return res(true);
+      requestAnimationFrame(boucle);
+    })();
+  });
+}
+function coordsEcran(ev) {
+  const r = scene.getBoundingClientRect();
+  return [(ev.clientX - r.left) * W / r.width, (ev.clientY - r.top) * H / r.height];
+}
+function dans(c, x, y, marge) {
+  const m = marge == null ? Math.max(6, W * 0.004) : marge;
+  return x >= c[0] - m && x <= c[0] + c[2] + m && y >= c[1] - m && y <= c[1] + c[3] + m;
+}
+function onde(x, y, classe) {
+  const o = document.createElement("div");
+  o.className = "onde " + (classe || "");
+  placer(o, x, y);
+  scene.appendChild(o);
+  setTimeout(() => o.remove(), 700);
+}
+function poserCurseur(x, y) { etat.pos = [x, y]; placer(curseur, x, y); }
+function message(txt, classe) { const m = $("message"); m.innerHTML = txt || ""; m.className = classe || ""; }
+
+// précharger les images
+const cache = {};
+function image(src) {
+  if (!src) return Promise.resolve();
+  if (!cache[src]) cache[src] = new Promise(res => { const i = new Image(); i.onload = i.onerror = () => res(i); i.src = src; });
+  return cache[src];
+}
+
+// ---------------------------------------------------------------- affichage commun
+function montrerBulle(p) {
+  if (!p.bulle) { bulle.classList.remove("visible"); return; }
+  bulle.innerHTML = md(p.bulle);
+  bulle.classList.add("visible");
+  const poser = () => {
+    const bw = bulle.offsetWidth * W / scene.clientWidth, bh = bulle.offsetHeight * H / scene.clientHeight;
+    if (p.bulle_position)                      // position choisie dans l'éditeur
+      return placer(bulle, Math.max(0, Math.min(p.bulle_position[0], W - bw)), Math.max(0, Math.min(p.bulle_position[1], H - bh)));
+    // sinon sous la zone si possible, au-dessus à défaut ; jamais hors de l'écran
+    const c = (p.cible && p.cible.cadre) || [p.point[0] - 60, p.point[1] - 24, 120, 48];
+    let x = c[0] + c[2] / 2 - bw / 2, y = c[1] + c[3] + H * 0.015;
+    if (y + bh > H * 0.98) y = c[1] - bh - H * 0.015;
+    placer(bulle, Math.max(W * 0.005, Math.min(x, W - bw - W * 0.005)), Math.max(H * 0.005, y));
+  };
+  poser(); maths(bulle, poser);
+}
+function cacherAides() { bulle.classList.remove("visible"); cadre.classList.remove("visible", "indice"); }
+function montrerCadre(p, indice) {
+  const c = p.cible && p.cible.cadre; if (!c || p.action === "touche") return;     // une touche n'a pas de zone
+  placer(cadre, c[0], c[1], c[2], c[3]);
+  cadre.classList.toggle("indice", !!indice);
+  cadre.classList.add("visible");
+}
+
+function majInterface() {
+  const p = PAS[etat.i], et = C.etapes[p.ie];
+  $("titre-etape").textContent = `Étape ${p.ie + 1}. ${et.titre || ""}`;
+  const narr = (et.narration || "").trim();
+  if ($("narration").dataset.t !== narr) { $("narration").dataset.t = narr; $("narration").innerHTML = md(narr); maths($("narration")); }
+  document.querySelectorAll("#chapitres button").forEach((b, k) => {
+    b.classList.toggle("courant", k === p.ie);
+    b.classList.toggle("fait", etat.vues.has(k) && k !== p.ie);
+    b.setAttribute("aria-current", k === p.ie ? "step" : "false");
+  });
+  $("compteur").textContent = `E${p.ie + 1}-P${p.ip + 1} · pas ${etat.i + 1} / ${PAS.length}`;
+  $("barre-prog").style.width = pc(etat.i + 1, PAS.length);
+  $("b-lecture").textContent = etat.lecture ? "❚❚ Pause" : "▶ Lecture";
+  $("b-lecture").disabled = etat.mode === "pratique";
+  $("m-demo").setAttribute("aria-pressed", etat.mode === "demo");
+  $("m-prat").setAttribute("aria-pressed", etat.mode === "pratique");
+  scene.classList.toggle("pratique", etat.mode === "pratique");
+  curseur.style.display = etat.mode === "pratique" ? "none" : "";
+}
+
+// voix du navigateur : aperçu de la narration avant la vraie synthèse
+const voixOK = "speechSynthesis" in window;
+if (!voixOK || !C.etapes.some(e => (e.narration || "").trim())) $("o-voix-l").style.display = "none";
+let voixEtape = -1;
+function lireNarration(ie) {
+  if (!voixOK) return;
+  speechSynthesis.cancel();
+  if (!$("o-voix").checked) return;
+  const t = (C.etapes[ie].narration || "").trim(); if (!t) return;
+  const u = new SpeechSynthesisUtterance(texteBrut(t).replace(/\$[^$]*\$/g, " "));     // ni ** ni formules à l'oral u.lang = C.langue === "en" ? "en-GB" : "fr-FR"; u.rate = vitesse();
+  speechSynthesis.speak(u);
+}
+let audio = null;
+function jouerAudio(ie) {
+  if (audio) { audio.pause(); audio = null; }
+  const a = C.etapes[ie].audio; if (!a) return lireNarration(ie);
+  audio = new Audio(a); audio.playbackRate = vitesse(); audio.play().catch(() => {});
+}
+function finAudio(jeton) {
+  return new Promise(res => {
+    (function boucle() {
+      if (jeton !== etat.jeton) return res(false);
+      const parle = (audio && !audio.ended && !audio.paused) || (voixOK && speechSynthesis.speaking);
+      if (!parle) return res(true);
+      setTimeout(boucle, 150);
+    })();
+  });
+}
+
+// ---------------------------------------------------------------- démonstration
+// Durées d'un pas en mode Regarder (ms) : déplacement du curseur, geste, lecture de la bulle.
+// p.lecture_s (réglé dans l'éditeur) fixe la durée totale ; sinon tout est calculé. Même calcul dans editeur.html.
+const dureeBulle = p => p.bulle ? Math.min(5000, Math.max(1800, 900 + 45 * texteBrut(p.bulle).length)) : 600;
+function tempsPas(p, depuis) {
+  const immobile = ["touche", "saisie", "montrer"].includes(p.action);
+  const d = depuis ? Math.hypot(p.point[0] - depuis[0], p.point[1] - depuis[1]) : 0;
+  let trajet = immobile ? 0 : Math.round(Math.min(1500, Math.max(450, 350 + 1300 * d / W)));
+  const geste = p.action === "saisie" ? 90 * (p.texte || "").length + 700 : p.action === "glisser" ? 900
+    : (immobile || p.action === "molette") ? 0 : 250 + (p.action === "double_clic" ? 160 : 0);
+  let bulle = dureeBulle(p);
+  if (p.lecture_s > 0) {
+    const total = p.lecture_s * 1000;
+    if (trajet) trajet = Math.round(Math.min(trajet, Math.max(200, (total - geste) * 0.4)));
+    bulle = Math.max(300, total - geste - trajet);
+  }
+  return {trajet, geste, bulle, total: trajet + geste + bulle};
+}
+// Chemin du curseur : un arc propre du point précédent au point visé (par défaut), ou le trajet enregistré.
+function cheminPas(p) {
+  const a = etat.pos || p.point, b = p.point;
+  const mode = p.trajectoire || REG.trajectoire || "arc";
+  if (mode === "enregistree" && p.trajet && p.trajet.length > 2) {
+    const tr = p.trajet, tT = Math.max(1, tr[tr.length - 1][2]);
+    const pts = [[a[0], a[1], 0], ...tr.slice(1).map(q => [q[0], q[1], q[2] / tT])];
+    pts[pts.length - 1] = [b[0], b[1], 1];
+    return u => {
+      let k = 1; while (k < pts.length - 1 && pts[k][2] < u) k++;
+      const A = pts[k - 1], B = pts[k], v = B[2] > A[2] ? Math.min(1, Math.max(0, (u - A[2]) / (B[2] - A[2]))) : 1;
+      return [A[0] + (B[0] - A[0]) * v, A[1] + (B[1] - A[1]) * v];
+    };
+  }
+  const dx = b[0] - a[0], dy = b[1] - a[1], cx = (a[0] + b[0]) / 2 - dy * 0.12, cy = (a[1] + b[1]) / 2 + dx * 0.12;
+  return u => {
+    const e = u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2, f = 1 - e;
+    return [f * f * a[0] + 2 * f * e * cx + e * e * b[0], f * f * a[1] + 2 * f * e * cy + e * e * b[1]];
+  };
+}
+async function animerTrajet(p, jeton, duree) {
+  const f = cheminPas(p);
+  let t = 0, last = performance.now();
+  return new Promise(res => {
+    (function boucle() {
+      if (jeton !== etat.jeton) return res(false);
+      const n = performance.now(); if (etat.lecture) t += (n - last) * vitesse(); last = n;
+      poserCurseur(...f(Math.min(1, t / Math.max(1, duree))));
+      if (t >= duree) { poserCurseur(p.point[0], p.point[1]); return res(true); }
+      requestAnimationFrame(boucle);
+    })();
+  });
+}
+
+async function jouerPas(jeton) {
+  const p = PAS[etat.i];
+  majInterface(); message("");
+  await image(p.image); if (jeton !== etat.jeton) return false;
+  ecran.src = p.image;
+  image((PAS[etat.i + 1] || {}).image);
+  if (p.ip === 0 && voixEtape !== p.ie) { voixEtape = p.ie; jouerAudio(p.ie); }
+  cacherAides();
+  const T = tempsPas(p, etat.pos);
+  if (!T.trajet) { if (!etat.pos) poserCurseur(...p.point); }
+  else if (!(await animerTrajet(p, jeton, T.trajet))) return false;
+  montrerCadre(p); montrerBulle(p);
+  if (p.action === "saisie") {
+    const c = p.cible.cadre, champ = document.createElement("div");
+    champ.className = "saisie"; poserChamp(champ, c);
+    scene.appendChild(champ);
+    for (const ch of p.texte || "") { champ.textContent += ch; if (!(await attendre(90, jeton))) { champ.remove(); return false; } }
+    await attendre(700, jeton); champ.remove();
+  } else if (p.action === "glisser" && p.arrivee) {
+    onde(...p.point);
+    if (!(await animerTrajet({point: p.arrivee, trajectoire: "arc"}, jeton, 900))) return false;
+  } else if (!["touche", "molette", "montrer"].includes(p.action)) {
+    if (!(await attendre(250, jeton))) return false;
+    onde(...p.point);
+    if (p.action === "double_clic") { await attendre(160, jeton); onde(...p.point); }
+  }
+  if (!(await attendre(T.bulle, jeton))) return false;
+  return true;
+}
+
+async function boucleDemo() {
+  const jeton = ++etat.jeton;
+  etat.boucle = jeton; etat.lecture = true; majInterface();
+  while (jeton === etat.jeton && etat.i < PAS.length) {
+    if (!(await jouerPas(jeton))) return;
+    const p = PAS[etat.i];
+    if (p.dernier) {
+      etat.vues.add(p.ie);
+      if (!(await finAudio(jeton))) return;
+      if (C.etapes[p.ie].arret !== false || etat.i === PAS.length - 1) { return finEtape(p.ie); }
+    }
+    etat.i++;
+  }
+}
+
+function finEtape(ie) {
+  etat.lecture = false; etat.jeton++; majInterface(); cacherAides();
+  const derniere = ie === C.etapes.length - 1;
+  const fond = document.createElement("div"); fond.className = "carte-fin";
+  const bilan = etat.mode === "pratique" ? bilanPratique(ie) : "";
+  fond.innerHTML = `<div><h3>${derniere ? "Fin de la capsule" : "Étape " + (ie + 1) + " terminée"}</h3>
+    <p>${echap(C.etapes[ie].titre || "")}</p>${bilan}
+    <p><button class="b secondaire" data-a="rejouer">Revoir l'étape</button>
+    ${etat.mode === "demo" ? '<button class="b secondaire" data-a="faire">Faire cette étape</button>' : ""}
+    ${derniere ? "" : '<button class="b" data-a="continuer">Continuer</button>'}</p></div>`;
+  scene.appendChild(fond);
+  if (derniere && C.image_finale) ecran.src = C.image_finale;
+  fond.addEventListener("click", ev => {
+    ev.stopPropagation();                      // le clic sur la carte ne compte pas comme un essai
+    const a = ev.target.dataset && ev.target.dataset.a; if (!a) return;
+    fond.remove();
+    if (a === "rejouer") allerEtape(ie);
+    else if (a === "faire") { etat.mode = "pratique"; allerEtape(ie); }
+    else allerEtape(ie + 1);
+  });
+  const b = fond.querySelector('[data-a="continuer"]') || fond.querySelector("button"); if (b) b.focus();
+}
+function bilanPratique(ie) {
+  const ps = PAS.filter(p => p.ie === ie && !aObserver(p)), ok = ps.filter(p => (etat.traces[p.id] || {}).premier).length;
+  return `<p>Réussi du premier coup : <b>${ok} / ${ps.length}</b></p>`;
+}
+
+// ---------------------------------------------------------------- pratique
+// texte attendu : « 100 », « 100 mm », « 100,0 » sont la même réponse ; autres formes dans p.accepte
+function reponseJuste(saisi, p) {
+  const norm = s => String(s).trim().toLowerCase().replace(/\s+/g, "").replace(",", ".");
+  const nombre = s => { const m = norm(s).match(/^([-+]?\d*\.?\d+(?:e[-+]?\d+)?)([a-zµ°%]*)$/); return m ? [parseFloat(m[1]), m[2]] : null; };
+  const attendus = [p.texte || "", ...(p.accepte || [])];
+  const tol = p.tolerance || 1e-9;
+  return attendus.some(a => {
+    if (norm(saisi) === norm(a)) return true;
+    const x = nombre(saisi), y = nombre(a);
+    return !!(x && y && Math.abs(x[0] - y[0]) <= tol * Math.max(1, Math.abs(y[0])) && (!x[1] || !y[1] || x[1] === y[1]));
+  });
+}
+// pas montré sans être demandé (molette, défilement : impossible à refaire sur une image fixe)
+const aObserver = p => p.observer || p.action === "molette" || p.action === "montrer";
+
+function consignePratique(p) {
+  if (aObserver(p)) {
+    montrerCadre(p); montrerBulle(p);
+    message('À regarder seulement. <button class="b secondaire" id="b-vu">Continuer</button>');
+    $("b-vu").onclick = () => reussite(p, null, null, true);
+    $("b-vu").focus();
+    return;
+  }
+  // zone montrée dès la consigne : réglage du pas (éditeur), sinon quand la zone ou la bulle ne disent rien
+  const generique = p.indice != null ? !!p.indice
+    : (!p.cible || p.cible.origine === "aucune" || /^(Cliquez|Double-cliquez) ici/.test(p.bulle || ""));
+  if (generique) montrerCadre(p, true);       // sans nom de contrôle, la consigne seule ne suffit pas
+  montrerBulle(p, true);
+  if (p.action === "saisie") {
+    const c = p.cible.cadre, champ = document.createElement("input");
+    champ.className = "saisie"; champ.setAttribute("aria-label", "Texte à taper");
+    poserChamp(champ, c);
+    scene.appendChild(champ); etat.attenteSaisie = champ;
+    champ.addEventListener("keydown", ev => {
+      if (ev.key !== "Enter") return;
+      ev.preventDefault();
+      if (reponseJuste(champ.value, p)) reussite(p); else echec(p, null);
+    });
+    setTimeout(() => champ.focus(), 50);
+  }
+}
+async function montrerPasPratique() {
+  etat.jeton++; etat.lecture = false;
+  const p = PAS[etat.i]; etat.essais = 0; etat.valide = null;
+  if (etat.attenteSaisie) { etat.attenteSaisie.remove(); etat.attenteSaisie = null; }
+  majInterface(); cacherAides(); message("");
+  await image(p.image); ecran.src = p.image; image((PAS[etat.i + 1] || {}).image);
+  if (p.ip === 0 && voixEtape !== p.ie) { voixEtape = p.ie; jouerAudio(p.ie); }
+  consignePratique(p);
+}
+function suivant(p) {
+  if (p.dernier) { etat.vues.add(p.ie); finEtape(p.ie); }
+  else { etat.i++; montrerPasPratique(); }
+}
+function reussite(p, x, y, vu) {
+  if (etat.valide === p.id) return;            // un seul passage (la molette envoie plusieurs événements)
+  etat.valide = p.id;
+  if (!vu) {
+    const tr = etat.traces[p.id] = etat.traces[p.id] || {essais: 0};
+    tr.essais = etat.essais + 1; if (tr.premier === undefined) tr.premier = etat.essais === 0;
+    if (x != null) onde(x, y, "juste");
+    message("Oui.", "juste");
+  }
+  if (etat.attenteSaisie) { etat.attenteSaisie.remove(); etat.attenteSaisie = null; }
+  if (p.retour_juste && !vu) {                 // explication donnée après le geste : l'étudiant la lit, puis continue
+    message(`${md(p.retour_juste)} <button class="b secondaire" id="b-vu">Continuer</button>`, "juste");
+    maths($("message")); $("b-vu").onclick = () => suivant(p); $("b-vu").focus();
+    return;
+  }
+  setTimeout(() => suivant(p), 450);
+}
+function echec(p, x, y) {
+  etat.essais++;
+  if (x != null) onde(x, y, "faux");
+  const n = REG.essais || 3;
+  if (etat.essais >= n) {
+    montrerCadre(p); message(`C'est ici : ${md(p.bulle)}`, "faux");
+    const tr = etat.traces[p.id] = etat.traces[p.id] || {}; tr.premier = false;
+  } else message(`${p.retour_faux ? md(p.retour_faux) : "Pas tout à fait."} Essai ${etat.essais} / ${n}.`, "faux");
+  maths($("message"));
+}
+// Gestes acceptés pour un pas : le geste principal et ses variantes (p.ou), par exemple
+// « côté du haut ou côté du bas », « touche Entrée ou clic sur OK ».
+const gestes = p => [{action: p.action, cadre: p.cible && p.cible.cadre, touches: p.touches}, ...(p.ou || [])];
+const EVT = {clic: "click", double_clic: "dblclick", clic_droit: "contextmenu", clic_milieu: "auxclick", molette: "wheel"};
+function actionAttendue(p, type, ev) {
+  if (etat.mode !== "pratique" || scene.querySelector(".carte-fin") || etat.valide || aObserver(p)) return;
+  const [x, y] = coordsEcran(ev), g = gestes(p).filter(q => EVT[q.action] && q.cadre);
+  if (!g.length) return;                                     // saisie, touche seule, glisser : jugés ailleurs
+  if (g.some(q => EVT[q.action] === type && dans(q.cadre, x, y))) return reussite(p, x, y);
+  if (type === "click" && g.some(q => q.action === "double_clic" && dans(q.cadre, x, y))) return;   // 1er clic d'un double-clic
+  if (p.action === "glisser" && type === "click") return;    // jugé au relâchement (mouseup)
+  if (ev.target.closest && ev.target.closest(".saisie")) return;
+  if (type === "click" || type === "contextmenu" || g.some(q => EVT[q.action] === type)) echec(p, x, y);
+}
+let appui = null;
+ecran.draggable = false;
+scene.addEventListener("dragstart", ev => ev.preventDefault());
+scene.addEventListener("mousedown", ev => { appui = coordsEcran(ev); if (etat.mode === "pratique") ev.preventDefault(); });
+scene.addEventListener("mouseup", ev => {
+  const p = PAS[etat.i]; if (etat.mode !== "pratique" || p.action !== "glisser" || !appui) return;
+  const [x, y] = coordsEcran(ev), a = appui; appui = null;
+  if (Math.hypot(x - a[0], y - a[1]) < 10) return;
+  const proche = p.arrivee && Math.hypot(x - p.arrivee[0], y - p.arrivee[1]) < W * 0.03;
+  if (dans(p.cible.cadre, a[0], a[1]) && proche) reussite(p, x, y); else echec(p, x, y);
+});
+scene.addEventListener("click", ev => { if (ev.button === 0) actionAttendue(PAS[etat.i], "click", ev); });
+scene.addEventListener("dblclick", ev => actionAttendue(PAS[etat.i], "dblclick", ev));
+scene.addEventListener("contextmenu", ev => { ev.preventDefault(); actionAttendue(PAS[etat.i], "contextmenu", ev); });
+scene.addEventListener("auxclick", ev => { if (ev.button === 1) actionAttendue(PAS[etat.i], "auxclick", ev); });
+scene.addEventListener("wheel", ev => { if (etat.mode === "pratique") { ev.preventDefault(); actionAttendue(PAS[etat.i], "wheel", ev); } }, {passive: false});
+
+function libelleTouche(ev) {
+  const noms = {Enter: "Entrée", Tab: "Tab", Escape: "Échap", Delete: "Suppr", Backspace: "Retour arrière",
+    ArrowUp: "Haut", ArrowDown: "Bas", ArrowLeft: "Gauche", ArrowRight: "Droite", Home: "Début", End: "Fin", " ": "Espace"};
+  const k = noms[ev.key] || (ev.key.length === 1 ? ev.key.toUpperCase() : ev.key);
+  return [ev.ctrlKey && "Ctrl", ev.altKey && "Alt", ev.metaKey && "Win", k].filter(Boolean).join("+");
+}
+
+// ---------------------------------------------------------------- navigation
+function allerPas(i) {
+  etat.i = Math.max(0, Math.min(PAS.length - 1, i));
+  scene.querySelectorAll(".carte-fin,.saisie").forEach(e => e.remove());
+  if (etat.mode === "pratique") return montrerPasPratique();
+  etat.jeton++; etat.lecture = false;
+  const p = PAS[etat.i];
+  image(p.image).then(() => { ecran.src = p.image; });
+  cacherAides(); poserCurseur(...p.point); majInterface(); montrerCadre(p); montrerBulle(p);
+}
+function allerEtape(ie) {
+  voixEtape = -1;
+  allerPas(debutEtape(Math.min(ie, C.etapes.length - 1)));
+  if (etat.mode === "demo") { cacherAides(); boucleDemo(); }
+}
+function lecture() {
+  if (etat.mode !== "demo") return;
+  if (etat.lecture) { etat.lecture = false; if (audio) audio.pause(); if (voixOK) speechSynthesis.pause(); majInterface(); }
+  else if (scene.querySelector(".carte-fin")) { /* attendre le choix de la carte */ }
+  else {
+    if (audio && audio.paused && !audio.ended) audio.play();
+    if (voixOK && speechSynthesis.paused) speechSynthesis.resume();
+    if (etat.boucle === etat.jeton) { etat.lecture = true; majInterface(); }   // reprise après pause
+    else boucleDemo();
+  }
+}
+$("b-lecture").onclick = lecture;
+$("b-prec").onclick = () => { allerPas(etat.i - 1); };
+$("b-suiv").onclick = () => { allerPas(etat.i + 1); };
+$("m-demo").onclick = () => { if (etat.mode === "demo") return; etat.mode = "demo"; allerEtape(PAS[etat.i].ie); };
+$("m-prat").onclick = () => { if (etat.mode === "pratique") return; etat.mode = "pratique"; allerEtape(PAS[etat.i].ie); };
+$("o-rapide").onchange = () => { if (audio) audio.playbackRate = vitesse(); };
+document.addEventListener("keydown", ev => {
+  const p = PAS[etat.i];
+  const touches = etat.mode === "pratique" && !aObserver(p) ? gestes(p).filter(q => q.action === "touche") : [];
+  if (touches.length && !etat.valide && !scene.querySelector(".carte-fin") && !(ev.target.closest && ev.target.closest(".saisie"))) {
+    if (["Control", "Alt", "Shift", "Meta"].includes(ev.key)) return;
+    const norm = s => s.toLowerCase().replace(/\s/g, "");
+    if (touches.some(q => norm(libelleTouche(ev)) === norm(q.touches || ""))) { ev.preventDefault(); return reussite(p); }
+    if (p.action === "touche") { ev.preventDefault(); return echec(p); }     // une touche attendue en premier : toute autre est une erreur
+  }
+  if (ev.target.tagName === "INPUT" || ev.target.tagName === "BUTTON" && ev.key === " ") return;
+  if (ev.key === " ") { ev.preventDefault(); lecture(); }
+  else if (ev.key === "ArrowRight") allerPas(etat.i + 1);
+  else if (ev.key === "ArrowLeft") allerPas(etat.i - 1);
+});
+
+// ---------------------------------------------------------------- démarrage
+$("titre").textContent = C.titre || "Capsule";
+document.title = C.titre || "Capsule";
+const nPas = PAS.length;
+$("sous-titre").textContent = `${C.etapes.length} étape${C.etapes.length > 1 ? "s" : ""} · ${nPas} actions`;
+scene.style.aspectRatio = `${W} / ${H}`;
+C.etapes.forEach((et, ie) => {
+  const li = document.createElement("li"), b = document.createElement("button");
+  b.innerHTML = `<span class="num">${ie + 1}</span><span>${echap(et.titre || "Étape " + (ie + 1))}<small>${et.pas.length} action${et.pas.length > 1 ? "s" : ""}</small></span>`;
+  b.onclick = () => allerEtape(ie);
+  li.appendChild(b); $("chapitres").appendChild(li);
+});
+if (REG.mode === "demonstration") $("m-prat").parentElement.style.display = "none";
+if (REG.mode === "pratique") $("m-demo").parentElement.style.display = "none";
+{ const i0 = PAS.findIndex(p => p.id === location.hash.slice(1)); allerPas(i0 > 0 ? i0 : 0); }   // index.html#p012
+</script>
+</body>
+</html>

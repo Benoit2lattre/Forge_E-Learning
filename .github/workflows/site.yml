@@ -1,0 +1,52 @@
+# Forge E-Learning — construction du site et publication sur la branche gh-pages
+#
+# ÉTAT : NON ACTIVÉE. Seul le lancement manuel (onglet Actions > « Site » > Run workflow) est possible.
+# Pour publier à chaque push sur main, décommenter le bloc « push » ci-dessous.
+#
+# Attention : l'étape de publication RÉÉCRIT entièrement la branche gh-pages à chaque exécution
+# (un seul commit, sans historique, poussé avec --force). Ne rien modifier à la main sur cette branche.
+#
+# Réglages GitHub nécessaires (Settings du dépôt) :
+#   - Actions > General > Workflow permissions : « Read and write permissions »
+#     (ou garder la permission « contents: write » déclarée ci-dessous) ;
+#   - Pages > Build and deployment : Source « Deploy from a branch », branche gh-pages, dossier / (root).
+name: Site
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: site
+  cancel-in-progress: true
+
+jobs:
+  construire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer Jupyter Book
+        run: pip install -r site/requirements.txt
+
+      - name: Construire le site
+        run: jupyter-book build . --config site/_config.yml --toc site/_toc.yml --path-output site -W --keep-going
+
+      - name: Publier le site sur la branche gh-pages (clonable seul)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cp .github/README_site.md site/_build/html/README.md
+          cd site/_build/html
+          touch .nojekyll
+          git init -q -b gh-pages
+          git add -A
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -q -m "Site de documentation (${GITHUB_SHA::7})"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
