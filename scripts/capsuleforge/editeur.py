@@ -3,7 +3,7 @@
 « capsuleforge editer tuto1 » démarre un petit serveur sur cet ordinateur seulement (127.0.0.1) et ouvre
 l'éditeur dans le navigateur. La page lit et écrit ``capsule.yaml`` par ce serveur ; rien ne sort de cet ordinateur.
 
-Ce que fait le serveur : ::
+Ce que fait le serveur (module :mod:`serveur_local`) : ::
 
   GET  /                      la page de l'éditeur
   GET  /api/capsule           la capsule (JSON) et la liste des images
@@ -23,12 +23,12 @@ import json
 import shutil
 import threading
 import time
-import webbrowser
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs
 
 import assemblage as A
+import serveur_local as S
 
 ICI = Path(__file__).resolve().parent
 
@@ -38,9 +38,6 @@ ORDRE_PAS = ["ignorer", "raison", "id", "action", "image", "point", "arrivee", "
              "duree_ms", "processus", "autre_programme"]
 ORDRE_ETAPE = ["titre", "narration", "audio", "arret", "pas"]
 ORDRE_CAPSULE = ["format", "titre", "langue", "ecran", "source", "reglages", "masques", "etapes", "image_finale"]
-TYPES = {".html": "text/html; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
-         ".webp": "image/webp", ".json": "application/json", ".mp3": "audio/mpeg", ".wav": "audio/wav",
-         ".js": "text/javascript", ".css": "text/css"}
 
 
 def _ordonner(d: dict, ordre: list[str]) -> dict:
@@ -197,83 +194,42 @@ class Seance:
 
 
 def _gestionnaire(seance: Seance):
-    """Renvoie la classe de gestionnaire HTTP liée à ``seance``."""
-    class G(BaseHTTPRequestHandler):
-        server_version = "CapsuleForge"
+    """Renvoie la classe de gestionnaire HTTP liée à ``seance`` (routes : voir l'en-tête du module)."""
+    class G(S.Gestionnaire):
 
-        def log_message(self, *a):          # console silencieuse
-            pass
+        def get(self, chemin, url):
+            if chemin in ("/", "/index.html"):
+                return self._fichier(ICI / "editeur.html")
+            if chemin == "/api/capsule":
+                return self._json(seance.lire())
+            if chemin.startswith("/images/"):
+                return self._fichier(seance.chemin_image(chemin[8:]))
+            if chemin.startswith("/vignette/"):
+                q = parse_qs(url.query)
+                x = float(q["x"][0]) if "x" in q else None
+                y = float(q["y"][0]) if "y" in q else None
+                v = seance.vignette(chemin[10:], x, y)
+                return self._envoyer(200, v, "image/jpeg", {"Cache-Control": "max-age=3600"}) if v \
+                    else self._envoyer(404, b"", "text/plain")
+            if chemin == "/vendor/mathjax.js":
+                import construire
+                return self._fichier(construire.MATHJAX, True)
+            if chemin.startswith("/apercu/"):
+                f = (seance.sortie / chemin[8:]).resolve()
+                if seance.sortie.resolve() not in f.parents:
+                    return self._envoyer(403, b"refuse", "text/plain")
+                return self._fichier(f)
+            self._introuvable()
 
-        def _envoyer(self, code: int, corps: bytes, type_: str, cache: bool = False):
-            self.send_response(code)
-            self.send_header("Content-Type", type_)
-            self.send_header("Content-Length", str(len(corps)))
-            self.send_header("Cache-Control", "max-age=3600" if cache else "no-store")
-            self.end_headers()
-            self.wfile.write(corps)
-
-        def _json(self, obj, code: int = 200):
-            self._envoyer(code, json.dumps(obj, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
-
-        def _fichier(self, f: Path | None, cache: bool = False):
-            if not f or not f.is_file():
-                return self._envoyer(404, b"introuvable", "text/plain")
-            self._envoyer(200, f.read_bytes(), TYPES.get(f.suffix.lower(), "application/octet-stream"), cache)
-
-        def _local(self) -> bool:
-            """Refuse ce qui ne vient pas de la page elle-même (un autre site ouvert dans le navigateur)."""
-            hote = (self.headers.get("Host") or "").split(":")[0]
-            if hote not in ("127.0.0.1", "localhost"):
-                return False
-            origine = self.headers.get("Origin")
-            return not origine or urlparse(origine).hostname in ("127.0.0.1", "localhost")
-
-        def do_GET(self):
-            if not self._local():
-                return self._envoyer(403, b"refuse", "text/plain")
-            u = urlparse(self.path)
-            chemin = unquote(u.path)
-            try:
-                if chemin in ("/", "/index.html"):
-                    return self._fichier(ICI / "editeur.html")
-                if chemin == "/api/capsule":
-                    return self._json(seance.lire())
-                if chemin.startswith("/images/"):
-                    return self._fichier(seance.chemin_image(chemin[8:]))
-                if chemin.startswith("/vignette/"):
-                    q = parse_qs(u.query)
-                    x = float(q["x"][0]) if "x" in q else None
-                    y = float(q["y"][0]) if "y" in q else None
-                    v = seance.vignette(chemin[10:], x, y)
-                    return self._envoyer(200, v, "image/jpeg", True) if v else self._envoyer(404, b"", "text/plain")
-                if chemin == "/vendor/mathjax.js":
-                    import construire
-                    return self._fichier(construire.MATHJAX, True)
-                if chemin.startswith("/apercu/"):
-                    f = (seance.sortie / chemin[8:]).resolve()
-                    if seance.sortie.resolve() not in f.parents:
-                        return self._envoyer(403, b"refuse", "text/plain")
-                    return self._fichier(f)
-                self._envoyer(404, b"introuvable", "text/plain")
-            except Exception as e:                                   # l'éditeur affiche le message
-                self._json({"ok": False, "message": f"{type(e).__name__} : {e}"}, 500)
-
-        def do_POST(self):
-            if not self._local():
-                return self._envoyer(403, b"refuse", "text/plain")
-            chemin = urlparse(self.path).path
-            corps = self.rfile.read(int(self.headers.get("Content-Length") or 0))
-            try:
-                if chemin == "/api/capsule":
-                    return self._json(seance.ecrire(json.loads(corps.decode("utf-8"))))
-                if chemin == "/api/image":
-                    cap = A.lire_yaml(seance.yaml)
-                    return self._json({"ok": True, "nom": seance.ajouter_image(corps, cap["ecran"])})
-                if chemin == "/api/apercu":
-                    return self._json(seance.apercu())
-                self._envoyer(404, b"introuvable", "text/plain")
-            except Exception as e:
-                self._json({"ok": False, "message": f"{type(e).__name__} : {e}"}, 500)
+        def post(self, chemin, corps):
+            if chemin == "/api/capsule":
+                return self._json(seance.ecrire(json.loads(corps.decode("utf-8"))))
+            if chemin == "/api/image":
+                cap = A.lire_yaml(seance.yaml)
+                return self._json({"ok": True, "nom": seance.ajouter_image(corps, cap["ecran"])})
+            if chemin == "/api/apercu":
+                return self._json(seance.apercu())
+            self._introuvable()
 
     return G
 
@@ -283,15 +239,7 @@ def demarrer(capsule_yaml: Path, sortie: Path, port: int = 8765) -> tuple[Thread
 
     Le serveur n'écoute que sur 127.0.0.1 et n'est pas encore lancé.
     """
-    seance = Seance(capsule_yaml, sortie)
-    dernier = None
-    for p in range(port, port + 20):
-        try:
-            srv = ThreadingHTTPServer(("127.0.0.1", p), _gestionnaire(seance))
-            return srv, f"http://127.0.0.1:{p}/"
-        except OSError as e:
-            dernier = e
-    raise SystemExit(f"Aucun port libre entre {port} et {port + 19} ({dernier})")
+    return S.demarrer(_gestionnaire(Seance(capsule_yaml, sortie)), port)
 
 
 def editer(capsule_yaml: Path, sortie: Path, port: int = 8765, navigateur: bool = True):
@@ -304,11 +252,5 @@ def editer(capsule_yaml: Path, sortie: Path, port: int = 8765, navigateur: bool 
     srv, adresse = demarrer(capsule_yaml, sortie, port)
     print(f"Éditeur de « {Path(capsule_yaml).parent.name} » : {adresse}")
     print("Laisser cette fenêtre ouverte pendant l'édition ; Ctrl+C pour arrêter.")
-    if navigateur:
-        threading.Timer(0.4, lambda: webbrowser.open(adresse)).start()
-    try:
-        srv.serve_forever()
-    except KeyboardInterrupt:
+    if S.servir(srv, adresse, navigateur):
         print("\nÉditeur arrêté.")
-    finally:
-        srv.server_close()

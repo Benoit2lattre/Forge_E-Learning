@@ -380,19 +380,11 @@ def relire_traduction(yaml_chap: Path, langue: str, port: int = 8776, navigateur
 
     Le serveur local tourne jusqu'à la fermeture de la page (ou Ctrl+C).
     """
-    import threading
-    import webbrowser
     import relecture
+    import serveur_local
     preparer(yaml_chap, langue, "aucun")
     srv, adresse = relecture.demarrer(yaml_chap, port, seance=_seance_traduction(yaml_chap, langue))
     print(f"Relecture de la traduction {langue} de « {yaml_chap.parent.name} » : {adresse}")
     print("Laisser cette fenêtre ouverte. Elle se libère quand la page est fermée (ou bouton « Quitter », ou Ctrl+C).")
-    if navigateur:
-        threading.Timer(0.4, lambda: webbrowser.open(adresse)).start()
-    try:
-        srv.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        srv.server_close()
+    serveur_local.servir(srv, adresse, navigateur)
     print("Relecture de la traduction terminée.")

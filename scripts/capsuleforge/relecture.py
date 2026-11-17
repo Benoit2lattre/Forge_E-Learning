@@ -8,7 +8,7 @@ Les phrases horodatées d'un pas (``phrases``) sont la seule source du texte dit
 sous-titres en sont tirés. À la première ouverture, elles sont préparées à partir de la narration et de la
 transcription (``transcriptions/<id>.json``), sans rien écrire tant que l'on n'enregistre pas.
 
-Routes du serveur : ::
+Routes du serveur (module :mod:`serveur_local`) : ::
 
   GET  /                  la page
   GET  /api/chapitre      le chapitre : pas, phrases, apparitions, mots horodatés de la transcription
@@ -27,12 +27,11 @@ import re
 import shutil
 import threading
 import time
-import webbrowser
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
 
 import format2 as F
+import serveur_local as S
 import transcription as T
 
 ICI = Path(__file__).resolve().parent
@@ -239,102 +238,35 @@ class Seance:
 
 
 def _gestionnaire(seance: Seance):
-    """Renvoie la classe de gestionnaire HTTP liée à ``seance``."""
-    class G(BaseHTTPRequestHandler):
-        server_version = "CapsuleForge"
+    """Renvoie la classe de gestionnaire HTTP liée à ``seance`` (routes : voir l'en-tête du module)."""
+    class G(S.Gestionnaire):
         protocol_version = "HTTP/1.1"
 
-        def log_message(self, *a):
-            pass
+        def get(self, chemin, url):
+            if chemin in ("/", "/index.html", "/api/chapitre"):
+                seance.page_revenue()
+            if chemin in ("/", "/index.html"):
+                return self._envoyer(200, (ICI / getattr(seance, "PAGE", "relecture.html")).read_bytes(), S.TYPES[".html"])
+            if chemin == "/api/chapitre":
+                return self._json(seance.lire())
+            if chemin.startswith("/media/"):
+                return self._media(seance.media(chemin[7:]))
+            self._introuvable()
 
-        def _envoyer(self, code: int, corps: bytes, type_: str, entetes: dict | None = None):
-            self.send_response(code)
-            self.send_header("Content-Type", type_)
-            self.send_header("Content-Length", str(len(corps)))
-            for k, v in (entetes or {"Cache-Control": "no-store"}).items():
-                self.send_header(k, v)
-            self.end_headers()
-            self.wfile.write(corps)
-
-        def _json(self, obj, code: int = 200):
-            self._envoyer(code, json.dumps(obj, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
-
-        def _media(self, f: Path | None):
-            """Fichier du chapitre, avec lecture partielle (Range) : nécessaire pour se déplacer dans un son."""
-            if not f:
-                return self._envoyer(404, b"introuvable", "text/plain")
-            taille = f.stat().st_size
-            type_ = TYPES[f.suffix.lower()]
-            plage = self.headers.get("Range") or ""
-            debut, fin = 0, taille - 1
-            if plage.startswith("bytes="):
-                a, _, b = plage[6:].split(",")[0].partition("-")
-                try:
-                    if a:
-                        debut = int(a); fin = min(int(b), taille - 1) if b else taille - 1
-                    else:
-                        debut = max(0, taille - int(b))
-                except ValueError:
-                    debut, fin = 0, taille - 1
-                if debut > fin or debut >= taille:
-                    return self._envoyer(416, b"", type_, {"Content-Range": f"bytes */{taille}"})
-            with open(f, "rb") as h:
-                h.seek(debut)
-                corps = h.read(fin - debut + 1)
-            entetes = {"Accept-Ranges": "bytes", "Cache-Control": "no-cache"}
-            if plage.startswith("bytes="):
-                entetes["Content-Range"] = f"bytes {debut}-{fin}/{taille}"
-                return self._envoyer(206, corps, type_, entetes)
-            self._envoyer(200, corps, type_, entetes)
-
-        def _local(self) -> bool:
-            """Refuse ce qui ne vient pas de la page elle-même (un autre site ouvert dans le navigateur)."""
-            hote = (self.headers.get("Host") or "").split(":")[0]
-            if hote not in ("127.0.0.1", "localhost"):
-                return False
-            origine = self.headers.get("Origin")
-            return not origine or urlparse(origine).hostname in ("127.0.0.1", "localhost")
-
-        def do_GET(self):
-            if not self._local():
-                return self._envoyer(403, b"refuse", "text/plain")
-            chemin = unquote(urlparse(self.path).path)
-            try:
-                if chemin in ("/", "/index.html", "/api/chapitre"):
-                    seance.page_revenue()
-                if chemin in ("/", "/index.html"):
-                    return self._envoyer(200, (ICI / getattr(seance, "PAGE", "relecture.html")).read_bytes(), TYPES[".html"])
-                if chemin == "/api/chapitre":
-                    return self._json(seance.lire())
-                if chemin.startswith("/media/"):
-                    return self._media(seance.media(chemin[7:]))
-                self._envoyer(404, b"introuvable", "text/plain")
-            except (BrokenPipeError, ConnectionResetError):
-                pass
-            except Exception as e:
-                self._json({"ok": False, "message": f"{type(e).__name__} : {e}"}, 500)
-
-        def do_POST(self):
-            if not self._local():
-                return self._envoyer(403, b"refuse", "text/plain")
-            corps = self.rfile.read(int(self.headers.get("Content-Length") or 0))
-            try:
-                chemin = urlparse(self.path).path
-                if chemin == "/api/pas":
-                    seance.page_revenue()
-                    return self._json(seance.ecrire(json.loads(corps.decode("utf-8"))))
-                if chemin == "/api/fin":
-                    self._json({"ok": True})
-                    return threading.Thread(target=seance.arreter, daemon=True).start()
-                if chemin == "/api/depart":
-                    seance.page_partie()
-                    return self._json({"ok": True})
-                if chemin.startswith("/api/") and hasattr(seance, "action"):      # autres écrans (traduction…)
-                    seance.page_revenue()
-                    return self._json(seance.action(chemin[5:], json.loads(corps.decode("utf-8") or "{}")))
-                self._envoyer(404, b"introuvable", "text/plain")
-            except Exception as e:
-                self._json({"ok": False, "message": f"{type(e).__name__} : {e}"}, 500)
+        def post(self, chemin, corps):
+            if chemin == "/api/pas":
+                seance.page_revenue()
+                return self._json(seance.ecrire(json.loads(corps.decode("utf-8"))))
+            if chemin == "/api/fin":
+                self._json({"ok": True})
+                return threading.Thread(target=seance.arreter, daemon=True).start()
+            if chemin == "/api/depart":
+                seance.page_partie()
+                return self._json({"ok": True})
+            if chemin.startswith("/api/") and hasattr(seance, "action"):      # autres écrans (traduction…)
+                seance.page_revenue()
+                return self._json(seance.action(chemin[5:], json.loads(corps.decode("utf-8") or "{}")))
+            self._introuvable()
 
     return G
 
@@ -346,15 +278,9 @@ def demarrer(chapitre_yaml: Path, port: int = 8775, seance=None) -> tuple[Thread
     serveur n'écoute que sur 127.0.0.1 et n'est pas encore lancé.
     """
     seance = seance or Seance(chapitre_yaml)
-    dernier = None
-    for p in range(port, port + 20):
-        try:
-            srv = ThreadingHTTPServer(("127.0.0.1", p), _gestionnaire(seance))
-            seance.arreter = srv.shutdown
-            return srv, f"http://127.0.0.1:{p}/"
-        except OSError as e:
-            dernier = e
-    raise SystemExit(f"Aucun port libre entre {port} et {port + 19} ({dernier})")
+    srv, adresse = S.demarrer(_gestionnaire(seance), port)
+    seance.arreter = srv.shutdown
+    return srv, adresse
 
 
 def relire(chapitre_yaml: Path, port: int = 8775, navigateur: bool = True):
@@ -368,12 +294,5 @@ def relire(chapitre_yaml: Path, port: int = 8775, navigateur: bool = True):
     print(f"Relecture de « {Path(chapitre_yaml).parent.name} » : {adresse}")
     print("Laisser cette fenêtre ouverte pendant la relecture. Elle se libère quand la page est fermée")
     print("(ou par le bouton « Quitter » de la page, ou par Ctrl+C ici).")
-    if navigateur:
-        threading.Timer(0.4, lambda: webbrowser.open(adresse)).start()
-    try:
-        srv.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        srv.server_close()
+    S.servir(srv, adresse, navigateur)
     print("Relecture terminée.")
