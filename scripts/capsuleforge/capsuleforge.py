@@ -66,7 +66,7 @@ sys.path.insert(0, str(ICI.parent / "commun"))
 import chemins  # noqa: E402
 import assemblage as A  # noqa: E402
 
-VERSION = "0.8"
+VERSION = "0.9"
 DOSSIER = chemins.DATA / "capsuleforge"
 COMMANDES = ["enregistrer", "editer", "construire", "traduire", "voix", "video", "filmer", "convertir", "plan", "pptx", "transcrire", "relire", "verifier", "assembler", "approj", "assistant"]
 
@@ -167,21 +167,22 @@ def cmd_construire(a):
     """
     y = trouver_capsule(a.capsule)
     y2 = trouver_chapitre(a.capsule)
-    format2 = y.name != "capsule.yaml" or (not y.is_file() and y2.is_file())
+    chapitre = y.name != "capsule.yaml" or (not y.is_file() and y2.is_file())
     if y.name == "capsule.yaml" and y.is_file() and y2.is_file():            # les deux formats dans le dossier
         choix = getattr(a, "lecteur", None)
         if choix:
-            format2 = choix == "2"
+            chapitre = choix == "2"
         else:
-            format2 = y2.stat().st_mtime > y.stat().st_mtime                  # le plus récemment modifié fait foi
+            chapitre = y2.stat().st_mtime > y.stat().st_mtime                  # le plus récemment modifié fait foi
             print(f"  {y.parent.name} a capsule.yaml (format 1) et chapitre.yaml (format 2) : lecteur au format "
-                  f"{2 if format2 else 1}, celui du fichier modifié en dernier (--lecteur 1 ou 2 pour choisir)")
-    if format2:                                                               # chapitre au format 2 (cours)
-        import construire2
+                  f"{2 if chapitre else 1}, celui du fichier modifié en dernier (--lecteur 1 ou 2 pour choisir)")
+    if chapitre:                                                               # chapitre au format 2 (cours)
+        import construire_chapitre
         y2 = y if y.name != "capsule.yaml" and y.is_file() else y2
         sortie = Path(a.sortie) if a.sortie else chemins.SORTIES / "capsuleforge" / y2.parent.name
-        return construire2.construire(y2, sortie, largeur=a.largeur, fmt=a.format or "webp", audio=a.audio,
-                                      scorm=getattr(a, "scorm", None), scorm_version=getattr(a, "scorm_version", None) or "2004") and 0
+        construire_chapitre.construire(y2, sortie, largeur=a.largeur, fmt=a.format or "webp", audio=a.audio,
+                                       scorm=getattr(a, "scorm", None), scorm_version=getattr(a, "scorm_version", None) or "2004")
+        return 0
     import construire
     sortie = Path(a.sortie) if a.sortie else chemins.SORTIES / "capsuleforge" / y.parent.name
     construire.construire(y, sortie, largeur=a.largeur, fmt=a.format or "png")
@@ -200,7 +201,7 @@ def trouver_chapitre(nom: str) -> Path:
     ``nom`` peut être un fichier, un dossier ou un nom court cherché dans ``data/capsuleforge`` comme pour
     :func:`trouver_capsule`. Le fichier renvoyé n'existe pas forcément.
     """
-    import format2 as F
+    import format_chapitre as F
     p = Path(nom)
     if p.is_file():
         return p
@@ -211,7 +212,7 @@ def trouver_chapitre(nom: str) -> Path:
 
 def _rapport2(chap, dossier):
     """Affiche les erreurs et avertissements d'un chapitre au format 2 ; renvoie la liste des erreurs."""
-    import format2 as F
+    import format_chapitre as F
     err, av = F.verifier(chap, dossier)
     for e in err:
         print("  ERREUR :", e)
@@ -225,7 +226,7 @@ def cmd_verifier(a):
 
     Commande ``verifier`` ; renvoie 1 s'il y a au moins une erreur, 0 sinon.
     """
-    import format2 as F
+    import format_chapitre as F
     y = trouver_capsule(a.capsule)
     err = []
     if y.is_file() and y.name != F.FICHIER and (A.lire_yaml(y).get("format") != F.FORMAT):
@@ -249,7 +250,7 @@ def cmd_convertir(a):
     Commande ``convertir`` ; l'original n'est pas modifié. Un ``chapitre.yaml`` existant n'est remplacé que s'il
     est lui-même issu d'une conversion.
     """
-    import format2 as F
+    import format_chapitre as F
     y = trouver_capsule(a.capsule)
     if not y.is_file():
         raise SystemExit(f"Capsule introuvable : {y}")
@@ -291,7 +292,7 @@ def cmd_transcrire(a):
     """
     import shutil
     import time
-    import format2 as F
+    import format_chapitre as F
     import transcription as T
     y = trouver_chapitre(a.chapitre)
     if not y.is_file():
@@ -369,7 +370,7 @@ def cmd_filmer(a):
     y = trouver_chapitre(a.chapitre)
     if not y.is_file():
         raise SystemExit(f"Pas de chapitre : {y}")
-    webcam = a.webcam if a.webcam not in (None, "") else (True if a.webcam == "" else None)
+    webcam = True if a.webcam == "" else a.webcam                 # « --webcam » seul : la caméra par défaut
     micro = False if a.sans_micro else (a.micro or True)
     filmer.filmer(y, a.section, titre=a.titre, ecran=a.ecran, webcam=webcam, micro=micro, ips=a.ips, duree=a.duree,
                   importer=not a.sans_import, essai=a.essai)
@@ -396,7 +397,7 @@ def cmd_relire(a):
 
 def cmd_plan(a):
     """Affiche le plan d'un chapitre au format 2, parcours par parcours (commande ``plan``)."""
-    import format2 as F
+    import format_chapitre as F
     y = trouver_chapitre(a.chapitre)
     if not y.is_file():
         raise SystemExit(f"Pas de {F.FICHIER} : {y} (pour une capsule au format 1 : « capsuleforge convertir »)")

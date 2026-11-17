@@ -18,7 +18,7 @@ ICI = Path(__file__).resolve().parent
 MATHJAX = ICI.parent / "exoforge" / "moteur" / "vendor" / "mathjax-tex-svg-full.js"
 
 
-def _masquer(img, masques, echelle):
+def masquer(img, masques, echelle):
     """Pixellise puis floute, dans l'image, les zones ``[x, y, l, h]`` des masques."""
     from PIL import ImageFilter
     for m in masques or []:
@@ -76,7 +76,7 @@ def construire(capsule_yaml: Path, sortie: Path, largeur: int | None = None, fmt
         with Image.open(src) as im:
             im = im.convert("RGB")
             masques = list(cap.get("masques") or [])
-            im = _masquer(im, masques, 1.0)
+            im = masquer(im, masques, 1.0)
             if echelle < 1:
                 im = im.resize((round(im.width * echelle), round(im.height * echelle)), Image.LANCZOS)
             if fmt == "webp":

@@ -38,7 +38,7 @@ import sys
 import zipfile
 from pathlib import Path
 
-import format2 as F
+import format_chapitre as F
 import voix as voix_mod
 
 ICI = Path(__file__).resolve().parent
@@ -174,7 +174,7 @@ def page_traduite(code: str, ident: str, langue: str, d: dict, perimees: list) -
     return page
 
 
-def _fiche_exoforge(nom: str, dossier: Path) -> Path | None:
+def fiche_exoforge(nom: str, dossier: Path) -> Path | None:
     """Renvoie le chemin d'une fiche ExoForge, cherchée à côté du chapitre puis dans ``data/exoforge`` (``None`` si absente)."""
     f = dossier / nom
     if f.is_file():
@@ -203,7 +203,7 @@ def exercices_partie(p: dict, dossier: Path, sortie: Path, journal=print, trad_e
         if not isinstance(ref, dict) or (ref.get("outil") or "exoforge") != "exoforge" or not ref.get("fiche"):
             journal(f"  partie {p.get('id')} : exercice ignoré ({ref})")
             continue
-        fiche = _fiche_exoforge(ref["fiche"], dossier)
+        fiche = fiche_exoforge(ref["fiche"], dossier)
         if not fiche:
             journal(f"  partie {p.get('id')} : fiche ExoForge introuvable « {ref['fiche']} » (exercice ignoré)")
             continue
@@ -540,7 +540,7 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                 im = im.convert("RGB")
                 if masques:                                  # zones floutées du chapitre (barre des tâches…)
                     import construire as C1
-                    im = C1._masquer(im, masques, im.width / W)
+                    im = C1.masquer(im, masques, im.width / W)
                 if echelle < 1:
                     im = im.resize((round(im.width * echelle), round(im.height * echelle)), Image.LANCZOS)
                 if fmt == "webp":
@@ -707,7 +707,7 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                "parcours": [{"id": c.get("id"), "titre": F.texte(c.get("titre"), src), "tr": tr(c, ("titre",)), "annexes": c.get("annexes", "a_la_demande"), "questions": c.get("questions", "proposees"), "exercices": bool(c.get("exercices"))}
                             for c in chap.get("parcours") or []],
                "parties": parties}
-    gabarit = (ICI / "lecteur2.html").read_text(encoding="utf-8")
+    gabarit = (ICI / "lecteur_chapitre.html").read_text(encoding="utf-8")
     langue = html.escape((chap.get("langues") or {}).get("source", "fr"))
 
     def rendre(d: dict) -> str:

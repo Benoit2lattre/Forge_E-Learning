@@ -30,7 +30,7 @@ import time
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
-import format2 as F
+import format_chapitre as F
 import serveur_local as S
 import transcription as T
 
@@ -65,7 +65,7 @@ class Seance:
                     yield partie, sec, pas
 
     def remarques(self, chap: dict) -> tuple[dict, list]:
-        """Résultat de :func:`format2.verifier` rangé pour la page : ``(remarques par pas, remarques générales)``.
+        """Résultat de :func:`format_chapitre.verifier` rangé pour la page : ``(remarques par pas, remarques générales)``.
 
         Chaque remarque est ``{"niveau": "erreur" | "avertissement", "texte": …}`` ; un message de la forme
         « D3-2 (d08) : … » est rangé sous le pas ``d08``, les autres (sections, parties, chapitre) sont générales.
@@ -192,7 +192,7 @@ class Seance:
                             x["couleur"] = str(o["couleur"])[:9]
                         x["debut_s"] = round(float(o.get("debut_s") or 0), 1)
                         x["duree_s"] = round(max(0.1, float(o.get("duree_s") or 0)), 1)
-                        gardes.append(F._ordonner(x, F.ORDRE_OBJET))
+                        gardes.append(F.ordonner(x, F.ORDRE_OBJET))
                     if gardes:
                         pas["objets"] = gardes
                     else:
@@ -204,7 +204,7 @@ class Seance:
                         src.pop("narration", None); src.pop("minutage", None)
                     else:
                         src.pop("relu", None)
-                ordonne = F._ordonner(pas, F.ORDRE_PAS)
+                ordonne = F.ordonner(pas, F.ORDRE_PAS)
                 pas.clear(); pas.update(ordonne)
             if not n:
                 return {"ok": True, "message": "rien à enregistrer"}

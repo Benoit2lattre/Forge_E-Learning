@@ -349,9 +349,9 @@ def filmer(yaml_chap: Path, section: str, titre: str | None = None, ecran: int |
     l'enregistrement.
     """
     if importer:                        # section vérifiée avant de filmer, pas après
-        import format2 as F
+        import format_chapitre as F
         import video
-        video._section(F.lire(yaml_chap), section, titre)
+        video.trouver_section(F.lire(yaml_chap), section, titre)
     dossier = yaml_chap.parent / "enregistrements" / time.strftime("%Y%m%d_%H%M%S")
     journal(f"Enregistrement dans {dossier}")
     res = enregistrer(dossier, ecran, webcam, micro, ips, duree, essai, journal)

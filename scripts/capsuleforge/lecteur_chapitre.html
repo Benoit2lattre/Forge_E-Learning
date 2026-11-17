@@ -325,7 +325,7 @@ const voixDispo = [LG.source].concat((LG.autres || []).filter(l => tousPas().som
 const toutesQuestions = () => C.parties.flatMap(p => p.sections.flatMap(s => (s.lots || []).flatMap(l => l.questions)));
 const stDispo = [LG.source].concat((LG.autres || []).filter(l => tousPas().some(q => q.trad && q.trad[l]) || C.parties.some(p => p.tr && p.tr[l])
   || toutesQuestions().some(q => q.tr && q.tr[l]) || C.parties.some(p => p.sections.some(s => s.exercice && s.exercice.html_tr && s.exercice.html_tr[l]))));
-/* questions : textes d'origine gardés une fois, traduction prise dans q.tr[langue][chemin] (chemins : construire2.textes_question) */
+/* questions : textes d'origine gardés une fois, traduction prise dans q.tr[langue][chemin] (chemins : construire_chapitre.textes_question) */
 function traduireQuestion(q) {
   if (!q._src) q._src = { question: q.question, feedback: q.feedback, feedback_juste: q.feedback_juste, feedback_faux: q.feedback_faux, unite: q.unite,
     choix: (q.choix || []).map(c => ({ texte: c.texte, feedback: c.feedback })), erreurs: (q.erreurs || []).map(e => ({ feedback: e.feedback })),

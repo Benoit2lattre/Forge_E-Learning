@@ -32,7 +32,7 @@ from pathlib import Path
 
 import yaml
 
-import format2 as F
+import format_chapitre as F
 
 MOTEURS = ("aucun", "argos", "deepl")
 
@@ -78,7 +78,7 @@ def elements_questions(chap: dict, dossier: Path):
     Clés ``question/<banque>/<titre>/<chemin>`` ; une question posée par plusieurs sections n'apparaît qu'une fois.
     La banque n'est pas modifiée : la traduction reste dans le fichier du chapitre et sert à la construction.
     """
-    import construire2 as C2
+    import construire_chapitre as CH
     N = F.noms(chap)
     cache, vus = {}, set()
     for p in chap.get("parties") or []:
@@ -87,8 +87,8 @@ def elements_questions(chap: dict, dossier: Path):
             for ref in s.get("questions") or []:
                 if not isinstance(ref, dict) or not ref.get("banque"):
                     continue
-                for x in C2.questions_ref(ref, dossier, cache, journal=lambda *a: None, sec_id=s.get("id")) or []:
-                    for chemin, texte in C2.textes_question(x):
+                for x in CH.questions_ref(ref, dossier, cache, journal=lambda *a: None, sec_id=s.get("id")) or []:
+                    for chemin, texte in CH.textes_question(x):
                         cle = f"{x['cle_tr']}/{chemin}"
                         if cle in vus or not _a_traduire(texte):
                             continue
@@ -105,17 +105,17 @@ def elements_questions(chap: dict, dossier: Path):
 def elements_exercices(chap: dict, dossier: Path):
     """Produit ``(clé, texte, contexte)`` pour chaque texte affiché des fiches ExoForge appelées par le chapitre.
 
-    Clés ``exercice/<id>/<chemin>`` (chemins de :func:`construire2.textes_fiche`). La fiche n'est pas modifiée :
+    Clés ``exercice/<id>/<chemin>`` (chemins de :func:`construire_chapitre.textes_fiche`). La fiche n'est pas modifiée :
     à la construction, une page traduite de l'exercice est produite à côté de l'originale.
     """
-    import construire2 as C2
+    import construire_chapitre as CH
     vus = set()
     for p in chap.get("parties") or []:
         refs = p.get("exercice") or []
         for ref in [refs] if isinstance(refs, dict) else refs:
             if not isinstance(ref, dict) or not ref.get("fiche"):
                 continue
-            fiche = C2._fiche_exoforge(ref["fiche"], dossier)
+            fiche = CH.fiche_exoforge(ref["fiche"], dossier)
             if not fiche:
                 continue
             cfg = yaml.safe_load(fiche.read_text(encoding="utf-8")) or {}
@@ -124,7 +124,7 @@ def elements_exercices(chap: dict, dossier: Path):
                 continue
             vus.add(ident)
             titre = F.texte(cfg.get("titre")) or ident
-            for chemin, texte in C2.textes_fiche({k: v for k, v in cfg.items() if k != "latex"}):
+            for chemin, texte in CH.textes_fiche({k: v for k, v in cfg.items() if k != "latex"}):
                 if not _a_traduire(texte):
                     continue
                 yield f"exercice/{ident}/{chemin}", texte, {"groupe": f"Exercice « {titre} »", "quoi": chemin.replace("/", " › ")}

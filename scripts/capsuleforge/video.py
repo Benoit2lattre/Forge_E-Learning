@@ -24,13 +24,13 @@ from __future__ import annotations
 
 import shutil
 import time
-import wave
 from fractions import Fraction
 from pathlib import Path
 
 import numpy as np
 
-import format2 as F
+import format_chapitre as F
+import sons as S
 
 TAUX_SON = 22050
 
@@ -198,14 +198,7 @@ def affiche(video: Path, t: float, dst: Path) -> None:
             dernier.to_image().save(dst)
 
 
-def _ecrire_wav(chemin: Path, a: np.ndarray, taux: int) -> None:
-    chemin.parent.mkdir(parents=True, exist_ok=True)
-    with wave.open(str(chemin), "wb") as w:
-        w.setnchannels(1); w.setsampwidth(2); w.setframerate(taux)
-        w.writeframes((np.clip(a, -1, 1) * 32767).astype(np.int16).tobytes())
-
-
-def _section(chap: dict, ref: str, titre: str | None):
+def trouver_section(chap: dict, ref: str, titre: str | None):
     """Renvoie ``(partie, section)`` désignées par « partie/section » ou « section ».
 
     Avec « partie/nouvelle » et un titre (``--titre``), la section est créée.
@@ -243,7 +236,7 @@ def importer(yaml_chap: Path, fichier: Path, section: str, titre: str | None = N
         raise SystemExit(f"Vidéo introuvable : {fichier}")
     dossier = yaml_chap.parent
     chap = F.lire(yaml_chap)
-    partie, sec = _section(chap, section, titre)
+    partie, sec = trouver_section(chap, section, titre)
     largeur = (chap.get("ecran") or {}).get("largeur") or 1440
     nom = "".join(c if c.isalnum() or c in "-_" else "_" for c in fichier.stem).strip("_")[:60] or "video"
     if debut or fin:
@@ -254,7 +247,7 @@ def importer(yaml_chap: Path, fichier: Path, section: str, titre: str | None = N
         raise SystemExit(f"Son introuvable : {son}")
     info = comprimer(fichier, dossier / rel, largeur_max=largeur, qualite=qualite, debut=debut, fin=fin,
                      son_src=Path(son) if son else None, journal=journal)
-    son, taux = info["son"]
+    signal, taux = info["son"]                              # le paramètre son est le fichier ; ici le signal lu
     duree = info["duree_s"]
     rel_cam = None
     if camera:                                               # webcam filmée en même temps : caméo calé sur la vidéo
@@ -262,8 +255,8 @@ def importer(yaml_chap: Path, fichier: Path, section: str, titre: str | None = N
         comprimer(Path(camera), dossier / rel_cam, largeur_max=640, qualite=30, debut=debut, fin=fin, muet=True, journal=journal)
     if decoupe != "silences":
         cps = []
-    elif len(son):
-        cps = coupes(duree, silences(son, taux), pas_min, pas_max)
+    elif len(signal):
+        cps = coupes(duree, silences(signal, taux), pas_min, pas_max)
     else:                                                    # pas de son : pas réguliers d'au plus pas_max
         n = int(np.ceil(duree / pas_max)) if duree > pas_max else 1
         cps = [round(duree * k / n, 2) for k in range(1, n)]
@@ -281,7 +274,7 @@ def importer(yaml_chap: Path, fichier: Path, section: str, titre: str | None = N
         pid = f"v{k:02d}"
         pris.add(pid)
         affiche(dossier / rel, a, dossier / "images" / f"{pid}.png")
-        _ecrire_wav(dossier / "audio" / f"{pid}.wav", son[int(a * taux): int(b * taux)], taux)
+        S.ecrire_wav(dossier / "audio" / f"{pid}.wav", signal[int(a * taux): int(b * taux)], taux)
         q = {"id": pid, "fond": f"images/{pid}.png", "audio": f"audio/{pid}.wav", "duree_s": round(b - a, 2),
              "video": {"fichier": rel, "debut_s": round(a, 2), "fin_s": round(b, 2)},
              "source": {"type": "video", "fichier": fichier.name, "debut_s": round(debut + a, 2), "fin_s": round(debut + b, 2)},

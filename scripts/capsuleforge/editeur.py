@@ -28,6 +28,7 @@ from pathlib import Path
 from urllib.parse import parse_qs
 
 import assemblage as A
+import format_chapitre as F
 import serveur_local as S
 
 ICI = Path(__file__).resolve().parent
@@ -38,11 +39,6 @@ ORDRE_PAS = ["ignorer", "raison", "id", "action", "image", "point", "arrivee", "
              "duree_ms", "processus", "autre_programme"]
 ORDRE_ETAPE = ["titre", "narration", "audio", "arret", "pas"]
 ORDRE_CAPSULE = ["format", "titre", "langue", "ecran", "source", "reglages", "masques", "etapes", "image_finale"]
-
-
-def _ordonner(d: dict, ordre: list[str]) -> dict:
-    """Renvoie une copie de ``d`` dont les clés suivent ``ordre`` ; les autres clés viennent ensuite."""
-    return {**{k: d[k] for k in ordre if k in d}, **{k: v for k, v in d.items() if k not in ordre}}
 
 
 def _entiers(v):
@@ -66,23 +62,23 @@ def normaliser(cap: dict) -> dict:
                 c = {k: v for k, v in p["cible"].items() if v not in (None, "")}
                 if "cadre" in c:
                     c["cadre"] = _entiers(c["cadre"])
-                p["cible"] = _ordonner(c, ["nom", "type", "dans", "cadre", "origine"])
+                p["cible"] = F.ordonner(c, ["nom", "type", "dans", "cadre", "origine"])
             if isinstance(p.get("ou"), list):          # gestes acceptés en plus : zones en entiers
                 p["ou"] = [{k: (_entiers(v) if k == "cadre" else v) for k, v in q.items() if v not in (None, "")}
                            for q in p["ou"] if isinstance(q, dict)]
-            pas.append(_ordonner(p, ORDRE_PAS))
+            pas.append(F.ordonner(p, ORDRE_PAS))
         e2 = dict(et)
         e2["pas"] = pas
         e2.setdefault("narration", "")
         e2.setdefault("arret", True)
         if not e2.get("audio"):
             e2.pop("audio", None)
-        etapes.append(_ordonner(e2, ORDRE_ETAPE))
+        etapes.append(F.ordonner(e2, ORDRE_ETAPE))
     out = dict(cap)
     out["etapes"] = etapes
     out["masques"] = _entiers(cap.get("masques") or [])
     out.setdefault("format", A.FORMAT)
-    return _ordonner(out, ORDRE_CAPSULE)
+    return F.ordonner(out, ORDRE_CAPSULE)
 
 
 class Seance:

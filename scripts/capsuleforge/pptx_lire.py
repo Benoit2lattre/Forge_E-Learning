@@ -300,7 +300,7 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
     """
     import shutil
     import time
-    import format2 as F
+    import format_chapitre as F
     src, y = Path(src), Path(y)
     dossier = y.parent
     chap = F.lire(y)
@@ -398,7 +398,7 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
                     o["duree_s"] = v.get("duree_s") or o["debut_s"]
                     o["debut_s"] = 0.0
                     o["couleur"] = v.get("couleur") or "#ffffff"
-                objets.append(F._ordonner(o, F.ORDRE_OBJET))
+                objets.append(F.ordonner(o, F.ORDRE_OBJET))
             for r in d.get("remarques") or []:
                 noter(f"  diapositive {n} : {r}")
             objets += [o for o in (vieux or {}).get("objets") or []
@@ -407,13 +407,13 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
                 q["objets"] = objets
             if d.get("animation_par_paragraphe"):
                 q["source"]["animation_par_paragraphe"] = True
-            nouveaux.append(F._ordonner(q, F.ORDRE_PAS))
+            nouveaux.append(F.ordonner(q, F.ORDRE_PAS))
         sec["pas"] = nouveaux + autres
         d_tot = sum(q.get("duree_s") or 0 for q in nouveaux)
         sec["source"]["duree_s"] = round(d_tot, 1) or sec["source"].get("duree_s")
         print(f"  {N[('section', partie.get('id'), sec.get('id'))]} {F.texte(sec.get('titre'))} : {len(nouveaux)} pas, "
               f"{sum(1 for q in nouveaux for o in q.get('objets') or [] if o.get('type') == 'apparition')} apparitions, "
-              f"{sum(1 for q in nouveaux for o in q.get('objets') or [] if o.get('origine') == 'pptx')} annotations, {F._minsec(d_tot)}")
+              f"{sum(1 for q in nouveaux for o in q.get('objets') or [] if o.get('origine') == 'pptx')} annotations, {F.minsec(d_tot)}")
     ecran = chap.setdefault("ecran", {})
     ecran["largeur"] = largeur
     ecran["hauteur"] = round(largeur * lu["hauteur_pouces"] / lu["largeur_pouces"])

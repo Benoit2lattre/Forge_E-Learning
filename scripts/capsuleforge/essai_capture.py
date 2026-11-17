@@ -91,7 +91,7 @@ def ecran(n: int | None) -> dict:
         import mss
         with mss.mss() as m:
             ms = m.monitors[1:]                                      # [0] = tous les écrans réunis
-            dire(f"  écrans : " + " ; ".join(f"n° {k + 1} {e['width']} × {e['height']} en ({e['left']}, {e['top']})" for k, e in enumerate(ms)))
+            dire("  écrans : " + " ; ".join(f"n° {k + 1} {e['width']} × {e['height']} en ({e['left']}, {e['top']})" for k, e in enumerate(ms)))
             e = ms[(n or 1) - 1]
             return {"offset_x": str(e["left"]), "offset_y": str(e["top"]), "video_size": f"{e['width']}x{e['height']}"}
     except Exception as ex:

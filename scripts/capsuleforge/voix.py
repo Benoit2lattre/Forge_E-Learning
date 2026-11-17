@@ -28,12 +28,12 @@ from __future__ import annotations
 import hashlib
 import shutil
 import time
-import wave
 from pathlib import Path
 
 import numpy as np
 
-import format2 as F
+import format_chapitre as F
+import sons as S
 
 VOIX_DEFAUT = {
     "piper": {"fr": "fr_FR-tom-medium", "en": "en_GB-alan-medium", "es": "es_ES-davefx-medium", "de": "de_DE-thorsten-medium"},
@@ -112,20 +112,6 @@ def _decoder(f: Path):
         return (np.concatenate(a) if a else np.zeros(0, np.float32)).astype(np.float32), p.rate
 
 
-def _reechantillonner(a: np.ndarray, de: int, vers: int) -> np.ndarray:
-    if de == vers or not len(a):
-        return a
-    n = int(round(len(a) * vers / de))
-    return np.interp(np.linspace(0, len(a) - 1, n), np.arange(len(a)), a).astype(np.float32)
-
-
-def _ecrire_wav(chemin: Path, a: np.ndarray, taux: int) -> None:
-    chemin.parent.mkdir(parents=True, exist_ok=True)
-    with wave.open(str(chemin), "wb") as w:
-        w.setnchannels(1); w.setsampwidth(2); w.setframerate(taux)
-        w.writeframes((np.clip(a, -1, 1) * 32767).astype(np.int16).tobytes())
-
-
 # --------------------------------------------------------------------------- un pas
 
 def _textes(pas: dict, langue: str) -> list[str] | None:
@@ -163,7 +149,7 @@ def synthetiser(textes: list[str], moteur, silences) -> tuple[np.ndarray, int, l
     for k, txt in enumerate(textes):
         a, r = moteur.dire(txt)
         taux = taux or r
-        a = _reechantillonner(a, r, taux)
+        a = S.reechantillonner(a, r, taux)
         d = len(a) / taux
         temps.append([round(t, 2), round(t + d, 2)])
         morceaux.append(a)
@@ -225,7 +211,7 @@ def voix_chapitre(yaml_chap: Path, langue: str, moteur: str = "piper", nom: str 
                 sil = _silences(q, len(textes)) if langue != src else (0.5, [0.4] * (len(textes) - 1), 0.8)
                 a, taux, temps = synthetiser(textes, m, sil)
                 rel = f"audio/voix/{q['id']}.{langue}.wav"
-                _ecrire_wav(dossier / rel, a, taux)
+                S.ecrire_wav(dossier / rel, a, taux)
                 duree = round(len(a) / taux, 2)
                 if langue == src:
                     q["audio"], q["duree_s"] = rel, duree

@@ -12,7 +12,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import format2 as F
+import format_chapitre as F
+import sons as S
 
 
 def charger_modele(nom: str = "small"):
@@ -39,20 +40,6 @@ def vocabulaire(chap: dict) -> str:
 FREQ = 16000        # fréquence attendue par Whisper
 
 
-def _reechantillonner(x, freq: int):
-    """Ramène un signal mono float32 à 16 kHz : filtre passe-bas (sinus cardinal fenêtré) puis interpolation linéaire."""
-    import numpy as np
-    if freq == FREQ:
-        return x.astype("float32")
-    if freq > FREQ:                                    # éviter le repliement avant de réduire la cadence
-        coupure, n = 0.45 * FREQ / freq, 101
-        k = np.arange(n) - (n - 1) / 2
-        h = 2 * coupure * np.sinc(2 * coupure * k) * np.hamming(n)
-        x = np.convolve(x, h / h.sum(), mode="same")
-    t = np.arange(int(len(x) * FREQ / freq)) * (freq / FREQ)
-    return np.interp(t, np.arange(len(x)), x).astype("float32")
-
-
 def charger_audio(chemin: Path):
     """Lit un fichier audio et renvoie un signal mono à 16 kHz (float32, entre -1 et 1).
 
@@ -77,7 +64,7 @@ def charger_audio(chemin: Path):
                 raise ValueError(f"WAV sur {8 * largeur} bits")
             if canaux > 1:
                 x = x.reshape(-1, canaux).mean(axis=1)
-            return _reechantillonner(x, freq)
+            return S.reechantillonner(x, freq, FREQ)
         except (wave.Error, ValueError):
             pass                                       # WAV compressé ou inhabituel : on passe par PyAV
     import av
@@ -138,11 +125,10 @@ def transcrire_chapitre(chap: dict, dossier: Path, modele, refaire: bool = False
                 t = transcrire_fichier(modele, dossier / audio, langue, amorce)
                 (dossier / "transcriptions" / f"{pas['id']}.json").write_text(
                     json.dumps(t, ensure_ascii=False, indent=1), encoding="utf-8")
-                texte = " ".join(s["texte"] for s in t["segments"]).strip()
                 pas.pop("narration", None)
                 pas["phrases"] = phrases_des_segments(t)
                 pas.setdefault("source", {})["narration"] = "transcription automatique, à relire"
-                mots = len(texte.split())
+                mots = sum(len(s["texte"].split()) for s in t["segments"])
                 journal(f"  {N.get(('pas', pas['id']), pas['id'])} ({pas['id']}) : {mots} mots, "
                         f"{round(mots * 60 / max(1.0, t['duree_s']))} mots/min")
                 n += 1
@@ -158,7 +144,7 @@ def _norme(mot: str) -> str:
 
 
 def decouper_phrases(texte: str) -> list[str]:
-    """Découpe un texte en phrases (règle commune : :func:`format2.decouper_phrases`)."""
+    """Découpe un texte en phrases (règle commune : :func:`format_chapitre.decouper_phrases`)."""
     return F.decouper_phrases(texte)
 
 

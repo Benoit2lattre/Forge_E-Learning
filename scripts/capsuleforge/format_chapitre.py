@@ -45,7 +45,7 @@ ORDRE_OBJET = ["id", "type", "forme", "texte", "position", "cadre", "ouvre", "tr
                "parcours"]
 
 
-def _ordonner(d: dict, ordre: list[str]) -> dict:
+def ordonner(d: dict, ordre: list[str]) -> dict:
     """Renvoie une copie de ``d`` dont les clés suivent ``ordre`` (les autres clés à la suite)."""
     return {**{k: d[k] for k in ordre if k in d}, **{k: v for k, v in d.items() if k not in ordre}}
 
@@ -105,7 +105,7 @@ def convertir_v1(cap: dict, nom_fichier: str = "capsule.yaml") -> dict:
              "arret": et.get("arret", True), "pas": [_pas_v1(p) for p in et.get("pas") or []]}
         if et.get("audio"):
             s["audio"] = et["audio"]
-        sections.append(_ordonner(s, ORDRE_SECTION))
+        sections.append(ordonner(s, ORDRE_SECTION))
     langue = cap.get("langue") or "fr"
     chap = {"format": FORMAT, "titre": cap.get("titre") or "Sans titre", "langues": {"source": langue},
             "ecran": cap.get("ecran") or {}, "source": source, "reglages": reglages,
@@ -116,7 +116,7 @@ def convertir_v1(cap: dict, nom_fichier: str = "capsule.yaml") -> dict:
                          "place": "libre", "sections": sections}]}
     if cap.get("image_finale"):
         chap["image_finale"] = cap["image_finale"]
-    return _ordonner(chap, ORDRE_CHAPITRE)
+    return ordonner(chap, ORDRE_CHAPITRE)
 
 
 def _pas_v1(p: dict) -> dict:
@@ -155,24 +155,24 @@ def _pas_v1(p: dict) -> dict:
                 g[k] = p[k]
         if cible:
             g["cible"] = cible
-        gestes = [_ordonner(g, ORDRE_GESTE)]
+        gestes = [ordonner(g, ORDRE_GESTE)]
         for v in p.get("ou") or []:
             h = {"type": v.get("action", "clic")}
             if v.get("cadre"):
                 h["zone"] = v["cadre"]
             if v.get("touches"):
                 h["touches"] = v["touches"]
-            gestes.append(_ordonner(h, ORDRE_GESTE))
+            gestes.append(ordonner(h, ORDRE_GESTE))
         q["gestes"] = gestes
     if objets:
-        q["objets"] = [_ordonner(o, ORDRE_OBJET) for o in objets]
+        q["objets"] = [ordonner(o, ORDRE_OBJET) for o in objets]
     av = {k: p[k] for k in ("observer", "indice") if p.get(k) is not None}
     if av:
         q["a_vous"] = av
     ret = {a: p[b] for a, b in (("juste", "retour_juste"), ("faux", "retour_faux")) if p.get(b)}
     if ret:
         q["retours"] = ret
-    return _ordonner(q, ORDRE_PAS)
+    return ordonner(q, ORDRE_PAS)
 
 
 # --------------------------------------------------------------------------- noms dynamiques
@@ -297,7 +297,7 @@ def plan(chap: dict, parcours: str | None = None, variante: str | None = None) -
             total += ds or 0
             n_pas = sum(1 for q in s.get("pas") or [] if not q.get("ecarte"))
             lignes.append(f"{retrait}  {N[('section', p.get('id'), s.get('id'))]:<7} {texte(s.get('titre'))}"
-                          f"  ({_minsec(ds)}, {n_pas} pas, {len(s.get('questions') or [])} question(s))")
+                          f"  ({minsec(ds)}, {n_pas} pas, {len(s.get('questions') or [])} question(s))")
             for a in s.get("annexes") or []:
                 if a not in visibles:
                     continue
@@ -312,11 +312,11 @@ def plan(chap: dict, parcours: str | None = None, variante: str | None = None) -
     for p in d["annexes"]:
         if integrees and p.get("id") not in vues:
             lignes.append(f"(annexe jamais appelée : {N[('partie', p.get('id'))]} {texte(p.get('titre'))})")
-    lignes.append(f"Total estimé : {_minsec(total)}")
+    lignes.append(f"Total estimé : {minsec(total)}")
     return lignes
 
 
-def _minsec(s: float | None) -> str:
+def minsec(s: float | None) -> str:
     """Écrit une durée en minutes et secondes (« durée inconnue » si elle est nulle ou absente)."""
     if not s:
         return "durée inconnue"
@@ -387,7 +387,7 @@ def verifier(chap: dict, dossier: Path) -> tuple[list[str], list[str]]:
                 (av if squelette else err).append(f"{nom_s} : aucun pas")
             d = duree_section_s(s, largeur=ecran.get('largeur') or 1920)
             if d and d > DUREE_MAX_SECTION_S + 5:
-                av.append(f"{nom_s} : {_minsec(d)}, plus de 6 min (à couper)")
+                av.append(f"{nom_s} : {minsec(d)}, plus de 6 min (à couper)")
             if s.get("audio") and not (dossier / s["audio"]).is_file():
                 err.append(f"{nom_s} : audio introuvable {s['audio']}")
             for q in s.get("pas") or []:

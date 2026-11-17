@@ -2,7 +2,7 @@
 
 Un chapitre (un cours interactif ou un didacticiel) est décrit par un seul fichier, `chapitre.yaml`, rangé avec ses médias (`images/`, `audio/`). Ce format remplace `capsule.yaml` (format 1, étapes et pas à action unique), que `capsuleforge convertir` reprend sans perte.
 
-Statut : format écrit et vérifié par `scripts/capsuleforge/format2.py` (conversion, noms, plan par parcours, contrôles). Le lecteur et l'éditeur lisent encore le format 1 ; ils passeront au format 2 aux étapes 4 et 5 du cahier des charges.
+Statut : format écrit et vérifié par `scripts/capsuleforge/format_chapitre.py` (conversion, noms, plan par parcours, contrôles), lu par le lecteur de chapitre (`lecteur_chapitre.html`, construit par `construire_chapitre.py`). L'éditeur visuel lit encore le format 1.
 
 ## Les quatre niveaux
 
