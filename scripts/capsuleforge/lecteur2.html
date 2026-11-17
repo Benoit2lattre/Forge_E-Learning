@@ -322,7 +322,20 @@ for (const p of C.parties) { p._t = { titre: p.titre };
                                       temps: q.phrases.map(ph => [ph[0], ph[1]]), textes: q.phrases.map(ph => ph[2]) }; } }
 const tousPas = () => C.parties.flatMap(p => p.sections.flatMap(s => s.pas));
 const voixDispo = [LG.source].concat((LG.autres || []).filter(l => tousPas().some(q => q.voix && q.voix[l])));
-const stDispo = [LG.source].concat((LG.autres || []).filter(l => tousPas().some(q => q.trad && q.trad[l]) || C.parties.some(p => p.tr && p.tr[l])));
+const toutesQuestions = () => C.parties.flatMap(p => p.sections.flatMap(s => (s.lots || []).flatMap(l => l.questions)));
+const stDispo = [LG.source].concat((LG.autres || []).filter(l => tousPas().some(q => q.trad && q.trad[l]) || C.parties.some(p => p.tr && p.tr[l])
+  || toutesQuestions().some(q => q.tr && q.tr[l]) || C.parties.some(p => p.sections.some(s => s.exercice && s.exercice.html_tr && s.exercice.html_tr[l]))));
+/* questions : textes d'origine gardés une fois, traduction prise dans q.tr[langue][chemin] (chemins : construire2.textes_question) */
+function traduireQuestion(q) {
+  if (!q._src) q._src = { question: q.question, feedback: q.feedback, feedback_juste: q.feedback_juste, feedback_faux: q.feedback_faux, unite: q.unite,
+    choix: (q.choix || []).map(c => ({ texte: c.texte, feedback: c.feedback })), erreurs: (q.erreurs || []).map(e => ({ feedback: e.feedback })),
+    indices: (q.indices || []).slice() };
+  const d = (stL !== LG.source && q.tr && q.tr[stL]) || {}, o = q._src, g = (k, v) => d[k] || v;
+  for (const k of ["question", "feedback", "feedback_juste", "feedback_faux", "unite"]) if (o[k] != null) q[k] = g(k, o[k]);
+  (q.choix || []).forEach((c, i) => { c.texte = g("choix/" + i + "/texte", o.choix[i].texte); c.feedback = g("choix/" + i + "/feedback", o.choix[i].feedback); });
+  (q.erreurs || []).forEach((e, i) => { e.feedback = g("erreurs/" + i + "/feedback", o.erreurs[i].feedback); });
+  if (q.indices) q.indices = o.indices.map((t, i) => g("indices/" + i, t));
+}
 let voixL = LG.source, stL = LG.source;
 function appliquerLangues() {
   const t = (o, k) => (o && o.tr && o.tr[stL] && o.tr[stL][k]) || null;
@@ -336,6 +349,7 @@ function appliquerLangues() {
         const tps = v ? v.temps : o.temps, tr = stL !== LG.source && q.trad && q.trad[stL];
         q.phrases = tps.map((x, k) => [x[0], x[1], (tr && tr[k] && typo(tr[k])) || o.textes[k]]); d += q.duree_s; }
       if (s.pas.length) s.duree_s = Math.round(d * 10) / 10; } }
+  toutesQuestions().forEach(traduireQuestion);
   document.documentElement.lang = stL;
 }
 /* ---------- interface : libellés en français, traduits selon la langue des sous-titres ---------- */
@@ -702,7 +716,8 @@ function ouvrirExo(p, s) {
   EXO = { p, s, statut: "not attempted", score: null, fini: false, essai: 1, inter: {} };
   modeExo(true);
   const f = $("exo-cadre"); f.title = T("Exercice : ") + s.titre;
-  f.srcdoc = s.exercice.html.replace("__BASE__", new URL(s.exercice.base, location.href).href);
+  const page = (stL !== LG.source && s.exercice.html_tr && s.exercice.html_tr[stL]) || s.exercice.html;   /* exercice traduit si disponible */
+  f.srcdoc = page.replace("__BASE__", new URL(s.exercice.base, location.href).href);
   plan(); bandeExo(); if (innerWidth <= 860) fermerPlan(true); $("zone").scrollTop = 0; taille();
 }
 function exoFini() {
@@ -996,7 +1011,7 @@ for (const [id, liste, cle, etiquette] of [["voix", voixDispo, "voix", l => nomL
   if (id === "voix") voixL = sel.value; else stL = sel.value;
   sel.onchange = () => { memo.ecrire(cle, sel.value); const avantVoix = voixL; if (id === "voix") voixL = sel.value; else stL = sel.value;
     pause(); appliquerLangues(); libelles(); $("titre").textContent = typo(C.titre); plan();
-    if (S && !S.s.exercice) { if (voixL !== avantVoix) { ouvrir(S.p, S.s, 0, false, true); voileDepart(); } else { $("s-titre").textContent = typo(S.s.titre); texte(); dessiner(true); } } };
+    if (S && !S.s.exercice) { if (voixL !== avantVoix) { ouvrir(S.p, S.s, 0, false, true); voileDepart(); } else { $("s-titre").textContent = typo(S.s.titre); texte(); dessiner(true); if (!$("voile").hidden) voileDepart(); } } };
 }
 /* libellés fixes de la page (boutons, infobulles, aide) et titres des parcours */
 const AIDE_FR = document.querySelector(".aide").innerHTML;

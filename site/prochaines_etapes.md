@@ -18,5 +18,5 @@ Un plan grossier, outil par outil, de la version 0.2 vers la 0.3 puis au-delà. 
 - **Skill de création à partir d'un syllabus** : brouillon de banque de questions et de fiches d'exercices, avec un **catalogue d'erreurs types** par domaine (statique, résistance des matériaux, dynamique, calcul, vibrations, fatigue) partagé par QuizForge, ExoForge et DiagForge. Voir {doc}`../skills/creation-syllabus`.
 - **Skill d'aide à la préparation des capsules** (découpage, scénario, questions, traduction, relecture).
 - **Thème modifiable** des lecteurs (couleurs et polices du profil) et héritage entre profils.
-- **Traduction** des questions et des exercices, pas seulement du cours.
+- **Traduction** de l'interface du moteur ExoForge dans d'autres langues que l'anglais, et des questions dans Moodle (banques bilingues de QuizForge).
 - **Import d'un scénario PowerPoint** en fiche ExoForge.

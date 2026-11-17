@@ -9,7 +9,11 @@
    depuis (phrase corrigée dans la relecture) est signalée et laissée de côté.
 
 Textes traduits : titre du chapitre, titres des parties, titre / objectif / ouverture des sections, phrases dites
-(sous-titres et voix de synthèse), narration d'un pas sans phrases, texte des bulles et textes posés sur l'image.
+(sous-titres et voix de synthèse), narration d'un pas sans phrases, texte des bulles et textes posés sur l'image ;
+textes des questions QuizForge posées en fin de section (énoncé, options, rétroactions, indices, unité) et textes
+affichés des exercices ExoForge du chapitre. Ces deux dernières traductions restent dans ``traductions/<langue>.yaml``
+(la banque et la fiche ne sont pas modifiées) et sont prises à la construction du lecteur ; « importer » ne les
+recopie pas dans ``chapitre.yaml``.
 Moteurs : « aucun » (gratuit), « argos » (Argos Translate, gratuit, hors ligne : ``pip install argostranslate``, modèle
 téléchargé à la première utilisation), « deepl » (API DeepL ; clé dans la variable ``DEEPL_AUTH_KEY`` ; l'offre
 « API Free » a un quota gratuit).
@@ -17,6 +21,7 @@ Licence : GPL v3.
 """
 from __future__ import annotations
 
+import re
 import json
 import os
 import shutil
@@ -60,6 +65,69 @@ def elements(chap: dict):
                 for o in q.get("objets") or []:
                     if o.get("type") in ("bulle", "texte") and o.get("texte"):
                         yield f"objet/{q.get('id')}/{o.get('id')}/texte", o, "texte"
+
+
+def _a_traduire(texte) -> bool:
+    """Vrai si le texte contient des mots (au moins deux lettres) : « 4,75 », « β » ou « 2 » ne se traduisent pas."""
+    return len(re.findall(r"[^\W\d_]", re.sub(r"\\[A-Za-z]+|<[^>]*>|\{=[^}]*\}", "", str(texte or "")))) >= 2
+
+
+def elements_questions(chap: dict, dossier: Path):
+    """Produit ``(clé, texte, contexte)`` pour chaque texte des questions QuizForge posées par le chapitre.
+
+    Clés ``question/<banque>/<titre>/<chemin>`` ; une question posée par plusieurs sections n'apparaît qu'une fois.
+    La banque n'est pas modifiée : la traduction reste dans le fichier du chapitre et sert à la construction.
+    """
+    import construire2 as C2
+    N = F.noms(chap)
+    cache, vus = {}, set()
+    for p in chap.get("parties") or []:
+        for s in p.get("sections") or []:
+            gs = f"{N.get(('section', p.get('id'), s.get('id')), '')} {F.texte(s.get('titre'))}".strip()
+            for ref in s.get("questions") or []:
+                if not isinstance(ref, dict) or not ref.get("banque"):
+                    continue
+                for x in C2.questions_ref(ref, dossier, cache, journal=lambda *a: None, sec_id=s.get("id")) or []:
+                    for chemin, texte in C2.textes_question(x):
+                        cle = f"{x['cle_tr']}/{chemin}"
+                        if cle in vus or not _a_traduire(texte):
+                            continue
+                        vus.add(cle)
+                        quoi = {"question": "énoncé", "feedback": "rétroaction générale", "feedback_juste": "rétroaction si juste",
+                                "feedback_faux": "rétroaction si faux", "unite": "unité"}.get(chemin)
+                        if not quoi:
+                            k = chemin.split("/")
+                            quoi = (f"option {int(k[1]) + 1}" + (" (rétroaction)" if k[2] == "feedback" else "")) if k[0] == "choix" else \
+                                   f"rétroaction de l'erreur {int(k[1]) + 1}" if k[0] == "erreurs" else f"indice {int(k[1]) + 1}"
+                        yield cle, texte, {"groupe": gs, "quoi": f"question « {x.get('titre')} » : {quoi}"}
+
+
+def elements_exercices(chap: dict, dossier: Path):
+    """Produit ``(clé, texte, contexte)`` pour chaque texte affiché des fiches ExoForge appelées par le chapitre.
+
+    Clés ``exercice/<id>/<chemin>`` (chemins de :func:`construire2.textes_fiche`). La fiche n'est pas modifiée :
+    à la construction, une page traduite de l'exercice est produite à côté de l'originale.
+    """
+    import construire2 as C2
+    vus = set()
+    for p in chap.get("parties") or []:
+        refs = p.get("exercice") or []
+        for ref in [refs] if isinstance(refs, dict) else refs:
+            if not isinstance(ref, dict) or not ref.get("fiche"):
+                continue
+            fiche = C2._fiche_exoforge(ref["fiche"], dossier)
+            if not fiche:
+                continue
+            cfg = yaml.safe_load(fiche.read_text(encoding="utf-8")) or {}
+            ident = cfg.get("id") or fiche.stem
+            if ident in vus:
+                continue
+            vus.add(ident)
+            titre = F.texte(cfg.get("titre")) or ident
+            for chemin, texte in C2.textes_fiche({k: v for k, v in cfg.items() if k != "latex"}):
+                if not _a_traduire(texte):
+                    continue
+                yield f"exercice/{ident}/{chemin}", texte, {"groupe": f"Exercice « {titre} »", "quoi": chemin.replace("/", " › ")}
 
 
 def _pas_de(cle: str) -> str | None:
@@ -138,6 +206,15 @@ def preparer(yaml_chap: Path, langue: str, moteur: str = "aucun", journal=print)
         if e and e.get("moteur"):
             x["moteur"] = e["moteur"]
         elts.append(x)
+    for cle, texte, _ in list(elements_questions(chap, yaml_chap.parent)) + list(elements_exercices(chap, yaml_chap.parent)):
+        source = " ".join(texte.split())
+        e = par_cle.get(cle)
+        x = {"cle": cle, "source": source, "cible": (e or {}).get("cible") or "", "relu": bool((e or {}).get("relu"))}
+        if e and e.get("source") != source:          # question modifiée dans la banque : à retraduire
+            x["cible"], x["relu"] = "", False
+        if e and e.get("moteur") and x["cible"]:
+            x["moteur"] = e["moteur"]
+        elts.append(x)
     vides = [x for x in elts if not x["cible"]]
     if vides and moteur != "aucun":
         journal(f"  {len(vides)} texte(s) à traduire par {moteur}…")
@@ -203,7 +280,7 @@ def importer(yaml_chap: Path, langue: str, journal=print) -> int:
 
 # --------------------------------------------------------------------------- écran de relecture des traductions
 
-def _contextes(chap: dict, langue: str) -> dict:
+def _contextes(chap: dict, langue: str, dossier: Path | None = None) -> dict:
     """Renvoie, pour chaque clé, le contexte affiché : groupe (section), diapositive à l'instant de la phrase, son d'origine, voix traduite."""
     N = F.noms(chap)
     ctx = {"chapitre/titre": {"groupe": "Chapitre", "quoi": "titre du chapitre"}}
@@ -236,6 +313,9 @@ def _contextes(chap: dict, langue: str) -> dict:
                 ctx[f"pas/{q.get('id')}/narration"] = {"groupe": gs, "quoi": "narration du pas", "image": q.get("fond")}
                 for o in objets:
                     ctx[f"objet/{q.get('id')}/{o.get('id')}/texte"] = {"groupe": gs, "quoi": f"texte de l'objet {o.get('id')}", "image": q.get("fond")}
+    if dossier is not None:
+        for cle, _, c in list(elements_questions(chap, dossier)) + list(elements_exercices(chap, dossier)):
+            ctx[cle] = c
     return ctx
 
 
@@ -259,7 +339,7 @@ def _seance_traduction(yaml_chap: Path, langue: str):
         def lire(self) -> dict:
             chap = F.lire(self.yaml)
             _, trad = self._lire_fichier()
-            ctx = _contextes(chap, self.langue)
+            ctx = _contextes(chap, self.langue, self.dossier)
             elts = [dict(e, **{"contexte": ctx.get(e["cle"], {"groupe": "", "quoi": e["cle"]})}) for e in trad.get("elements") or []]
             return {"ok": True, "titre": F.texte(chap.get("titre")), "dossier": self.dossier.name,
                     "source": trad.get("source"), "langue": self.langue, "elements": elts}

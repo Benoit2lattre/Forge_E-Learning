@@ -49,7 +49,7 @@ Cette page dit, pour chaque outil, ce qui marche et a été essayé en condition
 
 - **Essayé** : reprise d'un diaporama narré (images des états d'animation, sons), transcription automatique, relecture phrase par phrase, annotations dessinées dans PowerPoint, lecteur de chapitre avec parcours, jauges et badges, questions QuizForge en fin de section, exercice ExoForge dans une annexe, paquet SCORM 2004 reçu par Moodle (note pondérée, avancement, interactions), traduction anglaise relue et voix de synthèse, import d'une vidéo ActivePresenter, enregistrement d'écran, de micro et de webcam.
 - **Livré, pas encore essayé** : la dernière version de l'enregistreur (raccourcis interceptés, son perdu comblé) ; les paquets SCORM 1.2 (`--scorm-version 1.2`), essayés sur une plateforme simulée seulement.
-- **Manque** : affichage du caméo ; simulation ActivePresenter dans le chapitre ; éditeur d'assemblage ; export H5P ; questions et exercices traduits ; thème modifiable.
+- **Manque** : affichage du caméo ; simulation ActivePresenter dans le chapitre ; éditeur d'assemblage ; export H5P ; thème modifiable.
 - **Limites connues** : Moodle ne prend pas officiellement en charge SCORM 2004 ([FAQ SCORM de Moodle](https://docs.moodle.org/en/SCORM_FAQ)) ; les fonctions utilisées (données de suspension, note, achèvement, interactions) ont fonctionné dans l'essai, et l'export SCORM 1.2, plus sûr pour Moodle et d'autres plateformes, reste à essayer dans Moodle. Le lecteur ne joue pas encore les formules LaTeX dans les questions.
 
 ## Annonce de la version 0.2

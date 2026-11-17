@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -72,6 +73,107 @@ def _mp3(src: Path, dst: Path, debit: int = DEBIT_MP3) -> None:
 MINUTES_PAR_ETAPE = 1.5      # durée estimée d'un exercice ExoForge, faute de `duree_min`
 
 
+#: clés d'une fiche ExoForge dont la valeur est un texte affiché (traduisible) ; ``entetes`` et ``options`` : listes de textes
+TEXTES_FICHE = {"titre", "cours", "message", "texte", "enonce", "indice", "solution", "retour", "retour_juste",
+                "retour_faux", "explication", "etiquette", "alt", "entetes", "options"}
+
+#: textes de l'interface du moteur ExoForge (littéraux du code de la page), par langue ; le reste reste en français
+UI_EXOFORGE = {"en": [
+    ("'Valider'", "'Check'"), ("'Vérifier'", "'Check'"), ("'Continuer'", "'Continue'"), ("'Exact.'", "'Correct.'"),
+    ("'Ce n’est pas la bonne réponse.'", "'This is not the right answer.'"),
+    ("'Ce n’est pas la bonne valeur.'", "'This is not the right value.'"),
+    ("'La bonne réponse est indiquée en vert.'", "'The right answer is shown in green.'"),
+    ("'Une partie seulement de votre réponse est juste.'", "'Only part of your answer is correct.'"),
+    ("'Plusieurs réponses possibles.'", "'Several answers possible.'"),
+    ("'Entrez un nombre.'", "'Enter a number.'"),
+    ("'Entrez un nombre ou une fraction, par exemple 0,25 ou 1/4.'", "'Enter a number or a fraction, for example 0.25 or 1/4.'"),
+    ("'Votre réponse (ex. 0,25 ou 1/4)'", "'Your answer (e.g. 0.25 or 1/4)'"), ("'Votre réponse'", "'Your answer'"),
+    ("'Besoin d’un rappel de méthode ?'", "'Need a reminder of the method?'"),
+    ("'Recommencer avec de nouvelles données'", "'Start again with new data'"),
+    ("'Tout afficher sans écouter'", "'Show everything without listening'"), ("'Tout afficher'", "'Show everything'"),
+    ("'Description textuelle du graphique'", "'Text description of the graph'"),
+    ("'Lire la courbe pour une valeur donnée'", "'Read the curve at a given value'"),
+    ("'Se complète au fil des questions.'", "'Fills in as you answer the questions.'"),
+    ("'Écouter (synthèse vocale)'", "'Listen (speech synthesis)'"), ("'Écouter ce commentaire'", "'Listen to this commentary'"),
+    ("'Écouter le commentaire'", "'Listen to the commentary'"), ("'Transcription du commentaire'", "'Commentary transcript'"),
+    ("'Avancement du commentaire'", "'Commentary progress'"), ("'↺ Réécouter'", "'↺ Listen again'"),
+    ("'▶ Écouter'", "'▶ Listen'"), ("'🔊 Écouter'", "'🔊 Listen'"), ("'Réécouter la partie '", "'Listen again to part '"),
+    ("`${nbT} essais.`", "`${nbT} attempts.`"), ("'Partie')", "'Part')"), ("'Lire')", "'Read')"),
+    ("'Modèle'", "'Model'"), ("'Valeur'", "'Value'"), ("' mégapascals'", "' megapascals'"),
+    ("'<b>Correction</b> : '", "'<b>Solution</b>: '"), ("'<br><i>Indice</i> : '", "'<br><i>Hint</i>: '"),
+    ("`Essai ${essai} sur ${nbT} : réessayez.`", "`Attempt ${essai} of ${nbT}: try again.`"),
+    ("`Score : ${Math.round(pc)} / 100`", "`Score: ${Math.round(pc)} / 100`"),
+    ("`Tentatives : ${nbT}`", "`Attempts: ${nbT}`"), ("`Tentatives restantes : ${reste}`", "`Attempts left: ${reste}`"),
+    ('<html lang="fr">', '<html lang="en">'),
+]}
+
+
+def textes_fiche(obj, chemin: str = ""):
+    """Produit ``(chemin, texte)`` pour chaque texte affiché d'une fiche ExoForge (clés de :data:`TEXTES_FICHE`).
+
+    Le chemin suit la structure de la fiche (``etapes/2/options/1/retour``) ; il sert de clé de traduction
+    (``exercice/<id>/<chemin>``) et retrouve le même texte dans la configuration incluse dans la page construite.
+    """
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            c = f"{chemin}/{k}" if chemin else str(k)
+            if k in TEXTES_FICHE and isinstance(v, str) and v.strip():
+                yield c, v
+            elif k in ("entetes", "options") and isinstance(v, list):
+                for i, x in enumerate(v):
+                    if isinstance(x, str) and x.strip():
+                        yield f"{c}/{i}", x
+                    else:
+                        yield from textes_fiche(x, f"{c}/{i}")
+            elif isinstance(v, (dict, list)):
+                yield from textes_fiche(v, c)
+    elif isinstance(obj, list):
+        for i, x in enumerate(obj):
+            yield from textes_fiche(x, f"{chemin}/{i}")
+
+
+def _poser(obj, chemin: str, valeur) -> None:
+    parties = chemin.split("/")
+    for p in parties[:-1]:
+        obj = obj[int(p)] if isinstance(obj, list) else obj[p]
+    dernier = parties[-1]
+    if isinstance(obj, list):
+        obj[int(dernier)] = valeur
+    else:
+        obj[dernier] = valeur
+
+
+def page_traduite(code: str, ident: str, langue: str, d: dict, perimees: list) -> str | None:
+    """Renvoie la page d'un exercice ExoForge traduite (textes de la fiche, interface du moteur), ou ``None`` sans traduction.
+
+    ``d`` : éléments du fichier de traduction (clé → élément). Les sons du commentaire (langue source) sont retirés.
+    """
+    m = re.search(r'(<script id="config" type="application/json">)(.*?)(</script>)', code, re.S)
+    if not m:
+        return None
+    cfg = json.loads(m.group(2))
+    n = 0
+    for chemin, texte in list(textes_fiche(cfg)):
+        e = d.get(f"exercice/{ident}/{chemin}")
+        if not e:
+            continue
+        if e.get("source") != " ".join(texte.split()):
+            perimees.append(f"exercice/{ident}/{chemin}")
+            continue
+        _poser(cfg, chemin, e["cible"])
+        n += 1
+    if not n:
+        return None
+    for k in ("audios", "transcriptions", "reperes"):
+        if k in cfg:
+            cfg[k] = {}
+    js = json.dumps(cfg, ensure_ascii=False, indent=1).replace("</", "<\\/")
+    page = code[:m.start(2)] + js + code[m.end(2):]
+    for a, b in UI_EXOFORGE.get(langue, []):
+        page = page.replace(a, b)
+    return page
+
+
 def _fiche_exoforge(nom: str, dossier: Path) -> Path | None:
     """Renvoie le chemin d'une fiche ExoForge, cherchée à côté du chapitre puis dans ``data/exoforge`` (``None`` si absente)."""
     f = dossier / nom
@@ -82,11 +184,14 @@ def _fiche_exoforge(nom: str, dossier: Path) -> Path | None:
     return trouves[0] if trouves else None
 
 
-def exercices_partie(p: dict, dossier: Path, sortie: Path, journal=print) -> list[dict]:
+def exercices_partie(p: dict, dossier: Path, sortie: Path, journal=print, trad_ext: dict | None = None,
+                     perimees: list | None = None) -> list[dict]:
     """Renvoie les exercices ExoForge d'une partie sous forme de sections « exercice » du lecteur (HTML de l'exercice inclus).
 
     Chaque fiche est construite si besoin (``scripts/exoforge/build.py``) et ses fichiers sont recopiés dans
     ``<sortie>/exercices/<id>/`` ; une fiche introuvable ou qui ne se construit pas est signalée et ignorée.
+    ``trad_ext`` (langue → éléments ``exercice/…`` des fichiers de traduction) ajoute une page traduite par langue
+    (``html_tr``) et le titre traduit de la section (``tr``).
     """
     import yaml
     refs = p.get("exercice") or []
@@ -126,10 +231,18 @@ def exercices_partie(p: dict, dossier: Path, sortie: Path, journal=print) -> lis
         code = code.replace("<head>", '<head>\n<base href="__BASE__">', 1)    # adresse absolue posée par le lecteur
         etapes = len(cfg.get("etapes") or [])
         duree = ref.get("duree_min") or max(3, round(etapes * MINUTES_PAR_ETAPE))
-        sections.append({"id": "exo-" + ident, "titre": F.texte(ref.get("titre") or cfg.get("titre") or ident),
+        html_tr, tr_titre = {}, {}
+        for l, d in (trad_ext or {}).items():
+            t = page_traduite(code, ident, l, d, perimees if perimees is not None else [])
+            if t:
+                html_tr[l] = t
+            e = d.get(f"exercice/{ident}/titre")
+            if e and not ref.get("titre"):
+                tr_titre[l] = {"titre": e["cible"]}
+        sections.append({"id": "exo-" + ident, "titre": F.texte(ref.get("titre") or cfg.get("titre") or ident), "tr": tr_titre,
                          "objectif": F.texte(ref.get("objectif") or ""), "ouverture": "", "arret": True, "annexes": [],
                          "questions": 0, "lots": [], "duree_s": float(duree) * 60, "pas": [],
-                         "exercice": {"id": ident, "base": f"exercices/{ident}/", "etapes": etapes, "html": code,
+                         "exercice": {"id": ident, "base": f"exercices/{ident}/", "etapes": etapes, "html": code, "html_tr": html_tr,
                                       "poids": float(ref["poids"]) if ref.get("poids") is not None else float(duree)}})
         journal(f"  exercice {ident} ({etapes} étapes, ~{duree} min, poids {sections[-1]['exercice']['poids']:g}) dans la partie {p.get('id')}")
     return sections
@@ -270,6 +383,45 @@ def _question(q: dict) -> dict:
     return x
 
 
+def textes_question(x: dict) -> list[tuple[str, str]]:
+    """Renvoie les textes traduisibles d'une question convertie : ``[(chemin, texte)]``, chemins du type ``choix/1/texte``.
+
+    Ce sont les clés du fichier de traduction du chapitre (``question/<banque>/<titre>/<chemin>``) et de ``tr`` dans le lecteur.
+    """
+    out = [(k, x.get(k)) for k in ("question", "feedback", "feedback_juste", "feedback_faux", "unite")]
+    out += [(f"choix/{i}/{k}", c.get(k)) for i, c in enumerate(x.get("choix") or []) for k in ("texte", "feedback")]
+    out += [(f"erreurs/{i}/feedback", e.get("feedback")) for i, e in enumerate(x.get("erreurs") or [])]
+    out += [(f"indices/{i}", t) for i, t in enumerate(x.get("indices") or [])]
+    return [(k, str(t)) for k, t in out if t and str(t).strip()]
+
+
+def questions_ref(ref: dict, dossier: Path, cache: dict, journal=print, sec_id: str = "") -> list[dict] | None:
+    """Renvoie les questions converties d'un renvoi ``{banque, id | etiquette, nombre}`` (types joués par le lecteur).
+
+    Chaque question porte ``cle_tr`` = ``question/<banque>/<titre>``, préfixe de ses clés de traduction.
+    Renvoie ``None`` si la banque est introuvable.
+    """
+    banque = _banque(ref["banque"], dossier, cache)
+    if banque is None:
+        return None
+    if ref.get("id"):
+        choisies = [q for q in banque if q.get("titre") == ref["id"]]
+    elif ref.get("etiquette"):
+        choisies = [q for q in banque if ref["etiquette"] in (q.get("tags") or [])]
+    else:
+        choisies = list(banque)
+    ecartees = [q.get("titre") for q in choisies if q.get("type") not in TYPES_QUESTION]
+    if ecartees:
+        journal(f"  section {sec_id} : types non joués par le lecteur ({', '.join(map(str, ecartees))})")
+    res = []
+    for q in choisies:
+        if q.get("type") in TYPES_QUESTION:
+            x = _question(q)
+            x["cle_tr"] = f"question/{ref['banque']}/{q.get('titre', '')}"
+            res.append(x)
+    return res
+
+
 def questions_section(sec: dict, dossier: Path, cache: dict, journal=print) -> list[dict]:
     """Convertit les renvois « questions » d'une section en lots ``[{nombre, questions}]``.
 
@@ -279,20 +431,10 @@ def questions_section(sec: dict, dossier: Path, cache: dict, journal=print) -> l
     for ref in sec.get("questions") or []:
         if not isinstance(ref, dict) or not ref.get("banque"):
             continue
-        banque = _banque(ref["banque"], dossier, cache)
-        if banque is None:
+        choisies = questions_ref(ref, dossier, cache, journal, sec.get("id"))
+        if choisies is None:
             journal(f"  section {sec.get('id')} : banque introuvable « {ref['banque']} » (questions ignorées)")
             continue
-        if ref.get("id"):
-            choisies = [q for q in banque if q.get("titre") == ref["id"]]
-        elif ref.get("etiquette"):
-            choisies = [q for q in banque if ref["etiquette"] in (q.get("tags") or [])]
-        else:
-            choisies = list(banque)
-        ecartees = [q.get("titre") for q in choisies if q.get("type") not in TYPES_QUESTION]
-        if ecartees:
-            journal(f"  section {sec.get('id')} : types non joués par le lecteur ({', '.join(map(str, ecartees))})")
-        choisies = [_question(q) for q in choisies if q.get("type") in TYPES_QUESTION]
         if not choisies:
             journal(f"  section {sec.get('id')} : aucune question pour {ref}")
             continue
@@ -450,6 +592,34 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
     src = (chap.get("langues") or {}).get("source") or "fr"
     autres = [l for l in (chap.get("langues") or {}).get("autres") or [] if l != src]
 
+    # traductions des questions (fichiers traductions/<langue>.yaml, clés « question/… ») : la banque reste en langue source
+    trad_ext: dict = {}
+    for l in autres:
+        ft = dossier / "traductions" / f"{l}.yaml"
+        if ft.is_file():
+            import yaml as _yaml
+            elts = (_yaml.safe_load(ft.read_text(encoding="utf-8")) or {}).get("elements") or []
+            trad_ext[l] = {e["cle"]: e for e in elts if str(e.get("cle", "")).startswith(("question/", "exercice/")) and e.get("cible")}
+    perimees: list = []
+
+    def tr_question(x: dict) -> None:
+        """Pose ``x["tr"] = {langue: {chemin: texte}}`` à partir des fichiers de traduction ; retire ``cle_tr``."""
+        cle = x.pop("cle_tr", None)
+        if not cle:
+            return
+        for l, d in trad_ext.items():
+            t = {}
+            for chemin, texte in textes_question(x):
+                e = d.get(f"{cle}/{chemin}")
+                if not e:
+                    continue
+                if e.get("source") != " ".join(texte.split()):
+                    perimees.append(f"{cle}/{chemin}")
+                    continue
+                t[chemin] = e["cible"]
+            if t:
+                x.setdefault("tr", {})[l] = t
+
     def tr(obj: dict, champs) -> dict:
         """Renvoie les traductions présentes : ``{langue: {champ: texte}}`` (le lecteur retombe sur la source sinon)."""
         res = {}
@@ -505,6 +675,9 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                                                for o in x["objets"]]}
                 pas.append(x)
             lots = questions_section(s, dossier, banques, journal)
+            for lot in lots:
+                for x in lot["questions"]:
+                    tr_question(x)
             duree = sum(x["duree_s"] for x in pas) if pas else F.duree_section_s(s, largeur=W)
             sections.append({"id": s.get("id"), "nom": N.get(("section", p.get("id"), s.get("id")), ""),
                              "titre": F.texte(s.get("titre"), src), "objectif": F.texte(s.get("objectif"), src),
@@ -515,7 +688,7 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                              "questions": sum(l["nombre"] for l in lots), "lots": lots,
                              "duree_s": round(duree, 1) if duree else None, "pas": pas})
         nom_p = N.get(("partie", p.get("id")), "")
-        exos = exercices_partie(p, dossier, sortie, journal)
+        exos = exercices_partie(p, dossier, sortie, journal, trad_ext, perimees)
         for k, x in enumerate(exos):
             x["nom"] = nom_p + "-Ex" + (str(k + 1) if len(exos) > 1 else "")
         sections += exos
@@ -550,6 +723,9 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
     n_x = sum(1 for p in parties for s in p["sections"] if s.get("exercice"))
     if n_x:
         journal(f"  {n_x} exercice(s) ExoForge (dossier exercices/)")
+    if perimees:
+        journal(f"  {len(perimees)} traduction(s) de question dont la source a changé depuis (texte d'origine affiché) : "
+                "relancer « capsuleforge traduire » pour les remettre à jour")
     n_q = sum(s["questions"] for p in parties for s in p["sections"])
     if n_q:
         journal(f"  {n_q} question(s) posée(s) en fin de section")
