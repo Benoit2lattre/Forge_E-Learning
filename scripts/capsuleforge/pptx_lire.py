@@ -3,6 +3,7 @@
 Lit dans l'archive : titre, notes, durée (minutage enregistré), audio de narration et états d'animation de
 chaque diapositive. Un état = ce qui est visible après un clic ; l'état 0 est la diapositive à son ouverture.
 Le fichier n'est jamais modifié. Les images sont produites à part, par PowerPoint lui-même (``pptx_images.py``).
+:func:`reprendre` fait la reprise complète dans un chapitre (commande ``capsuleforge pptx``).
 
 Formes d'annotation : une forme nommée « cf spot », « cf cadre », « cf pointeur » ou « cf cache » (volet Sélection de
 PowerPoint) n'est jamais sur les images ; elle devient un objet du pas. Un pointeur tracé en ligne brisée
@@ -276,3 +277,149 @@ def plage(texte: str | None, maxi: int) -> list[int]:
         a, _, b = bloc.partition("-")
         out += list(range(int(a), int(b or a) + 1))
     return [n for n in out if 1 <= n <= maxi]
+
+
+def _recouvre(c1, c2) -> float:
+    """Part de la plus petite des deux zones ``[x, y, l, h]`` couverte par l'autre."""
+    lx = min(c1[0] + c1[2], c2[0] + c2[2]) - max(c1[0], c2[0])
+    ly = min(c1[1] + c1[3], c2[1] + c2[3]) - max(c1[1], c2[1])
+    return max(0, lx) * max(0, ly) / max(1, min(c1[2] * c1[3], c2[2] * c2[3]))
+
+
+def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None = None, images: bool = True) -> dict:
+    """Reprend le diaporama ``src`` dans les sections du chapitre ``y`` qui y renvoient ; renvoie le chapitre écrit.
+
+    Les sections visées sont celles dont ``source.fichier`` est le nom du diaporama et dont ``source.diapos``
+    contient une des diapositives demandées (``diapos`` : « 6-12 », « 3,5 »… ; toutes si ``None``). Chaque
+    diapositive devient un pas (image, audio, durée), chaque clic d'animation une apparition, et les formes
+    d'annotation des objets ; le texte déjà relu et les réglages de temps existants sont conservés.
+
+    Écrit les images avec PowerPoint (``pptx_images``, sauf si ``images`` est faux), ``pptx_journal.txt``, une copie
+    de l'ancien chapitre dans ``sauvegardes/`` et le nouveau ``chapitre.yaml``. ``largeur`` : largeur des images
+    (par défaut celle de l'écran du chapitre, sinon 1440).
+    """
+    import shutil
+    import time
+    import format2 as F
+    src, y = Path(src), Path(y)
+    dossier = y.parent
+    chap = F.lire(y)
+    lu = lire(src)
+    voulues = set(plage(diapos, len(lu["diapos"])))
+    par_n = {d["n"]: d for d in lu["diapos"]}
+    cibles = [(p, s) for p in chap.get("parties") or [] for s in p.get("sections") or []
+              if (s.get("source") or {}).get("fichier") == src.name
+              and any(n in voulues for n in (s.get("source") or {}).get("diapos") or [])]
+    if not cibles:
+        raise SystemExit(f"Aucune section de {y.name} ne renvoie à {src.name} pour ces diapositives "
+                         "(champ source: {fichier, diapos} de la section).")
+    a_faire = sorted({n for _, s in cibles for n in s["source"]["diapos"] if n in voulues and n in par_n})
+    a_lire = [par_n[n] for n in a_faire]
+    print(f"{src.name} : {len(lu['diapos'])} diapositives ; {len(a_faire)} à reprendre, "
+          f"{sum(len(d['etats']) for d in a_lire)} états d'animation")
+    audios = extraire_audio(src, a_lire, dossier)
+    largeur = largeur or (chap.get("ecran") or {}).get("largeur") or 1440
+    journal = dossier / "pptx_journal.txt"          # relu ensuite sans avoir à copier la console
+
+    def noter(ligne):
+        print(ligne)
+        with open(journal, "a", encoding="utf-8") as f:
+            f.write(ligne + "\n")
+
+    journal.write_text(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {src.name} diapos {a_faire}\n", encoding="utf-8")
+    if not images:
+        noter("  images non produites (--sans-images)")
+    else:
+        import traceback
+        import pptx_images
+        try:
+            ecrits = pptx_images.exporter(src, a_lire, dossier, largeur, journal=noter)
+            noter(f"  {len(ecrits)} images écrites dans {dossier / 'images'}")
+        except BaseException:
+            noter(traceback.format_exc())
+            raise SystemExit(f"L'export des images a échoué : voir {journal}")
+    N = F.noms(chap)
+    for partie, sec in cibles:
+        anciens = {(q.get("source") or {}).get("diapo"): q for q in sec.get("pas") or [] if (q.get("source") or {}).get("type") == "pptx"}
+        autres = [q for q in sec.get("pas") or [] if (q.get("source") or {}).get("type") != "pptx"]
+        nouveaux = []
+        for n in sec["source"]["diapos"]:
+            d, vieux = par_n.get(n), anciens.get(n)
+            if d is None or n not in voulues:
+                if vieux:
+                    nouveaux.append(vieux)
+                continue
+            K = len(d["etats"])
+            duree = d.get("audio_s") or d.get("duree_s")
+            q = {"id": f"d{n:02d}", "fond": f"images/d{n:02d}_e0.png",
+                 "source": {"type": "pptx", "fichier": src.name, "diapo": n, "etats": K, "titre": d["titre"]},
+                 "narration": (vieux or {}).get("narration") or d["notes"] or ""}
+            if (vieux or {}).get("phrases"):            # texte déjà relu : gardé tel quel
+                q["phrases"] = vieux["phrases"]; q.pop("narration")
+            for cle in ("narration", "minutage", "relu"):
+                if cle in ((vieux or {}).get("source") or {}):
+                    q["source"][cle] = vieux["source"][cle]
+            if n in audios:
+                q["audio"] = audios[n]
+            if duree:
+                q["duree_s"] = duree
+            deja = {o.get("id"): o for o in (vieux or {}).get("objets") or []}
+            objets = []
+            for k in range(1, K):                       # instants répartis, sauf réglage déjà fait
+                o = {"id": f"e{k}", "type": "apparition", "fichier": f"images/d{n:02d}_e{k}.png",
+                     "debut_s": (deja.get(f"e{k}") or {}).get("debut_s") or round((duree or 4.0 * K) * k / K, 1)}
+                objets.append(o)
+            # annotations dessinées dans PowerPoint (formes « cf … ») : géométrie relue, réglages de temps gardés
+            k_emu = largeur / lu["largeur_emu"]
+            formes = d.get("formes") or []
+            manuels = [o for o in (vieux or {}).get("objets") or [] if o.get("type") == "cache" and o.get("origine") != "pptx"]
+
+            for i, f in enumerate(formes):
+                o = {"id": f"f{f['spid']}", "type": f["type"], "origine": "pptx"}
+                if f["type"] == "cache":
+                    zone = [round(v * k_emu) for v in f["cadre"]]
+                    if any(_recouvre(zone, m["cadre"]) > 0.5 for m in manuels if m.get("cadre")):
+                        noter(f"  diapositive {n} : « {f['nom']} » non repris, un cache posé dans la relecture couvre déjà cette zone")
+                        continue
+                if f.get("forme"):
+                    o["forme"] = f["forme"]
+                if f["type"] == "pointeur":
+                    pts = f.get("trajet") or [[f["cadre"][0] + f["cadre"][2] / 2, f["cadre"][1] + f["cadre"][3] / 2]]
+                    pts = [[round(px * k_emu), round(py * k_emu)] for px, py in pts]
+                    o["position"] = list(pts[0])
+                    if len(pts) > 1:
+                        o["trajet"] = pts
+                else:
+                    o["cadre"] = [round(v * k_emu) for v in f["cadre"]]
+                v = deja.get(o["id"]) or {}
+                o["debut_s"] = v["debut_s"] if v.get("debut_s") is not None else round((duree or 20.0) * (i + 1) / (len(formes) + 1), 1)
+                o["duree_s"] = v.get("duree_s") or 4.0
+                if f["type"] == "cache":                # un cache part du début du pas ; sa durée est l'instant où il est levé
+                    o["duree_s"] = v.get("duree_s") or o["debut_s"]
+                    o["debut_s"] = 0.0
+                    o["couleur"] = v.get("couleur") or "#ffffff"
+                objets.append(F._ordonner(o, F.ORDRE_OBJET))
+            for r in d.get("remarques") or []:
+                noter(f"  diapositive {n} : {r}")
+            objets += [o for o in (vieux or {}).get("objets") or []
+                       if o.get("type") != "apparition" and o.get("origine") != "pptx"]
+            if objets:
+                q["objets"] = objets
+            if d.get("animation_par_paragraphe"):
+                q["source"]["animation_par_paragraphe"] = True
+            nouveaux.append(F._ordonner(q, F.ORDRE_PAS))
+        sec["pas"] = nouveaux + autres
+        d_tot = sum(q.get("duree_s") or 0 for q in nouveaux)
+        sec["source"]["duree_s"] = round(d_tot, 1) or sec["source"].get("duree_s")
+        print(f"  {N[('section', partie.get('id'), sec.get('id'))]} {F.texte(sec.get('titre'))} : {len(nouveaux)} pas, "
+              f"{sum(1 for q in nouveaux for o in q.get('objets') or [] if o.get('type') == 'apparition')} apparitions, "
+              f"{sum(1 for q in nouveaux for o in q.get('objets') or [] if o.get('origine') == 'pptx')} annotations, {F._minsec(d_tot)}")
+    ecran = chap.setdefault("ecran", {})
+    ecran["largeur"] = largeur
+    ecran["hauteur"] = round(largeur * lu["hauteur_pouces"] / lu["largeur_pouces"])
+    if y.is_file():
+        (dossier / "sauvegardes").mkdir(exist_ok=True)
+        shutil.copy2(y, dossier / "sauvegardes" / f"chapitre_{time.strftime('%Y%m%d_%H%M%S')}.yaml")
+    F.ecrire(chap, y)
+    print(f"-> {y}")
+    return chap
