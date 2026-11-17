@@ -46,7 +46,7 @@ import capsules as C              # noqa: E402
 import chemins                    # noqa: E402
 import serveur_local as S         # noqa: E402
 
-VERSION = "0.2"
+VERSION = "0.2.1"
 RACINE = chemins.RACINE
 PY = sys.executable
 PORT = 8770
@@ -166,6 +166,7 @@ class Atelier:
         self.verrou = threading.Lock()
         self.dialogue = threading.Lock()
         self.minuterie: threading.Timer | None = None
+        self.montres: dict[str, float] = {}         # dernière ouverture de l'explorateur par chemin
         self.page_partie_le: float | None = None
         self.arreter = lambda: None            # remplacé par srv.shutdown
         self.journal = chemins.DATA / "_atelier" / "journal.jsonl"
@@ -457,15 +458,23 @@ class Atelier:
             self.dialogue.release()
 
     def montrer(self, p: dict) -> dict:
-        """Ouvre l'explorateur sur un fichier (sélectionné) ou un dossier du dépôt."""
+        """Ouvre l'explorateur sur un fichier (sélectionné) ou un dossier du dépôt, au premier plan.
+
+        Une même demande répétée dans les 8 s est ignorée (l'explorateur met parfois du temps à s'ouvrir : sans cela,
+        chaque clic en ouvrirait un de plus).
+        """
         f = dans_depot(p.get("chemin") or "")
         if not f.exists():
             return {"ok": False, "message": "introuvable : " + rel(f)}
+        cle, maintenant = str(f), time.time()
+        if maintenant - self.montres.get(cle, 0) < 8:
+            return {"ok": True, "deja": True}
+        self.montres[cle] = maintenant
         if WINDOWS:
-            if f.is_file():
-                subprocess.Popen(["explorer", "/select,", str(f)])
-            else:
-                os.startfile(str(f))                     # noqa: S606 (dossier du dépôt)
+            avant = fenetres_explorateur()
+            subprocess.Popen(["explorer", "/select,", str(f)] if f.is_file() else ["explorer", str(f)])
+            dossier = f.parent if f.is_file() else f
+            threading.Thread(target=premier_plan, args=(avant, dossier.name), daemon=True).start()
         else:
             subprocess.Popen(["xdg-open", str(f if f.is_dir() else f.parent)])
         return {"ok": True}
@@ -488,6 +497,61 @@ class Atelier:
         """Arrête l'atelier si la page est partie depuis plus de 4 s et qu'aucune tâche ne tourne."""
         if self.page_partie_le and time.time() - self.page_partie_le >= 3.9 and not self.en_cours():
             threading.Thread(target=self.arreter, daemon=True).start()
+
+
+# --------------------------------------------------------------------------------------------- Windows : explorateur
+def fenetres_explorateur() -> set:
+    """Fenêtres de l'explorateur Windows ouvertes (classe CabinetWClass)."""
+    import ctypes
+    from ctypes import wintypes
+    u = ctypes.windll.user32
+    trouvees = set()
+    classe = ctypes.create_unicode_buffer(64)
+
+    @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    def chaque(hwnd, _):
+        u.GetClassNameW(hwnd, classe, 64)
+        if classe.value == "CabinetWClass" and u.IsWindowVisible(hwnd):
+            trouvees.add(hwnd)
+        return True
+    u.EnumWindows(chaque, 0)
+    return trouvees
+
+
+def premier_plan(avant: set, titre: str, delai: float = 6.0):
+    """Met au premier plan la fenêtre d'explorateur qui vient de s'ouvrir (ou celle qui porte ``titre``).
+
+    Windows refuse le premier plan à un programme qui n'a pas la main (l'icône clignote dans la barre des tâches) ;
+    l'appui simulé sur Alt, d'usage courant, lève ce refus.
+    """
+    try:
+        import ctypes
+        from ctypes import wintypes
+        u = ctypes.windll.user32
+        fin = time.time() + delai
+        cible = None
+        while time.time() < fin and not cible:
+            time.sleep(0.15)
+            nouvelles = fenetres_explorateur() - avant
+            if nouvelles:
+                cible = next(iter(nouvelles))
+            else:                                        # explorateur déjà ouvert sur ce dossier : il est réutilisé
+                tampon = ctypes.create_unicode_buffer(260)
+                for h in fenetres_explorateur():
+                    u.GetWindowTextW(h, tampon, 260)
+                    if tampon.value == titre and time.time() > fin - delai + 1.5:
+                        cible = h
+                        break
+        if not cible:
+            return
+        if u.IsIconic(cible):
+            u.ShowWindow(cible, 9)                       # SW_RESTORE
+        VK_MENU, KEYUP = 0x12, 0x0002
+        u.keybd_event(VK_MENU, 0, 0, 0)
+        u.keybd_event(VK_MENU, 0, KEYUP, 0)
+        u.SetForegroundWindow(wintypes.HWND(cible))
+    except Exception:                                    # premier plan impossible : la fenêtre reste ouverte
+        pass
 
 
 def lire_fiche(f: Path, yaml) -> dict | None:

@@ -73,6 +73,10 @@ label.case{flex-direction:row !important;align-items:center;gap:6px}
 .diaporama{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding-bottom:8px;border-bottom:1px solid #ECE9E3}
 .diaporama b{font-size:13.5px;word-break:break-all}
 .btn.petit{padding:3px 9px;font-size:13px}
+.paquets{display:flex;flex-direction:column;gap:6px;border-top:1px solid #ECE9E3;padding-top:8px}
+.paquet{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.paquet b{display:block;font-size:13px;font-weight:600}
+.paquet .sous{display:block;font-size:12px}
 .carte.etroite{max-width:640px}
 table.sections td,table.sections th{padding:6px 8px;font-size:13px}
 table.sections tr.partie td{background:#F0EEEA;font-weight:600}
@@ -213,8 +217,8 @@ async function exercices() {
           el("button", { class: "btn", type: "button", onclick: () => construire(x.fiche) }, "Construire"),
           el("button", { class: "btn second", type: "button", disabled: !x.essayer, onclick: () => essayer(x.essayer, true), title: "Toujours les mêmes valeurs (mode=fixe)" }, "Essayer"),
           el("button", { class: "btn second", type: "button", disabled: !x.essayer, onclick: () => essayer(x.essayer, false), title: "Nouvelles valeurs à chaque ouverture" }, "Valeurs tirées"),
-          el("button", { class: "btn second", type: "button", disabled: !x.paquet, onclick: () => montrer(x.paquet) }, "Paquet SCORM"),
-          el("button", { class: "btn second", type: "button", onclick: () => montrer(x.fiche) }, "Fiche")))))))) ;
+          el("button", { class: "btn second", type: "button", disabled: !x.paquet, onclick: e => montrer(x.paquet, e.currentTarget) }, "Paquet SCORM"),
+          el("button", { class: "btn second", type: "button", onclick: e => montrer(x.fiche, e.currentTarget) }, "Fiche")))))))) ;
   };
   filtre.oninput = () => { FILTRE = filtre.value; dessiner(); };
   dessiner();
@@ -225,7 +229,12 @@ async function construire(fiche) {
   CHOISIE = r.id; deplier(); rafraichir();
 }
 function essayer(url, fixe) { window.open(url + (fixe ? "?mode=fixe" : ""), "_blank", "noopener"); }
-async function montrer(chemin) { const r = await api("/api/montrer", { chemin }); if (!r.ok) message(r.message || "Ouverture impossible.", true); }
+async function montrer(chemin, bouton) {
+  if (bouton) { bouton.disabled = true; setTimeout(() => bouton.disabled = false, 4000); }
+  const r = await api("/api/montrer", { chemin });
+  if (!r.ok) return message(r.message || "Ouverture impossible.", true);
+  message(r.deja ? "L'explorateur est déjà en train de s'ouvrir." : "Ouverture de l'explorateur… (s'il reste derrière, son icône clignote dans la barre des tâches)");
+}
 async function autreFiche() {
   message("Choisissez la fiche dans la fenêtre qui s'ouvre (elle peut être derrière le navigateur).");
   const r = await api("/api/parcourir", { titre: "Choisir une fiche ExoForge", types: [["Fiche ExoForge", "*.yaml"]], depart: "outils/exoforge/exemples" });
@@ -262,7 +271,7 @@ async function detailCapsule(zone, nom) {
   const lancer = (action, params) => lancerTache(action, { capsule: nom, ...params });
   const haut = el("div", { class: "barre" },
     el("button", { class: "btn second", type: "button", disabled: !d.lecteur, onclick: () => window.open(d.lecteur, "_blank", "noopener") }, "Ouvrir le lecteur"),
-    el("button", { class: "btn second", type: "button", onclick: () => montrer("data/capsuleforge/" + nom) }, "Dossier de la capsule"),
+    el("button", { class: "btn second", type: "button", onclick: e => montrer("data/capsuleforge/" + nom, e.currentTarget) }, "Dossier de la capsule"),
     el("span", { class: "sous" }, d.construit ? "Lecteur construit " + quand(d.construit) : "Lecteur pas encore construit"));
   if (d.ancienne) return zone.replaceChildren(haut, el("div", { class: "carte etroite" },
     el("div", { class: "nom" }, "Didacticiel enregistré pour l'ancien lecteur"),
@@ -316,10 +325,12 @@ async function detailCapsule(zone, nom) {
     el("button", { class: "btn", type: "button", onclick: () => lancer("capsule.voix", { langue: selVoixL.value, moteur: selMoteur.value, voix: selVoix.value, vitesse: opt("vitesse", "1"), refaire: opt("refaire_voix", false), sections: portee() }) }, "Faire la voix"));
   const construire = el("div", { class: "carte" }, el("div", { class: "nom" }, "5. Construire"),
     el("label", {}, "Paquets SCORM ", choix("scorm", [["", "aucun (lecteur seul)"], ["chapitre", "un pour la capsule"], ["parties", "un par partie"], ["tout", "les deux"]], "")),
-    el("label", {}, "Format ", choix("version", [["1.2", "SCORM 1.2 (conseillé pour Moodle)"], ["2004", "SCORM 2004"]], "1.2")),
+    el("label", {}, "Format ", choix("version", [["1.2", "SCORM 1.2 (conseillé, Moodle)"], ["2004", "SCORM 2004"]], "1.2")),
     el("div", { class: "actions" }, el("button", { class: "btn second", type: "button", onclick: () => lancer("capsule.verifier", {}) }, "Vérifier"),
       el("button", { class: "btn", type: "button", onclick: () => lancer("capsule.construire", { scorm: opt("scorm", ""), version: opt("version", "1.2") }) }, "Construire")),
-    d.paquets.length ? el("div", { class: "paquets" }, d.paquets.map(z => el("div", { class: "ligne" }, el("span", { class: "sous" }, `${z.fichier} · ${quand(z.date)}`), el("button", { class: "btn second petit", type: "button", onclick: () => montrer(z.chemin) }, "Montrer")))) : null);
+    d.paquets.length ? el("div", { class: "paquets" }, el("div", { class: "sous" }, "Paquets construits :"), d.paquets.map(z => el("div", { class: "paquet", title: z.fichier },
+      el("span", {}, el("b", {}, z.libelle), el("span", { class: "sous" }, `${z.version} · ${quand(z.date)}`)),
+      el("button", { class: "btn second petit", type: "button", onclick: e => montrer(z.chemin, e.currentTarget) }, "Montrer")))) : null);
   /* sections */
   const entetes = ["", "Section", "Genre", "Durée", "Pas", "Diapos reprises", "Images", "Texte dit", "Relu", ...d.autres.flatMap(l => [`Texte ${l}`, `Voix ${l}`]), "Questions"];
   const corps = el("tbody", {});
@@ -424,7 +435,7 @@ async function journal() {
   o.replaceChildren(...[el("span", { class: "etat" }, `${ICONES[t.etat]} ${t.titre}`), el("span", { class: "pastille " + (t.etat === "reussie" ? "p-ok" : t.etat === "echec" ? "p-ko" : "p-neutre") }, LIBELLES[t.etat] + " · " + duree(t.duree)),
     t.etat === "en_cours" ? el("button", { class: "btn second", type: "button", onclick: async () => { await api("/api/arreter", { id: t.id }); rafraichir(); } }, "Arrêter") : null,
     t.liens && t.liens.essayer ? el("button", { class: "btn", type: "button", onclick: () => essayer(t.liens.essayer, true) }, "Essayer l'exercice") : null,
-    t.liens && t.liens.paquet ? el("button", { class: "btn second", type: "button", onclick: () => montrer(t.liens.paquet) }, "Montrer le paquet SCORM") : null,
+    t.liens && t.liens.paquet ? el("button", { class: "btn second", type: "button", onclick: e => montrer(t.liens.paquet, e.currentTarget) }, "Montrer le paquet SCORM") : null,
     t.liens && t.liens.lecteur ? el("button", { class: "btn", type: "button", onclick: () => window.open(t.liens.lecteur, "_blank", "noopener") }, "Ouvrir le lecteur") : null,
     t.liens && t.liens.ouvrir && t.etat === "en_cours" ? el("button", { class: "btn", type: "button", onclick: () => window.open(t.liens.ouvrir, "_blank") }, "Revenir à l'écran") : null].filter(Boolean));
 }

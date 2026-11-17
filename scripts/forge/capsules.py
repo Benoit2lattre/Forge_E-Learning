@@ -219,8 +219,16 @@ def _chercher(base: Path, nom: str, profondeur: int):
 def paquets(nom: str) -> list[dict]:
     if not SORTIES.is_dir():
         return []
-    return [{"fichier": z.name, "chemin": chemins_rel(z), "date": z.stat().st_mtime}
-            for z in sorted(SORTIES.glob(f"{nom}_*.zip")) if "scorm" in z.name]
+    out = []
+    for z in sorted(SORTIES.glob(f"{nom}_*.zip")):
+        m = re.fullmatch(re.escape(nom) + r"(?:_([A-Z]+)_(.+?))?_scorm(12|2004)", z.stem)
+        if not m:
+            continue
+        version = "SCORM 1.2" if m.group(3) == "12" else "SCORM 2004"
+        quoi = f"partie {m.group(1)} ({m.group(2).replace('_', ' ')})" if m.group(1) else "capsule entière"
+        out.append({"fichier": z.name, "libelle": quoi, "version": version, "chemin": chemins_rel(z), "date": z.stat().st_mtime})
+    out.sort(key=lambda x: (x["libelle"] != "capsule entière", x["libelle"], x["version"]))
+    return out
 
 
 def chemins_rel(f: Path) -> str:
