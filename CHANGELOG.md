@@ -2,6 +2,10 @@
 
 Chaque outil a son propre numéro de version (voir la page « État des outils » du site).
 
+## Forge E-Learning 0.3 — en préparation
+
+- CapsuleForge : paquets SCORM 1.2 en plus de SCORM 2004 (`construire --scorm … --scorm-version 1.2`) ; le lecteur reconnaît seul la version de la plateforme.
+
 ## Forge E-Learning 0.2.1 — en préparation
 
 Corrections sans changement de format :

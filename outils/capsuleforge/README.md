@@ -198,6 +198,7 @@ Une partie peut porter un exercice ExoForge : `exercice: {outil: exoforge, fiche
 capsuleforge construire fiabilite --scorm chapitre     # un paquet pour tout le chapitre
 capsuleforge construire fiabilite --scorm parties      # un paquet par partie du tronc (avec ses annexes et exercices)
 capsuleforge construire fiabilite --scorm tout         # les deux
+capsuleforge construire fiabilite --scorm chapitre --scorm-version 1.2   # même paquet au format SCORM 1.2
 ```
 
 Paquets SCORM 2004 écrits dans `dist/capsuleforge/` : `fiabilite_scorm2004.zip`, `fiabilite_B_dimensionnement_scorm2004.zip`… À déposer dans Moodle comme activité « Paquet SCORM ». Dans la plateforme, le lecteur :
@@ -207,7 +208,9 @@ Paquets SCORM 2004 écrits dans `dist/capsuleforge/` : `fiabilite_scorm2004.zip`
 - renvoie une note sur 100 = la pratique, pondérée : chaque question pèse 1 et compte 1 si elle a été juste au moins une fois ; chaque exercice pèse son `poids` (entrée `exercice` du chapitre ; par défaut sa durée en minutes) et compte son meilleur score ; ce qui n'est pas fait compte 0 ; la même pratique compte quel que soit le parcours ; pas de note tant que rien n'est fait. `poids: 0` garde l'exercice pour la rétroaction et les traces sans le noter ; pour noter un exercice pour lui-même, déposer son propre paquet ExoForge ;
 - envoie une interaction par section vue (`lecture:…`), par question répondue (`question:…`, réponse et bonne réponse) et par réponse d'exercice (`exercice:<id>:…`, plus son score) : elles apparaissent dans le rapport de l'activité et serviront à DiagForge.
 
-Réglages Moodle conseillés : méthode d'évaluation « Note la plus élevée » ; nombre de tentatives illimité sans « Forcer une nouvelle tentative » (l'avancement continue la même tentative) ; achèvement « l'étudiant doit terminer l'activité » (statut achevé) et, si on le veut, « recevoir une note ». La prise en charge de SCORM 2004 par Moodle est partielle mais couvre ce qui est utilisé ici (données de suspension, note, achèvement, interactions).
+Réglages Moodle conseillés : méthode d'évaluation « Note la plus élevée » ; nombre de tentatives illimité sans « Forcer une nouvelle tentative » (l'avancement continue la même tentative) ; achèvement « l'étudiant doit terminer l'activité » (statut achevé) et, si on le veut, « recevoir une note ». Moodle ne prend officiellement en charge que SCORM 1.2 ; ses fonctions SCORM 2004 sont partielles mais couvrent ce qui est utilisé ici (données de suspension, note, achèvement, interactions), et les paquets 2004 y ont fonctionné.
+
+**SCORM 1.2** (`--scorm-version 1.2`, paquets `…_scorm12.zip`) : même lecteur, même note, même achèvement et mêmes interactions, dans le vocabulaire de SCORM 1.2. Différences : l'avancement gardé par la plateforme est limité à 4 096 caractères (au-delà, les sections vues les plus anciennes sont oubliées ; largement assez pour un chapitre de quelques dizaines de sections) ; pas de mesure de progression ; pas de description des interactions ; la bonne réponse d'une question numérique est envoyée comme une valeur, sans sa tolérance. Le lecteur reconnaît seul la version de la plateforme. Préférer SCORM 1.2 pour une plateforme autre que Moodle, ou si un paquet 2004 pose problème.
 
 Une partie annexe appelée par aucune partie du tronc n'entre dans aucun paquet par partie (la construction le signale).
 
@@ -262,7 +265,7 @@ Compte à rebours de 3 s, puis enregistrement : **Ctrl+Maj+P** pause / reprise (
 2. Simulation ActivePresenter (gestes, mode « À vous ») dans le chapitre.
 3. Éditeur d'assemblage du chapitre (sources mêlées, chronologie, objets).
 4. Lecture des traces SCORM dans DiagForge ; objectifs SCORM par section.
-5. Export SCORM 1.2 à côté du SCORM 2004 ; export H5P ensuite ; thème modifiable (couleurs et polices du profil).
+5. Export H5P ; thème modifiable (couleurs et polices du profil).
 
 Le plan d'ensemble est sur la page « Prochaines étapes » du site.
 

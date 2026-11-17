@@ -68,7 +68,7 @@ Une fiche résume un article lu en texte complet (question, public, méthode, r�
 | Style, profils | — | profils `Delattre` et `Ecole1` | — | thème modifiable dans CapsuleForge |
 | Bibliographie | — | 9 axes, 197 fiches | — | règles de restitution (axe G) à appliquer dans DiagForge |
 
-Limite connue : Moodle ne prend pas officiellement en charge SCORM 2004 ([FAQ SCORM de Moodle](https://docs.moodle.org/en/SCORM_FAQ)) ; les paquets de CapsuleForge y ont fonctionné, mais un export SCORM 1.2 est prévu pour la version 0.3. Détail outil par outil : page « État des outils » du site.
+Limite connue : Moodle ne prend pas officiellement en charge SCORM 2004 ([FAQ SCORM de Moodle](https://docs.moodle.org/en/SCORM_FAQ)) ; les paquets de CapsuleForge y ont fonctionné, et CapsuleForge sait aussi produire des paquets SCORM 1.2 (`--scorm-version 1.2`, à essayer dans Moodle). Détail outil par outil : page « État des outils » du site.
 
 ## Installation
 

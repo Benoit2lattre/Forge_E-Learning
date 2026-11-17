@@ -22,6 +22,9 @@ y garde l'avancement (``cmi.suspend_data``), renvoie l'achèvement (sections du 
 pondérée (question : poids 1, 1 si juste au moins une fois ; exercice : ``poids`` de l'entrée ``exercice``, par défaut sa
 durée en minutes, fois son meilleur score ; poids 0 = hors note) et une interaction par section vue, question
 répondue et réponse d'exercice. Paquets écrits à côté de la sortie : ``<nom>_scorm2004.zip``, ``<nom>_<lettre>_<id>_scorm2004.zip``.
+Option ``scorm_version="1.2"`` : mêmes paquets au format SCORM 1.2 (``…_scorm12.zip``), le seul que Moodle prend
+officiellement en charge ; l'avancement gardé est alors limité à 4 096 caractères (les plus anciennes sections vues
+sont oubliées au-delà) et il n'y a ni mesure de progression ni description des interactions.
 Licence : GPL v3.
 """
 from __future__ import annotations
@@ -169,6 +172,37 @@ def _manifeste_2004(ident: str, titre: str, fichiers: list[str]) -> str:
 '''
 
 
+def _manifeste_12(ident: str, titre: str, fichiers: list[str]) -> str:
+    """Renvoie le ``imsmanifest.xml`` SCORM 1.2 : un seul SCO, le lecteur."""
+    e = lambda t: html.escape(t, quote=True)
+    lignes = "\n".join(f'      <file href="{e(f)}"/>' for f in fichiers)
+    return f'''<?xml version="1.0" encoding="UTF-8"?>
+<manifest identifier="CF_{e(ident)}" version="1.0"
+  xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
+  xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.imsproject.org/xsd/imscp_rootv1p1p2 imscp_rootv1p1p2.xsd http://www.adlnet.org/xsd/adlcp_rootv1p2 adlcp_rootv1p2.xsd">
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+  </metadata>
+  <organizations default="ORG_{e(ident)}">
+    <organization identifier="ORG_{e(ident)}">
+      <title>{e(titre)}</title>
+      <item identifier="ITEM_{e(ident)}" identifierref="RES_{e(ident)}">
+        <title>{e(titre)}</title>
+      </item>
+    </organization>
+  </organizations>
+  <resources>
+    <resource identifier="RES_{e(ident)}" type="webcontent" adlcp:scormtype="sco" href="index.html">
+{lignes}
+    </resource>
+  </resources>
+</manifest>
+'''
+
+
 def _medias(parties: list[dict], sortie: Path) -> list[str]:
     """Renvoie les fichiers (chemins relatifs à la sortie) dont ces parties ont besoin : images, sons, dossiers d'exercices."""
     rels: list[str] = []
@@ -187,11 +221,12 @@ def _medias(parties: list[dict], sortie: Path) -> list[str]:
     return res
 
 
-def _paquet(zip_: Path, ident: str, titre: str, page: str, sortie: Path, rels: list[str]) -> Path:
-    """Écrit le paquet SCORM 2004 ``zip_`` (manifeste, page du lecteur, médias) et renvoie son chemin."""
+def _paquet(zip_: Path, ident: str, titre: str, page: str, sortie: Path, rels: list[str], version: str = "2004") -> Path:
+    """Écrit le paquet SCORM ``zip_`` (manifeste 2004 ou 1.2, page du lecteur, médias) et renvoie son chemin."""
     fichiers = ["index.html"] + rels
+    manifeste = _manifeste_12 if version == "1.2" else _manifeste_2004
     with zipfile.ZipFile(zip_, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr("imsmanifest.xml", _manifeste_2004(ident, titre, fichiers))
+        z.writestr("imsmanifest.xml", manifeste(ident, titre, fichiers))
         z.writestr("index.html", page)
         for r in rels:
             z.write(sortie / r, r, compress_type=zipfile.ZIP_STORED if Path(r).suffix.lower() in (".mp3", ".webp", ".png", ".wav") else zipfile.ZIP_DEFLATED)
@@ -316,12 +351,12 @@ def didacticiel(q: dict, chap: dict) -> dict | None:
 
 
 def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fmt: str = "webp",
-               audio: str = "mp3", journal=print, scorm: str | None = None) -> Path:
+               audio: str = "mp3", journal=print, scorm: str | None = None, scorm_version: str = "2004") -> Path:
     """Construit le lecteur d'un chapitre et renvoie le chemin de ``<sortie>/index.html``.
 
     ``largeur`` : largeur maximale des images (réduction seulement) ; ``fmt`` : ``webp`` ou ``png`` ;
     ``audio`` : ``mp3`` pour convertir les sons (sinon recopiés) ; ``scorm`` : ``chapitre``, ``parties`` ou
-    ``tout`` pour écrire aussi les paquets SCORM 2004. Arrête le programme (``SystemExit``) si le chapitre
+    ``tout`` pour écrire aussi les paquets SCORM ; ``scorm_version`` : ``2004`` (défaut) ou ``1.2``. Arrête le programme (``SystemExit``) si le chapitre
     contient des erreurs bloquantes.
     """
     from PIL import Image
@@ -523,9 +558,10 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
     if scorm:
         paquets = []
         nom = sortie.name
+        suffixe = "scorm12" if scorm_version == "1.2" else "scorm2004"
         if scorm in ("chapitre", "tout"):
-            paquets.append(_paquet(sortie.parent / f"{nom}_scorm2004.zip", nom, donnees["titre"] or nom, page, sortie,
-                                   _medias(parties, sortie)))
+            paquets.append(_paquet(sortie.parent / f"{nom}_{suffixe}.zip", nom, donnees["titre"] or nom, page, sortie,
+                                   _medias(parties, sortie), scorm_version))
         if scorm in ("parties", "tout"):
             jouable = lambda p: any(s["pas"] or s.get("exercice") for s in p["sections"])
             for p in parties:
@@ -537,12 +573,12 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                     continue
                 d = dict(donnees, parties=sous, cle=f"{donnees['cle']}-{p['id']}", titre=f"{donnees['titre']} — {p['titre']}")
                 ident = f"{nom}_{p['nom']}_{p['id']}"
-                paquets.append(_paquet(sortie.parent / f"{ident}_scorm2004.zip", ident, d["titre"], rendre(d), sortie,
-                                       _medias(sous, sortie)))
+                paquets.append(_paquet(sortie.parent / f"{ident}_{suffixe}.zip", ident, d["titre"], rendre(d), sortie,
+                                       _medias(sous, sortie), scorm_version))
             seules = [p["id"] for p in parties if p["type"] != "tronc" and jouable(p)
                       and not any(p["id"] in s["annexes"] for x in parties if x["type"] == "tronc" for s in x["sections"])]
             if seules:
                 journal(f"  parties hors de tout paquet par partie (appelées par aucune partie du tronc) : {', '.join(seules)}")
         for z in paquets:
-            journal(f"  SCORM 2004 : {z} ({z.stat().st_size / 1e6:.1f} Mo)")
+            journal(f"  SCORM {'1.2' if scorm_version == '1.2' else '2004'} : {z} ({z.stat().st_size / 1e6:.1f} Mo)")
     return sortie / "index.html"

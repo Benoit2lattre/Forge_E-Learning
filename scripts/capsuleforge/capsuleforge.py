@@ -13,7 +13,7 @@ Commandes (abréviations acceptées : « en », « ed », « cons », « conv »
     python capsuleforge.py construire fiabilite
         Un dossier sans capsule.yaml mais avec chapitre.yaml (cours) : lecteur du chapitre (plan, parcours, sous-titres,
         apparitions, spots, pointeurs), images en WebP et sons en MP3.
-    python capsuleforge.py construire fiabilite --scorm chapitre|parties|tout
+    python capsuleforge.py construire fiabilite --scorm chapitre|parties|tout [--scorm-version 1.2]
         En plus : paquets SCORM 2004 pour Moodle (un pour le chapitre, un par partie du tronc, ou les deux).
     python capsuleforge.py traduire fiabilite --langue en [--moteur aucun|argos|deepl]
         Écrit ou complète data/capsuleforge/fiabilite/traductions/en.yaml (source, cible, relu) ; le moteur pré-remplit.
@@ -181,7 +181,7 @@ def cmd_construire(a):
         y2 = y if y.name != "capsule.yaml" and y.is_file() else y2
         sortie = Path(a.sortie) if a.sortie else chemins.SORTIES / "capsuleforge" / y2.parent.name
         return construire2.construire(y2, sortie, largeur=a.largeur, fmt=a.format or "webp", audio=a.audio,
-                                      scorm=getattr(a, "scorm", None)) and 0
+                                      scorm=getattr(a, "scorm", None), scorm_version=getattr(a, "scorm_version", None) or "2004") and 0
     import construire
     sortie = Path(a.sortie) if a.sortie else chemins.SORTIES / "capsuleforge" / y.parent.name
     construire.construire(y, sortie, largeur=a.largeur, fmt=a.format or "png")
@@ -626,7 +626,8 @@ def main(argv=None):
     c.add_argument("--largeur", type=int, help="réduire les images à cette largeur (px)")
     c.add_argument("--format", choices=["png", "webp"], help="images : png par défaut pour une capsule, webp pour un chapitre")
     c.add_argument("--audio", default="mp3", choices=["mp3", "origine"], help="chapitre : sons convertis en MP3 mono (défaut) ou recopiés")
-    c.add_argument("--scorm", choices=["chapitre", "parties", "tout"], help="chapitre : paquets SCORM 2004 (Moodle) en plus du lecteur")
+    c.add_argument("--scorm", choices=["chapitre", "parties", "tout"], help="chapitre : paquets SCORM (Moodle) en plus du lecteur")
+    c.add_argument("--scorm-version", choices=["2004", "1.2"], default="2004", help="format des paquets : 2004 (défaut) ou 1.2 (seul format officiellement pris en charge par Moodle)")
     c.add_argument("--lecteur", choices=["1", "2"], help="dossier qui a capsule.yaml et chapitre.yaml : format à construire (défaut : le plus récent)")
     ed = sp.add_parser("editer", help="ouvrir l'éditeur visuel (navigateur)"); ed.add_argument("capsule")
     ed.add_argument("--port", type=int, default=8765); ed.add_argument("--sans-navigateur", action="store_true")

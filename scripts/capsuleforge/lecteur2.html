@@ -209,38 +209,72 @@ nav .exo-score{color:var(--navy2);white-space:nowrap}
 const C = JSON.parse(document.getElementById("donnees").textContent);
 const $ = id => document.getElementById(id), son = $("son");
 const L = C.ecran.largeur, H = C.ecran.hauteur;
-/* ---------- plateforme SCORM 2004 (Moodle) : avancement, achèvement, note et traces ; hors plateforme, rien ne change ---------- */
+/* ---------- plateforme SCORM 2004 ou 1.2 (Moodle) : avancement, achèvement, note et traces ; hors plateforme, rien ne change ---------- */
 const LMS = (() => {
-  let api = null;
-  const chercher = w => { let k = 0; while (w && !w.API_1484_11 && w.parent && w.parent !== w && k++ < 10) w = w.parent; return w && w.API_1484_11; };
-  try { api = chercher(window) || (window.opener && chercher(window.opener)) || null; } catch (e) { api = null; }
+  /* API_1484_11 = SCORM 2004 ; API = SCORM 1.2, cherchée seulement dans les fenêtres parentes (le lecteur définit lui-même
+     window.API pour les exercices ExoForge qu'il affiche) */
+  const chercher = (w, nom, depuisParent) => { let k = 0;
+    if (depuisParent) { if (!w || w.parent === w) return null; w = w.parent; }
+    while (w && !w[nom] && w.parent && w.parent !== w && k++ < 10) w = w.parent; return w && w[nom]; };
+  let api = null, v12 = false;
+  try { api = chercher(window, "API_1484_11") || (window.opener && chercher(window.opener, "API_1484_11")) || null; } catch (e) { api = null; }
+  if (!api) { try { api = chercher(window, "API", true) || (window.opener && chercher(window.opener, "API")) || null; v12 = !!api; } catch (e) { api = null; } }
   if (!api) return null;
-  try { if (String(api.Initialize("")) !== "true") return null; } catch (e) { return null; }
-  const get = k => { try { const v = api.GetValue(k); return v == null ? "" : String(v); } catch (e) { return ""; } };
-  const set = (k, v) => { try { api.SetValue(k, String(v)); } catch (e) {} };
+  const F = v12 ? { init: "LMSInitialize", get: "LMSGetValue", set: "LMSSetValue", commit: "LMSCommit", fin: "LMSFinish" }
+                : { init: "Initialize", get: "GetValue", set: "SetValue", commit: "Commit", fin: "Terminate" };
+  try { if (String(api[F.init]("")) !== "true") return null; } catch (e) { return null; }
+  const get = k => { try { const v = api[F.get](k); return v == null ? "" : String(v); } catch (e) { return ""; } };
+  const set = (k, v) => { try { api[F.set](k, String(v)); } catch (e) {} };
+  const MAX = v12 ? 4096 : 64000;                         /* taille de cmi.suspend_data */
+  const STATUT = v12 ? "cmi.core.lesson_status" : "cmi.completion_status";
   let etat = {}; try { etat = JSON.parse(get("cmi.suspend_data") || "{}") || {}; } catch (e) { etat = {}; }
   let n = parseInt(get("cmi.interactions._count"), 10) || 0, minuteur = 0, fini = false; const debut = Date.now();
-  if (get("cmi.completion_status") !== "completed") set("cmi.completion_status", "incomplete");
+  if (!["completed", "passed"].includes(get(STATUT))) set(STATUT, "incomplete");
   const commit = () => { clearTimeout(minuteur); minuteur = 0; if (fini) return;
-    let t = JSON.stringify(etat); if (t.length > 64000) { etat.vues = (etat.vues || []).slice(-400); t = JSON.stringify(etat).slice(0, 64000); }
-    set("cmi.suspend_data", t); set("cmi.exit", "suspend"); try { api.Commit(""); } catch (e) {} };
+    let t = JSON.stringify(etat);
+    while (t.length > MAX && (etat.vues || []).length > 0) { etat.vues = etat.vues.slice(Math.ceil(etat.vues.length / 4)); t = JSON.stringify(etat); }
+    if (t.length > MAX) t = t.slice(0, MAX);
+    set("cmi.suspend_data", t); set(v12 ? "cmi.core.exit" : "cmi.exit", "suspend"); try { api[F.commit](""); } catch (e) {} };
   const bientot = () => { if (!minuteur) minuteur = setTimeout(commit, 1200); };
   const horo = () => new Date().toISOString().slice(0, 19);
+  /* SCORM 1.2 : types, réponses et résultats dans son vocabulaire */
+  const TYPES12 = ["true-false", "choice", "fill-in", "matching", "performance", "sequencing", "likert", "numeric"];
+  const rep12 = (type, r) => { r = String(r);
+    if (type === "true-false") return r === "true" ? "t" : r === "false" ? "f" : r;
+    return r.replace(/\[,\]/g, ","); };
   return {
-    etat,
+    etat, version: v12 ? "1.2" : "2004",
     ecrire(k, v) { etat[k] = v; bientot(); },
     /* o = {id, type, reponse, correct, resultat, description} */
     interaction(o) { if (fini) return; const p = "cmi.interactions." + (n++) + ".";
-      set(p + "id", String(o.id).replace(/[^\w\-.:/]/g, "_").slice(0, 4000)); set(p + "type", o.type);
-      if (o.description) set(p + "description", String(o.description).slice(0, 250)); set(p + "timestamp", o.horo || horo());
-      if (o.correct != null && o.correct !== "") set(p + "correct_responses.0.pattern", o.correct);
-      if (o.reponse != null) set(p + "learner_response", o.reponse); set(p + "result", o.resultat || "neutral"); bientot(); },
-    avancement(f, acheve) { set("cmi.progress_measure", Math.max(0, Math.min(1, f)).toFixed(3)); if (acheve) set("cmi.completion_status", "completed"); bientot(); },
-    note(f) { f = Math.max(0, Math.min(1, f)); set("cmi.score.min", 0); set("cmi.score.max", 100); set("cmi.score.raw", Math.round(100 * f)); set("cmi.score.scaled", f.toFixed(4)); bientot(); },
-    lieu(t) { set("cmi.location", String(t).slice(0, 1000)); bientot(); },
+      if (v12) {
+        const type = o.type === "long-fill-in" ? "fill-in" : TYPES12.includes(o.type) ? o.type : "performance";
+        set(p + "id", String(o.id).replace(/[^\w\-.:/]/g, "_").slice(0, 255)); set(p + "type", type);
+        set(p + "time", (o.horo || horo()).slice(11, 19));
+        let c = o.correct == null ? "" : String(o.correct);
+        if (c.includes("[:]")) { const [x, y] = c.split("[:]").map(Number); c = type === "numeric" && isFinite(x) && isFinite(y) ? String(+((x + y) / 2).toPrecision(12)) : ""; }  /* 1.2 : une valeur, pas d'intervalle */
+        if (c === "" && o.attendu) c = String(o.attendu);    /* valeur attendue d'un exercice (sans sa tolérance) */
+        if (c !== "") set(p + "correct_responses.0.pattern", rep12(type, c).slice(0, 255));
+        if (o.reponse != null) set(p + "student_response", rep12(type, o.reponse).slice(0, 255));
+        const r = o.resultat || "neutral"; set(p + "result", r === "incorrect" ? "wrong" : r);
+      } else {
+        set(p + "id", String(o.id).replace(/[^\w\-.:/]/g, "_").slice(0, 4000)); set(p + "type", o.type);
+        if (o.description) set(p + "description", String(o.description).slice(0, 250)); set(p + "timestamp", o.horo || horo());
+        if (o.correct != null && o.correct !== "") set(p + "correct_responses.0.pattern", o.correct);
+        if (o.reponse != null) set(p + "learner_response", o.reponse); set(p + "result", o.resultat || "neutral");
+      }
+      bientot(); },
+    avancement(f, acheve) { if (!v12) set("cmi.progress_measure", Math.max(0, Math.min(1, f)).toFixed(3)); if (acheve) set(STATUT, "completed"); bientot(); },
+    note(f) { f = Math.max(0, Math.min(1, f));
+      if (v12) { set("cmi.core.score.min", 0); set("cmi.core.score.max", 100); set("cmi.core.score.raw", Math.round(100 * f)); }
+      else { set("cmi.score.min", 0); set("cmi.score.max", 100); set("cmi.score.raw", Math.round(100 * f)); set("cmi.score.scaled", f.toFixed(4)); }
+      bientot(); },
+    lieu(t) { set(v12 ? "cmi.core.lesson_location" : "cmi.location", String(t).slice(0, v12 ? 255 : 1000)); bientot(); },
     terminer() { if (fini) return; commit(); fini = true; const t = Math.round((Date.now() - debut) / 1000);
-      set("cmi.session_time", "PT" + Math.floor(t / 3600) + "H" + Math.floor(t % 3600 / 60) + "M" + (t % 60) + "S");
-      try { api.Commit(""); api.Terminate(""); } catch (e) {} }
+      const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), sec = t % 60, d2 = x => String(x).padStart(2, "0");
+      if (v12) set("cmi.core.session_time", d2(h) + ":" + d2(m) + ":" + d2(sec));
+      else set("cmi.session_time", "PT" + h + "H" + m + "M" + sec + "S");
+      try { api[F.commit](""); api[F.fin](""); } catch (e) {} }
   };
 })();
 /* dans une plateforme, l'avancement est celui qu'elle garde (jamais celui d'un autre étudiant sur le même ordinateur) ;
@@ -677,11 +711,13 @@ function exoFini() {
   const a = scores[k] || { meilleur: 0, fois: 0 }; scores[k] = { dernier: sc, meilleur: Math.max(a.meilleur, sc), fois: a.fois + 1 }; memo.ecrire("scores", scores);
   const inter = Object.keys(EXO.inter).sort((x, y) => x - y).map(i => EXO.inter[i]), j = memo.lire("exercices", []);
   if (LMS) { const TYPES = ["true-false", "choice", "fill-in", "long-fill-in", "matching", "sequencing", "likert", "numeric"];
-    for (const x of inter) { const ty = TYPES.includes(x.type) ? x.type : "other", lst = v => ty === "choice" ? String(v).split(",").join("[,]") : String(v);
+    const num = v => { const n = Number(v); return String(v).trim() !== "" && isFinite(n) ? String(+n.toPrecision(12)) : String(v); };  /* 0.6599999999999999 → 0.66 */
+    for (const x of inter) { const ty = TYPES.includes(x.type) ? x.type : "other", lst = v => ty === "choice" ? String(v).split(",").join("[,]") : ty === "numeric" ? num(v) : String(v);
       /* numérique : ExoForge accepte une tolérance qu'il ne transmet pas → valeur attendue en description, pas de motif exact */
       LMS.interaction({ id: "exercice:" + s.exercice.id + ":" + (x.id || "?"), type: ty, reponse: x.student_response != null ? lst(x.student_response) : "", horo: x.horo,
         correct: x.correct_responses && ty !== "numeric" && ty !== "other" ? lst(x.correct_responses) : "",
-        description: ty === "numeric" && x.correct_responses ? "Valeur attendue ≈ " + x.correct_responses + " (tolérance de l'exercice)" : "",
+        description: ty === "numeric" && x.correct_responses ? "Valeur attendue ≈ " + num(x.correct_responses) + " (tolérance de l'exercice)" : "",
+        attendu: ty === "numeric" && x.correct_responses ? num(x.correct_responses) : "",
         resultat: { correct: "correct", wrong: "incorrect", incorrect: "incorrect", unanticipated: "unanticipated" }[x.result] || "neutral" }); }
     LMS.interaction({ id: "exercice:" + s.exercice.id + ":score", type: "numeric", reponse: String(sc), resultat: String(sc / 100), description: "Score de l'exercice « " + s.titre + " » (sur 100)" }); }
   noter(k, sc / 100);

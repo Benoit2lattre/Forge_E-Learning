@@ -6,7 +6,7 @@ Un plan grossier, outil par outil, de la version 0.2 vers la 0.3 puis au-delà. 
 
 | Outil | Prochaines étapes |
 | --- | --- |
-| **CapsuleForge** | **export SCORM 1.2** à côté du SCORM 2004 (Moodle ne prend officiellement en charge que SCORM 1.2) ; afficher le **caméo** (vidéo de l'enseignant en médaillon) dans le lecteur, calé sur le pas, puis recaler un caméo filmé à part par comparaison des sons ; jouer une **simulation ActivePresenter** (gestes, mode « À vous ») dans le chapitre ; premier **éditeur d'assemblage** du chapitre (sources mêlées, chronologie, objets) |
+| **CapsuleForge** | essai dans Moodle de l'**export SCORM 1.2** (Moodle ne prend officiellement en charge que SCORM 1.2) ; afficher le **caméo** (vidéo de l'enseignant en médaillon) dans le lecteur, calé sur le pas, puis recaler un caméo filmé à part par comparaison des sons ; jouer une **simulation ActivePresenter** (gestes, mode « À vous ») dans le chapitre ; premier **éditeur d'assemblage** du chapitre (sources mêlées, chronologie, objets) |
 | **QuizForge** | rappel des réglages Moodle conseillés selon l'usage (classe ou examen), avec une alerte contre la combinaison tentatives multiples, meilleure note et relecture question par question ; pénalité par essai ; classeurs d'exemple régénérés |
 | **ExoForge** | fonction Φ (loi normale) dans les expressions ; rejet des tirages où une erreur type donne la bonne réponse ; retour gradué ; journal SCORM détaillé ; mode d'emploi à jour |
 | **DiagForge** | essai sur une vraie promotion ; première **restitution aux étudiants** (repère par notion, pas de classement, stratégie d'étude sous le seuil) ; lecture des traces SCORM d'ExoForge et de CapsuleForge |
