@@ -80,32 +80,31 @@ def modeles(export, banque):
 def repondre(nom, q, bonne, resume, theta, rng, hasard):
     """Simule la réponse d'un étudiant de niveau ``theta`` à une question.
 
-    Renvoie ``(réponse au format Moodle, fraction obtenue, à corriger ?)`` ; le troisième terme vaut
-    toujours ``False`` ici (les copies à corriger sont choisies dans :func:`main`). Avec ``hasard`` vrai,
-    l'étudiant répond au hasard.
+    Renvoie ``(réponse au format Moodle, fraction obtenue)`` (les copies à corriger sont choisies dans
+    :func:`main`). Avec ``hasard`` vrai, l'étudiant répond au hasard.
     """
     p = PARAMS.get(nom, {"b": 0, "a": 1})
     ok = lambda: rng.random() < (0.3 if hasard else proba(theta, p))  # noqa: E731
     t = q["type"]
     if t == "truefalse":
-        j = ok(); return (bonne if j else ("True" if bonne == "False" else "False")), float(j), False
+        j = ok(); return (bonne if j else ("True" if bonne == "False" else "False")), float(j)
     if t == "numerical":
         if ok():
-            return bonne, 1.0, False
-        return rng.choices(["2", "5000", "0.05", "0.55", "0.45"], [6, 1, 1, 1, 1])[0], 0.0, False
+            return bonne, 1.0
+        return rng.choices(["2", "5000", "0.05", "0.55", "0.45"], [6, 1, 1, 1, 1])[0], 0.0
     if t == "shortanswer":
         if ok():
-            return rng.choice([bonne, bonne, bonne.lower()]), 1.0, False
-        return rng.choice(["Dirichlet", "Robin", "Fourier"]), 0.0, False
+            return rng.choice([bonne, bonne, bonne.lower()]), 1.0
+        return rng.choice(["Dirichlet", "Robin", "Fourier"]), 0.0
     if t == "essay":
         f = min(1.0, max(0.0, round(proba(theta, p) + rng.uniform(-0.25, 0.25), 1)))
-        return rng.choice(ESSAIS), f, False
+        return rng.choice(ESSAIS), f
     if t == "multichoice" and q["single"]:
         if ok():
-            return bonne, 1.0, False
+            return bonne, 1.0
         fausses = [o for o in q["options"] if o != bonne and o != "k/m"]
         poids = [8 if "2π √" in o else 1 for o in fausses]
-        return rng.choices(fausses, poids)[0], 0.0, False
+        return rng.choices(fausses, poids)[0], 0.0
     if t == "multichoice":
         ordre = [x.strip() for x in resume.split("?:", 1)[1].split(";")] if "?:" in resume else q["options"]
         justes = bilan.cases(bonne)
@@ -118,7 +117,7 @@ def repondre(nom, q, bonne, resume, theta, rng, hasard):
             else:
                 choix.discard(rng.choice(sorted(justes)))
         f = max(0.0, 0.5 * len(choix & justes) - 0.5 * len(choix - justes))
-        return "; ".join(o for o in ordre if o in choix), f, False
+        return "; ".join(o for o in ordre if o in choix), f
     # réponses composées : appariement, zones, trous
     el = bilan.elements(bonne) or []
     mauvais = {"Masse": "Rigidité infinie", "Ressort": "Inertie", "Amortisseur": "Élasticité",
@@ -145,7 +144,7 @@ def repondre(nom, q, bonne, resume, theta, rng, hasard):
         txt = " ".join(f"{a} -> {{{v}}}" for a, v in rep)
     else:
         txt = " ".join(f"{{{v}}}" for _, v in rep)
-    return txt, (justes / len(el) if el else 0.0), False
+    return txt, (justes / len(el) if el else 0.0)
 
 
 def fr_nombre(x, fr):
@@ -184,7 +183,7 @@ def main():
                     "le dernier groupe est plus faible sur les textes à trous")
     a = ap.parse_args()
     rng = random.Random(a.graine)
-    banque = bilan.lire_banque([Path(a.xml)])
+    banque = bilan.lire_banque_xml([Path(a.xml)])
     mod = modeles(a.export, banque)
     noms = sorted(mod)
     sortie = Path(a.sortie); sortie.mkdir(parents=True, exist_ok=True)
@@ -215,7 +214,7 @@ def main():
                 q = mod[nom]["b"]
                 resume, bonne = rng.choice(mod[nom]["vus"])
                 faible = grp and grp == groupes[-1] and q["type"] in ("ddwtos", "gapselect")
-                txt, f, _ = repondre(nom, q, bonne, resume, th - (1.2 if faible else 0), rng, hasard)
+                txt, f = repondre(nom, q, bonne, resume, th - (1.2 if faible else 0), rng, hasard)
                 if q["type"] == "essay" and a_corriger > 0 and rng.random() < 0.5:
                     a_corriger -= 1
                     marks.append(None); pending = True

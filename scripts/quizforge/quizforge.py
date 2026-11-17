@@ -34,6 +34,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "commun"))
 import chemins  # noqa: E402
+from charte import COULEUR_PRINCIPALE  # noqa: E402
 from xml.sax.saxutils import escape as xml_escape
 
 import yaml
@@ -388,7 +389,7 @@ def fraction_moodle(x: float) -> float:
     return s * min(FRACTIONS, key=lambda f: abs(f - abs(x)))
 
 
-def cle(q: dict) -> str:
+def cle_question(q: dict) -> str:
     """Renvoie la clé de dédoublonnage d'une question : type + énoncé normalisé."""
     return q["type"] + "|" + re.sub(r"[^a-z0-9]", "", norm(re.sub(r"<[^>]+>", "", q["question"])))
 
@@ -1400,7 +1401,7 @@ def ecrire_banque(questions: list, chemin: Path):
     chemin.write_text(yaml.safe_dump(doc, allow_unicode=True, sort_keys=False, width=110), encoding="utf-8")
 
 
-def lire_banque(chemin: Path, rapport: list | None = None) -> list:
+def lire_banque_yaml(chemin: Path, rapport: list | None = None) -> list:
     """Lit une banque YAML de QuizForge et renvoie ses questions."""
     doc = yaml.safe_load(chemin.read_text(encoding="utf-8")) or {}
     qs = doc.get("questions", [])
@@ -1416,7 +1417,7 @@ def dedoublonner(questions: list, rapport: list) -> list:
     """
     vues = {}
     for q in questions:
-        k = cle(q).split("|", 1)[1]
+        k = cle_question(q).split("|", 1)[1]
         if k in vues:
             ancien = vues[k]
             if ancien["type"] == "essai" and q["type"] != "essai":
@@ -1543,7 +1544,7 @@ def creer_modele(chemin: Path, vide: bool = False, onglets=None):
             w.append(e)
         for c in w[1]:
             c.font = Font(bold=True, color="FFFFFF")
-            c.fill = PatternFill("solid", fgColor="470A68")
+            c.fill = PatternFill("solid", fgColor=COULEUR_PRINCIPALE)
         for i, h in enumerate(entetes, 1):
             w.column_dimensions[openpyxl.utils.get_column_letter(i)].width = 60 if h == "Question" else 22
         for row in w.iter_rows(min_row=2):
@@ -1576,7 +1577,7 @@ def lire_fichiers(fichiers, racine, rapport, reparer=False, nom=""):
         elif f.suffix.lower() in (".txt", ".gift"):
             qs += lire_gift(f, racine, rapport)
         elif f.suffix.lower() in (".yaml", ".yml"):
-            qs += lire_banque(f, rapport)
+            qs += lire_banque_yaml(f, rapport)
         else:
             rapport.append(f"{f.name} : format non pris en charge")
     return qs
@@ -1949,8 +1950,9 @@ def cmd_bilan(a):
 
     La couleur principale et le mode de tirage sont pris dans le profil s'il y en a un (voir :func:`bilan.bilan`).
     """
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "diagforge"))
     import bilan
-    couleur = "470A68"
+    couleur = COULEUR_PRINCIPALE
     try:
         nom = (a.profil or profil_par_defaut()) if lister_profils() else None
         if nom:

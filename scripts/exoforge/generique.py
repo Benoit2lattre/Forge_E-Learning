@@ -99,6 +99,24 @@ def textes_tex(obj):
             yield from textes_tex(v)
 
 
+def _fichiers_inclus(p: Path, schema=None) -> list[tuple[str, Path]]:
+    """Renvoie les fichiers appelés par ``\\input`` / ``\\include`` dans ``p`` : ``(nom écrit, chemin)``.
+
+    Un fichier est cherché à côté de ``p``, puis dans ``style/latex`` et les dossiers de profils ; le chemin
+    renvoyé peut ne pas exister. Avec un ``schema`` de profil, le jeu de couleurs inclus (``…ColorScheme``) est
+    sauté : il est remplacé par celui du profil.
+    """
+    res = []
+    for inc in re.findall(r"^[^%\n]*\\(?:input|include)\{([^}]+)\}", p.read_text(encoding="utf-8", errors="replace"), re.M):
+        if schema and "colorscheme" in inc.lower():
+            continue
+        q = p.parent / (inc if inc.endswith(".tex") else inc + ".tex")
+        if not q.exists():                    # fichier inclus rangé ailleurs (style/latex, profils)
+            q = next((d / q.name for d in chemins.dossiers_latex() if (d / q.name).exists()), q)
+        res.append((inc, q))
+    return res
+
+
 def preparer_latex(cfg, dossier, avert, schema=None):
     """Lit les fichiers LaTeX de la fiche et renvoie ``(macros, couleurs)`` pour MathJax.
 
@@ -121,12 +139,7 @@ def preparer_latex(cfg, dossier, avert, schema=None):
             continue
         fichiers.append(p)
         # \input / \include d'autres fichiers du même dossier (ex. New_BD_ColorScheme)
-        for inc in re.findall(r"^[^%\n]*\\(?:input|include)\{([^}]+)\}", p.read_text(encoding="utf-8", errors="replace"), re.M):
-            if schema and "colorscheme" in inc.lower():
-                continue                      # remplacé par le jeu de couleurs du profil
-            q = p.parent / (inc if inc.endswith(".tex") else inc + ".tex")
-            if not q.exists():                # fichier inclus rangé ailleurs (style/latex, profils)
-                q = next((d / q.name for d in chemins.dossiers_latex() if (d / q.name).exists()), q)
+        for _, q in _fichiers_inclus(p, schema):
             if q.exists() and q not in fichiers:
                 fichiers.append(q)
     if schema:
@@ -140,12 +153,7 @@ def preparer_latex(cfg, dossier, avert, schema=None):
     k = 0
     while k < len(fichiers):
         p = fichiers[k]; k += 1
-        for inc in re.findall(r"^[^%\n]*\\(?:input|include)\{([^}]+)\}", p.read_text(encoding="utf-8", errors="replace"), re.M):
-            if schema and "colorscheme" in inc.lower():
-                continue
-            q = p.parent / (inc if inc.endswith(".tex") else inc + ".tex")
-            if not q.exists():                # fichier inclus rangé ailleurs (style/latex, profils)
-                q = next((d / q.name for d in chemins.dossiers_latex() if (d / q.name).exists()), q)
+        for inc, q in _fichiers_inclus(p, schema):
             if q.exists() and q.resolve() not in fichiers:
                 fichiers.insert(k, q.resolve())
             elif not q.exists():

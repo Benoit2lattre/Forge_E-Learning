@@ -24,11 +24,15 @@ import html
 import math
 import re
 import statistics
+import sys
 import unicodedata
 import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "commun"))
+from charte import COULEUR_PRINCIPALE  # noqa: E402
 
 # Seuils des alertes (feuille Questions)
 # Seuils tirés de la bibliographie (reference/C_analyse_items/README.md) : discrimination item-reste < 0 à revoir,
@@ -95,7 +99,7 @@ def alpha_ramene(alpha, k, cible=50):
 
 
 # ------------------------------------------------------------------ outils
-def cle(t) -> str:
+def cle_texte(t) -> str:
     """Renvoie une clé de comparaison : sans accents, en minuscules, lettres et chiffres seulement."""
     t = unicodedata.normalize("NFKD", str(t or "")).encode("ascii", "ignore").decode().lower()
     return re.sub(r"[^a-z0-9]", "", t)
@@ -201,7 +205,7 @@ def colonnes(entete):
             "etat": ["status", "state", "etat"], "debut": ["started", "startedon", "commencele", "debut", "commence"],
             "fin": ["completed", "termine", "terminele", "fin"], "duree": ["duration", "timetaken", "tempsutilise", "duree"]}
     for i, h in enumerate(entete):
-        c, bas = cle(h), str(h).strip().lower()
+        c, bas = cle_texte(h), str(h).strip().lower()
         for role, alias in noms.items():
             if c in alias and role not in fixes:
                 fixes[role] = i
@@ -253,7 +257,7 @@ def lire_exports(fichiers, avert, moodle=None):
             continue
         fixes, slots, total = colonnes(lignes[0])
         if "debut" not in fixes or not (slots or total):
-            if cle(lignes[0][0]) in ("quizname", "nomdutest", "test"):
+            if cle_texte(lignes[0][0]) in ("quizname", "nomdutest", "test"):
                 if moodle is not None and len(lignes) > 1 and not moodle:
                     moodle.update({h: v.lstrip("'") for h, v in zip(lignes[0], lignes[1])})
                 avert.append(f"{p.name} : export « Statistiques » : résumé du test lu pour comparaison"
@@ -265,7 +269,7 @@ def lire_exports(fichiers, avert, moodle=None):
         n, vus = 0, Counter()
         for l in lignes[1:]:
             l = l + [""] * (len(lignes[0]) - len(l))
-            if cle(l[fixes.get("nom", 0)]) in ("overallaverage", "moyennegenerale", "moyenne"):
+            if cle_texte(l[fixes.get("nom", 0)]) in ("overallaverage", "moyennegenerale", "moyenne"):
                 continue
             ident = (l[fixes["email"]].strip().lower() if "email" in fixes else
                      f"{l[fixes.get('nom', 0)]} {l[fixes.get('prenom', 1)]}".strip().lower())
@@ -308,7 +312,7 @@ def lire_exports(fichiers, avert, moodle=None):
 
 
 # ------------------------------------------------------------------ banque de questions (export XML Moodle)
-def lire_banque(xmls):
+def lire_banque_xml(xmls):
     """Lit les exports XML Moodle des questions et renvoie la banque (liste de dictionnaires).
 
     Chaque question : ``nom``, ``type``, ``texte``, ``options``, ``single``, ``tags`` et ``categorie``.
@@ -341,7 +345,7 @@ TYPES_YAML = {"vf": "truefalse", "qcm": "multichoice", "appariement": "matching"
               "numerique": "numerical", "essai": "essay", "schema": "ddimageortext", "trous": "ddwtos"}
 
 
-def lire_banque_yaml(chemins, banque):
+def completer_banque_yaml(chemins, banque):
     """Complète la banque avec les banques YAML de QuizForge (``convertir`` → ``<classeur>_banque.yaml``).
 
     Ajoute les erreurs types visées par les leurres (Code erreur n) aux questions de même nom ;
@@ -484,11 +488,11 @@ def tronc(resume: str) -> str:
 
 def identifier(resume, banque):
     """Renvoie la question de la banque dont le texte commence le résumé Moodle (la plus longue correspondance), sinon ``None``."""
-    c = cle(resume)
+    c = cle_texte(resume)
     meilleure = None
     for q in banque:
-        cq = cle(q["texte"])[:60]
-        if cq and c.startswith(cq[:max(12, len(cq))]) and (meilleure is None or len(cq) > len(cle(meilleure["texte"])[:60])):
+        cq = cle_texte(q["texte"])[:60]
+        if cq and c.startswith(cq[:max(12, len(cq))]) and (meilleure is None or len(cq) > len(cle_texte(meilleure["texte"])[:60])):
             meilleure = q
     return meilleure
 
@@ -554,7 +558,7 @@ def choisir_tentatives(tent, mode):
     ``mode`` : ``"toutes"``, ``"premiere"``, ``"derniere"`` ; toute autre valeur garde la meilleure note.
     Renvoie les tentatives dans l'ordre de lecture.
     """
-    termines = [t for t in tent if cle(t["etat"]) in ("finished", "termine", "terminee", "")]
+    termines = [t for t in tent if cle_texte(t["etat"]) in ("finished", "termine", "terminee", "")]
     if mode == "toutes":
         return termines
     par = defaultdict(list)
@@ -844,7 +848,7 @@ def etudiants(tent_toutes):
 
 
 # ------------------------------------------------------------------ classeur
-def ecrire(sortie: Path, synth, questions, reponses, elems, etus, tent, couleur="470A68", plus=None):
+def ecrire(sortie: Path, synth, questions, reponses, elems, etus, tent, couleur=COULEUR_PRINCIPALE, plus=None):
     """Écrit le classeur du bilan (XLSX) dans ``sortie``.
 
     ``synth`` : ``{"lignes": [(titre, texte)], "histo": [(classe, effectif)]}`` pour la feuille Synthèse ;
@@ -998,7 +1002,7 @@ def trouver_fichiers(cibles):
     return exports, xmls
 
 
-def bilan(cibles, xml=None, mode="toutes", sortie=None, couleur="470A68", roster=None, images=True, tirage=None):
+def bilan(cibles, xml=None, mode="toutes", sortie=None, couleur=COULEUR_PRINCIPALE, roster=None, images=True, tirage=None):
     """Produit le bilan complet d'un test et renvoie le chemin du classeur.
 
     - ``cibles`` : dossiers ou fichiers d'exports Moodle ;
@@ -1024,17 +1028,17 @@ def bilan(cibles, xml=None, mode="toutes", sortie=None, couleur="470A68", roster
     if not tent_toutes:
         raise SystemExit("Aucune tentative lue :\n - " + "\n - ".join(avert))
     BS.affecter_groupes(tent_toutes, BS.lire_roster(rosters, avert) if rosters else {}, avert)
-    banque = lire_banque([x for x in xmls if x.suffix.lower() == ".xml"])
-    banque = lire_banque_yaml([x for x in xmls if x.suffix.lower() in (".yaml", ".yml")], banque)
+    banque = lire_banque_xml([x for x in xmls if x.suffix.lower() == ".xml"])
+    banque = completer_banque_yaml([x for x in xmls if x.suffix.lower() in (".yaml", ".yml")], banque)
     if banque:
         avert.append(f"banque : {len(banque)} question(s) lue(s) dans {', '.join(x.name for x in xmls)}")
     tent = choisir_tentatives(tent_toutes, mode)
     questions, reponses, elems, obs, infos = analyser(tent, banque, avert)
-    etus = etudiants([t for t in tent_toutes if cle(t["etat"]) in ("finished", "termine", "terminee", "")])
+    etus = etudiants([t for t in tent_toutes if cle_texte(t["etat"]) in ("finished", "termine", "terminee", "")])
     notes = [t["note"] for t in tent if t["note"] is not None]
     nmax = next((t["note_max"] for t in tent if t["note_max"]), None)
     acorr = sum(t["a_corriger"] for t in tent)
-    exclues = len(tent_toutes) - len([t for t in tent_toutes if cle(t["etat"]) in ("finished", "termine", "terminee", "")])
+    exclues = len(tent_toutes) - len([t for t in tent_toutes if cle_texte(t["etat"]) in ("finished", "termine", "terminee", "")])
     tests = sorted({t["test"] for t in tent_toutes})
     sans_groupe = sorted({t["test"][:-len(groupe_du_test(t["test"])) - 1] if groupe_du_test(t["test"]) else t["test"] for t in tent_toutes})
     nom_test = tests[0] if len(tests) == 1 else (sans_groupe[0] if len(sans_groupe) == 1 else " + ".join(tests))
@@ -1055,7 +1059,7 @@ def bilan(cibles, xml=None, mode="toutes", sortie=None, couleur="470A68", roster
         def mdl(*cles):
             for c in cles:
                 for h, v in moodle.items():
-                    if cle(h).startswith(c):
+                    if cle_texte(h).startswith(c):
                         return f"   (Moodle : {v})"
             return ""
         pc = lambda v: "-" if v is None else f"{v:.2f} %"  # noqa: E731
@@ -1127,7 +1131,7 @@ def bilan(cibles, xml=None, mode="toutes", sortie=None, couleur="470A68", roster
     ecrire(sortie, {"lignes": L, "histo": histo}, questions, reponses, elems, etus, tent, couleur,
            {"revoir": revoir, "groupes": stats_g, "regroupements": regr, "erreurs": erreurs,
             "equite": tir["equite"], "retention": tir["retention"]})
-    fp = BS.fiche(sortie.with_name(sortie.stem + "_fiche_prof.html"), nom_test, L, stats_g, regr, revoir, imgs, couleur, avert)
+    fp = BS.fiche(sortie.with_name(sortie.stem + "_fiche_prof.html"), nom_test, L, stats_g, regr, revoir, imgs, couleur)
     print(f"OK : {sortie}")
     print(f"OK : {fp}")
     if imgs:

@@ -81,7 +81,7 @@ def normaliser(cap: dict) -> dict:
     return F.ordonner(out, ORDRE_CAPSULE)
 
 
-class Seance:
+class SeanceEditeur:
     """État du serveur de l'éditeur pour un ``capsule.yaml`` : lecture, écriture, images, vignettes, aperçu.
 
     ``sortie`` est le dossier où l'aperçu du lecteur est construit.
@@ -189,7 +189,7 @@ class Seance:
         return {"ok": True, "url": "/apercu/index.html"}
 
 
-def _gestionnaire(seance: Seance):
+def _gestionnaire(seance: SeanceEditeur):
     """Renvoie la classe de gestionnaire HTTP liée à ``seance`` (routes : voir l'en-tête du module)."""
     class G(S.Gestionnaire):
 
@@ -235,7 +235,7 @@ def demarrer(capsule_yaml: Path, sortie: Path, port: int = 8765) -> tuple[Thread
 
     Le serveur n'écoute que sur 127.0.0.1 et n'est pas encore lancé.
     """
-    return S.demarrer(_gestionnaire(Seance(capsule_yaml, sortie)), port)
+    return S.demarrer(_gestionnaire(SeanceEditeur(capsule_yaml, sortie)), port)
 
 
 def editer(capsule_yaml: Path, sortie: Path, port: int = 8765, navigateur: bool = True):

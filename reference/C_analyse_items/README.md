@@ -65,7 +65,7 @@ Synthèse rédigée à partir des 10 fiches de lecture écrites (3 de priorité 
 | Rester en théorie classique | C | macdonald2002 | oui |
 | Test à essais multiples : difficulté, discrimination et alpha calculés sur la note avec crédit partiel et sur le premier essai seul | B | slepkov2019 (axe A) | non |
 
-Ces règles sont reprises sous forme lisible par un programme dans l'en-tête de chaque fiche (champ `regles`). La dernière colonne compare au code de `scripts/quizforge/bilan.py` après sa mise à jour du 08/11/2026.
+Ces règles sont reprises sous forme lisible par un programme dans l'en-tête de chaque fiche (champ `regles`). La dernière colonne compare au code de `scripts/diagforge/bilan.py` (alors `scripts/quizforge/bilan.py`) après sa mise à jour du 08/11/2026.
 
 ## Ce qui reste ouvert
 

@@ -1,7 +1,7 @@
 # donnees/
 
 Données d'exemple suivies par git. **Aucune donnée réelle d'étudiant** : uniquement le bac à sable Moodle
-(un étudiant fictif, « Sam Student ») et des promotions fictives générées par `scripts/quizforge/outils/promotion_fictive.py`.
+(un étudiant fictif, « Sam Student ») et des promotions fictives générées par `scripts/diagforge/outils/promotion_fictive.py`.
 
 ## diagforge/ — exports Moodle pour DiagForge (bilan des résultats)
 
@@ -14,8 +14,8 @@ Données d'exemple suivies par git. **Aucune donnée réelle d'étudiant** : uni
 | `promotion_groupes/` | 60 étudiants fictifs, deux tests (Quizz1_SMA, Quizz1_SMB), `roster.csv`, XML avec tags de thème | groupes, réussite par thème |
 
 ```
-python scripts/quizforge/quizforge.py bilan donnees/diagforge/promotion_groupes -p Ecole1
-python scripts/quizforge/quizforge.py bilan donnees/diagforge/bac_a_sable/3_reponses_completes donnees/diagforge/bac_a_sable/2_apres_correction -q donnees/diagforge/bac_a_sable/1_avant_correction
+python scripts/diagforge/diagforge.py donnees/diagforge/promotion_groupes -p Ecole1
+python scripts/diagforge/diagforge.py donnees/diagforge/bac_a_sable/3_reponses_completes donnees/diagforge/bac_a_sable/2_apres_correction -q donnees/diagforge/bac_a_sable/1_avant_correction
 ```
 
 Les sorties du bilan (`bilan_*.xlsx`, `*_fiche_prof.html`, `*_images/`) sont générées à côté des exports et ne sont pas suivies.

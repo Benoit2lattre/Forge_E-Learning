@@ -8,12 +8,12 @@ DiagForge regroupe l'analyse de ce qui a été produit avec les outils Forge : r
 
 Le bilan lit les exports d'un test Moodle et produit, pour le professeur, un classeur d'analyse et une fiche de synthèse, et pour les étudiants, des images anonymes de la répartition des notes et de la réussite par thème. Il désigne les questions à revoir en priorité : celles qui fonctionnent mal (à reformuler) et les notions mal acquises (à retravailler en cours).
 
-C'est la commande `bilan` de [QuizForge](../quizforge/README.md) ; code : [`scripts/quizforge/bilan.py`](../../scripts/quizforge/bilan.py), [`bilan_sorties.py`](../../scripts/quizforge/bilan_sorties.py), [`graphiques.py`](../../scripts/quizforge/graphiques.py). Installation : [README du dépôt](https://github.com/Benoit2lattre/Forge_E-Learning#installation) (les images demandent `matplotlib`).
+La commande est `python scripts/diagforge/diagforge.py` ; elle équivaut à la commande `bilan` de [QuizForge](../quizforge/README.md) (`python scripts/quizforge/quizforge.py bilan`, mêmes options), qui lit le profil d'établissement. Code : [`scripts/diagforge/`](../../scripts/diagforge/README.md) (`bilan.py`, `bilan_sorties.py`, `graphiques.py`, `tirage.py`). Installation : [README du dépôt](https://github.com/Benoit2lattre/Forge_E-Learning#installation) (les images demandent `matplotlib`).
 
 ## Essai immédiat, sur une promotion fictive
 
 ```bash
-python scripts/quizforge/quizforge.py bilan donnees/diagforge/promotion_groupes -p Ecole1
+python scripts/diagforge/diagforge.py donnees/diagforge/promotion_groupes -p Ecole1
 ```
 
 Le dossier contient les exports de deux groupes (60 étudiants fictifs), un roster et l'export XML des questions avec leurs tags de thème. Les sorties sont écrites à côté des exports. Les autres jeux d'essai sont décrits dans [`donnees/`](https://github.com/Benoit2lattre/Forge_E-Learning/tree/main/donnees).
@@ -43,8 +43,8 @@ Dans le test : **Résultats**, puis le rapport voulu, puis « Télécharger les 
 Rangez les exports d'un test dans un dossier (vos vrais exports dans `data/diagforge/<test>/`, qui n'est pas publié), puis :
 
 ```bash
-python scripts/quizforge/quizforge.py bilan data/diagforge/Quizz1
-python scripts/quizforge/quizforge.py bilan data/diagforge/Quizz1 -r roster.csv -t premiere
+python scripts/diagforge/diagforge.py data/diagforge/Quizz1
+python scripts/diagforge/diagforge.py data/diagforge/Quizz1 -r roster.csv -t premiere
 ```
 
 | Option | Rôle |
@@ -126,7 +126,7 @@ Les seuils viennent de la bibliographie de l'axe C ([analyse d'items](../../refe
 ## Tester sans vraie promotion
 
 ```bash
-python scripts/quizforge/outils/promotion_fictive.py <export_reponses.csv> <questions.xml> --fr -g "SMA;SMB"
+python scripts/diagforge/outils/promotion_fictive.py <export_reponses.csv> <questions.xml> --fr -g "SMA;SMB"
 ```
 
 Fabrique 60 étudiants fictifs au format des exports Moodle, avec des cas connus listés dans `verite.txt` (question trop facile, leurre jamais choisi, erreur dominante…), pour vérifier que le bilan les retrouve.

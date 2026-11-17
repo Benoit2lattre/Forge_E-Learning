@@ -16,7 +16,6 @@ Principe : la figure est tracée par le script, donc la position de chaque zone 
 """
 import base64
 import io
-import sys
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -134,15 +133,10 @@ def dessiner_dispersion(ax):
     ax.text(8.98, sigma(9) + 4, "50 %", fontsize=8, color=COUL["courbe"], ha="right", va="bottom", zorder=6)
 
 
-def vers_pixels(fig, ax, logn, s):
+def vers_pixels(ax, logn, s):
     """Convertit des coordonnées physiques (log N, σ) en pixels de l'image (origine en haut à gauche)."""
     xd, yd = ax.transData.transform((logn, s))
     return float(xd), float(HAUTEUR - yd)
-
-
-def fig_vers_pixels(fig, fx, fy):
-    """Convertit des coordonnées relatives à la figure (0 à 1) en pixels de l'image (origine en haut à gauche)."""
-    return fx * LARGEUR, HAUTEUR - fy * HAUTEUR
 
 
 def png(fig):
@@ -162,7 +156,7 @@ def q_niveaux():
     zones = []
     # étiquettes posées sur les pointillés, là où la courbe est loin
     for niv, logn, choix in ((RM, 5.5, 1), (RE, 6.5, 2), (SIGMA_D, 1.6, 3)):
-        x, y = vers_pixels(fig, ax, logn, niv)
+        x, y = vers_pixels(ax, logn, niv)
         zones.append({"x": borne(x - L_ZONE / 2), "y": round(y - 34), "choix": choix})
     etiquettes = ["Résistance à la traction R<sub>m</sub>", "Limite élastique R<sub>e</sub>",
                   "Limite d'endurance σ<sub>D</sub>", "Contrainte moyenne σ<sub>m</sub>"]
@@ -186,7 +180,7 @@ def q_transitions():
     fig, ax = figure("transitions")
     zones = []
     for (a, b), choix in (((3, 4), 1), ((6, 7), 2)):
-        poly = [vers_pixels(fig, ax, x, y) for x, y in contour_decade(a, b)]
+        poly = [vers_pixels(ax, x, y) for x, y in contour_decade(a, b)]
         zones.append({"forme": "polygon", "coords": ";".join(f"{round(x)},{round(y)}" for x, y in poly),
                       "choix": choix, "poly": poly})
     return fig, {
@@ -210,7 +204,7 @@ def q_domaines():
     zones = []
     # centre de chaque case (log N, σ), choisi dans la partie unie de la bande, loin de la courbe
     for logn, s_, choix in ((1.3, 455, 1), (6.5, 520, 2), (2.0, 105, 3), (8.05, 105, 4)):
-        x, y = vers_pixels(fig, ax, logn, s_)
+        x, y = vers_pixels(ax, logn, s_)
         zones.append({"x": borne(x - lz / 2, lz), "y": round(y - hz / 2), "choix": choix, "l": lz, "h": hz})
     etiquettes = ["Fatigue<br>oligocyclique", "Fatigue<br>polycyclique",
                   "Endurance<br>limitée", "Endurance<br>illimitée", "Fluage"]

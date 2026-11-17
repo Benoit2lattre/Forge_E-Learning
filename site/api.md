@@ -4,9 +4,10 @@ La référence du code est générée à partir des docstrings des modules de `s
 
 | Dossier | Contenu |
 | --- | --- |
-| `scripts/quizforge/` | QuizForge (conversion des classeurs, contrôles d'écriture, tirage) et DiagForge (analyse des résultats : `bilan`, `bilan_sorties`, `graphiques`, `tirage`) |
+| `scripts/quizforge/` | QuizForge : conversion des classeurs, contrôles d'écriture, plan de quiz de séance, schémas |
+| `scripts/diagforge/` | DiagForge : analyse des résultats (`bilan`, `bilan_sorties`, `graphiques`, `tirage`) |
 | `scripts/exoforge/` | ExoForge : construction des exercices, moteur générique, macros LaTeX |
 | `scripts/capsuleforge/` | CapsuleForge : enregistrement, formats 1 et 2, lecture de PowerPoint, transcription, relecture, traduction, voix, vidéo, construction des lecteurs et des paquets SCORM |
-| `scripts/commun/` | chemins communs, contrôle du dépôt avant commit |
+| `scripts/commun/` | chemins communs, couleur par défaut (`charte`), contrôle du dépôt avant commit |
 
 Les pages de la référence sont listées dans le menu, sous cette page.

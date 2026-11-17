@@ -17,6 +17,18 @@ Chaque outil a son propre numéro de version (voir la page « État des outils �
 - Réponses numériques des exercices arrondies dans les traces (0,66 au lieu de 0.6599999999999999) ; écran de départ d'une section mis à jour quand on change de langue.
 - Code réorganisé sans changement de comportement : `format_chapitre.py`, `construire_chapitre.py` et `lecteur_chapitre.html` (anciennement `format2.py`, `construire2.py`, `lecteur2.html`) ; fonctions partagées rendues publiques (`ordonner`, `minsec`, `masquer`, `fiche_exoforge`, `trouver_section`) ; sons (`sons.py` : rééchantillonnage, écriture WAV) mis en commun.
 
+### DiagForge 0.6
+
+- Code dans son propre dossier, `scripts/diagforge/` (`bilan.py`, `bilan_sorties.py`, `graphiques.py`, `tirage.py`, `outils/promotion_fictive.py`) ; nouvelle commande `python scripts/diagforge/diagforge.py <exports…>`, équivalente à `quizforge.py bilan` (toujours disponible, mêmes options).
+- Noms explicites : `lire_banque_xml` (export XML Moodle), `completer_banque_yaml` (banques QuizForge), `cle_texte`.
+
+### Code commun aux outils (sans changement de comportement)
+
+- Couleur principale par défaut écrite une seule fois (`scripts/commun/charte.py`) pour QuizForge et DiagForge.
+- QuizForge : `cle_question`, `lire_banque_yaml` (noms distincts de ceux de DiagForge) ; schéma de Wöhler sans code mort.
+- ExoForge : lecture des `\input` / `\include` des fichiers LaTeX écrite une seule fois (`generique._fichiers_inclus`).
+- CapsuleForge : `SeanceEditeur`, `SeanceRelecture`, `SeanceTraduction` (trois classes `Seance` auparavant).
+
 ## Forge E-Learning 0.2.1 — en préparation
 
 Corrections sans changement de format :

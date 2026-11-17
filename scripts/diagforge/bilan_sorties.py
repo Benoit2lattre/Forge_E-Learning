@@ -29,7 +29,7 @@ def est_roster(p: Path) -> bool:
     lignes = B.lire_table(p)
     if not lignes:
         return False
-    cles = [B.cle(h) for h in lignes[0]]
+    cles = [B.cle_texte(h) for h in lignes[0]]
     return any(c in ("groupe", "group", "groupes", "groups", "section", "td") for c in cles) and \
         not any(c in ("started", "commencele", "debut") for c in cles)
 
@@ -42,7 +42,7 @@ def lire_roster(fichiers, avert):
     table = {}
     for p in fichiers:
         lignes = B.lire_table(p)
-        cles = [B.cle(h) for h in lignes[0]]
+        cles = [B.cle_texte(h) for h in lignes[0]]
         idx = lambda *noms: next((i for i, c in enumerate(cles) if c in noms), None)  # noqa: E731
         ig = idx("groupe", "group", "groupes", "groups", "section", "td")
         ie = idx("email", "emailaddress", "adressedecourriel", "courriel", "adressemail", "mail")
@@ -57,9 +57,9 @@ def lire_roster(fichiers, avert):
             if ie is not None and l[ie].strip():
                 table[l[ie].strip().lower()] = g
             if inom is not None and ipre is not None:
-                table[B.cle(l[inom] + l[ipre])] = g; table[B.cle(l[ipre] + l[inom])] = g
+                table[B.cle_texte(l[inom] + l[ipre])] = g; table[B.cle_texte(l[ipre] + l[inom])] = g
             elif inom is not None:                                # « NOM Prénom » dans une seule colonne
-                table[B.cle(l[inom])] = g
+                table[B.cle_texte(l[inom])] = g
             n += 1
         avert.append(f"{p.name} : roster, {n} étudiant(s), groupes : {', '.join(sorted(set(table.values())))}")
     return table
@@ -75,7 +75,7 @@ def affecter_groupes(tent, roster, avert):
     for t in tent:
         g = ""
         if roster:
-            g = roster.get(t["email"].strip().lower()) or roster.get(B.cle(t["nom"] + t["prenom"])) or ""
+            g = roster.get(t["email"].strip().lower()) or roster.get(B.cle_texte(t["nom"] + t["prenom"])) or ""
             if not g:
                 absents.add(f"{t['nom']} {t['prenom']}".strip())
         t["groupe"] = g or B.groupe_du_test(t["test"])
@@ -258,7 +258,7 @@ def images(dossier: Path, nom_test, notes, par_groupe, regr, couleur, mode="meil
                                f"{len(tout)} étudiants ({critere})"))
     if len(groupes) > 1:
         for k, g in enumerate(groupes):
-            faits.append(G.histogramme(par_groupe[g], f"{nom_test} — groupe {g}", dossier / f"notes_groupe_{B.cle(g)}.png",
+            faits.append(G.histogramme(par_groupe[g], f"{nom_test} — groupe {g}", dossier / f"notes_groupe_{B.cle_texte(g)}.png",
                                        couleurs[(k + 1) % len(couleurs)], f"{len(par_groupe[g])} étudiants"))
         faits.append(G.comparaison_groupes({g: par_groupe[g] for g in groupes}, f"{nom_test} — comparaison des groupes",
                                            dossier / "notes_par_groupe.png", couleurs[1:]))
@@ -271,7 +271,7 @@ def images(dossier: Path, nom_test, notes, par_groupe, regr, couleur, mode="meil
 
 
 # ------------------------------------------------------------------ fiche du professeur (HTML autonome)
-def fiche(sortie: Path, nom_test, synth_lignes, stats_g, regr, revoir, imgs, couleur, avert):
+def fiche(sortie: Path, nom_test, synth_lignes, stats_g, regr, revoir, imgs, couleur):
     """Écrit la fiche du professeur, page HTML autonome (images intégrées), et renvoie son chemin.
 
     Sections : notes, où se produisent les erreurs, questions à revoir en priorité, indicateurs du test.

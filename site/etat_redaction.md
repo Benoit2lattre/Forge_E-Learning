@@ -20,7 +20,7 @@ Point sur la documentation à la version 0.2 : chaque page ou mode d'emploi est 
 | {doc}`Profils <../profils/README>` | rédigé | héritage entre profils (`base:`) non décrit, car non codé |
 | `donnees/README.md` (hors site) | rédigé | — |
 | `_static/README.md` (hors site) | rédigé | — |
-| `scripts/quizforge/README.md`, `scripts/exoforge/README.md` (hors site) | rédigés | notes pour développeur, non relues pour la 0.2 ; pas de README dans `scripts/capsuleforge/` |
+| `scripts/quizforge/README.md`, `scripts/diagforge/README.md`, `scripts/exoforge/README.md` (hors site) | rédigés | notes pour développeur, non relues pour la 0.2 ; pas de README dans `scripts/capsuleforge/` |
 
 ## Bibliographie
 

@@ -42,7 +42,7 @@ TYPES = {".html": "text/html; charset=utf-8", ".png": "image/png", ".jpg": "imag
 AJOUTS = ("spot", "cadre", "pointeur", "cache")       # objets que la page de relecture sait poser
 
 
-class Seance:
+class SeanceRelecture:
     """État du serveur de relecture pour un ``chapitre.yaml`` : lecture, écriture des pas, arrêt automatique.
 
     Une sous-classe peut définir ``PAGE`` (page HTML servie à la place de ``relecture.html``) et une méthode
@@ -237,7 +237,7 @@ class Seance:
         return f
 
 
-def _gestionnaire(seance: Seance):
+def _gestionnaire(seance: SeanceRelecture):
     """Renvoie la classe de gestionnaire HTTP liée à ``seance`` (routes : voir l'en-tête du module)."""
     class G(S.Gestionnaire):
         protocol_version = "HTTP/1.1"
@@ -274,10 +274,10 @@ def _gestionnaire(seance: Seance):
 def demarrer(chapitre_yaml: Path, port: int = 8775, seance=None) -> tuple[ThreadingHTTPServer, str]:
     """Crée le serveur sur le premier port libre à partir de ``port`` ; renvoie (serveur, adresse).
 
-    ``seance`` permet de fournir une autre séance que :class:`Seance` (écran de traduction, par exemple). Le
+    ``seance`` permet de fournir une autre séance que :class:`SeanceRelecture` (écran de traduction, par exemple). Le
     serveur n'écoute que sur 127.0.0.1 et n'est pas encore lancé.
     """
-    seance = seance or Seance(chapitre_yaml)
+    seance = seance or SeanceRelecture(chapitre_yaml)
     srv, adresse = S.demarrer(_gestionnaire(seance), port)
     seance.arreter = srv.shutdown
     return srv, adresse

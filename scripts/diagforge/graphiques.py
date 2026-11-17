@@ -3,7 +3,11 @@
 Nécessite matplotlib (dans l'environnement : ``uv pip install matplotlib``). Sans matplotlib, le bilan
 est produit sans images et le signale.
 """
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "commun"))
+from charte import COULEUR_PRINCIPALE  # noqa: E402
 
 
 def disponible():
@@ -25,7 +29,7 @@ def _plt():
     return plt
 
 
-def palette(principal="470A68"):
+def palette(principal=COULEUR_PRINCIPALE):
     """Renvoie la couleur principale du profil et une liste de teintes distinctes pour les groupes.
 
     Renvoie ``(principale, couleurs)`` ; ``couleurs`` commence par la couleur principale.
@@ -34,7 +38,7 @@ def palette(principal="470A68"):
     return base, [base, "#E0B989", "#4D62C9", "#6F8F78", "#DF231D", "#748CAB", "#FC4C02", "#9B2743"]
 
 
-def histogramme(notes20, titre, sortie: Path, couleur="#470A68", sous_titre=""):
+def histogramme(notes20, titre, sortie: Path, couleur="#" + COULEUR_PRINCIPALE, sous_titre=""):
     """Trace l'histogramme des notes sur 20 (classes de 2 points), avec moyenne et médiane.
 
     Enregistre l'image dans ``sortie`` et renvoie ce chemin.

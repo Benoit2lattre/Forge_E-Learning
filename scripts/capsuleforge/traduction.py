@@ -323,7 +323,7 @@ def _seance_traduction(yaml_chap: Path, langue: str):
     """Renvoie la séance de l'écran de relecture des traductions (actions « enregistrer » et « importer »)."""
     import relecture
 
-    class Seance(relecture.Seance):
+    class SeanceTraduction(relecture.SeanceRelecture):
         PAGE = "traduction.html"
 
         def __init__(self):
@@ -372,7 +372,7 @@ def _seance_traduction(yaml_chap: Path, langue: str):
                     return {"ok": True, "message": " ".join(l.strip() for l in lignes), "poses": k}
             return {"ok": False, "message": f"action inconnue : {nom}"}
 
-    return Seance()
+    return SeanceTraduction()
 
 
 def relire_traduction(yaml_chap: Path, langue: str, port: int = 8776, navigateur: bool = True):
