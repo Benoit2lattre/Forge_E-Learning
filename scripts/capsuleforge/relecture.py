@@ -23,6 +23,7 @@ Licence : GPL v3.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import threading
 import time
@@ -64,6 +65,27 @@ class Seance:
                 for pas in sec.get("pas") or []:
                     yield partie, sec, pas
 
+    def remarques(self, chap: dict) -> tuple[dict, list]:
+        """Résultat de :func:`format2.verifier` rangé pour la page : ``(remarques par pas, remarques générales)``.
+
+        Chaque remarque est ``{"niveau": "erreur" | "avertissement", "texte": …}`` ; un message de la forme
+        « D3-2 (d08) : … » est rangé sous le pas ``d08``, les autres (sections, parties, chapitre) sont générales.
+        """
+        try:
+            err, av = F.verifier(chap, self.dossier)
+        except Exception as e:  # la relecture reste utilisable même si la vérification échoue
+            return {}, [{"niveau": "erreur", "texte": f"vérification impossible : {e}"}]
+        ids = {q.get("id") for _, _, q in self._pas(chap)}
+        par_pas, autres = {}, []
+        for niveau, liste in (("erreur", err), ("avertissement", av)):
+            for t in liste:
+                m = re.match(r"^\S+ \(([^()]+)\) : (.+)$", t)
+                if m and m.group(1) in ids:
+                    par_pas.setdefault(m.group(1), []).append({"niveau": niveau, "texte": m.group(2)})
+                else:
+                    autres.append({"niveau": niveau, "texte": t})
+        return par_pas, autres
+
     def lire(self) -> dict:
         """Renvoie le chapitre tel que la page l'affiche : pas non écartés, phrases, apparitions, objets, mots.
 
@@ -101,8 +123,9 @@ class Seance:
                            for o in pas.get("objets") or [] if o.get("type") in AJOUTS],
                 "mots": mots, "prepare": prepare, "relu": (pas.get("source") or {}).get("relu") or "",
             })
+        par_pas, generales = self.remarques(chap)
         return {"ok": True, "titre": F.texte(chap.get("titre")), "dossier": self.dossier.name,
-                "ecran": chap.get("ecran") or {}, "pas": out}
+                "ecran": chap.get("ecran") or {}, "pas": out, "remarques": par_pas, "generales": generales}
 
     def ecrire(self, modifs: dict) -> dict:
         """Enregistre dans ``chapitre.yaml`` les modifications envoyées par la page ; renvoie un compte rendu.
@@ -191,8 +214,8 @@ class Seance:
                 shutil.copy2(self.yaml, self.dossier / "sauvegardes" / f"chapitre_{time.strftime('%Y%m%d_%H%M%S')}.yaml")
                 self.sauvegarde_faite = True
             F.ecrire(chap, self.yaml)
-            err, av = F.verifier(chap, self.dossier)
-            return {"ok": True, "message": f"{n} pas enregistré(s)", "erreurs": err}
+            par_pas, generales = self.remarques(chap)
+            return {"ok": True, "message": f"{n} pas enregistré(s)", "remarques": par_pas, "generales": generales}
 
     def page_partie(self):
         """Programme l'arrêt du serveur dans 4 s : la page se ferme ou se recharge (annulé si elle revient)."""

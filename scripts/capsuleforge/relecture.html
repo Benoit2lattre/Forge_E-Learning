@@ -77,6 +77,11 @@ main{flex:1;display:flex;min-height:0}
 h2{font-size:13px;margin:6px 0 0;color:var(--texte2);font-weight:600;text-transform:none}
 #entete-droite{padding:8px 12px;border-bottom:1px solid var(--bord);display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex:none}
 #entete-droite .info{color:var(--texte2);font-size:12px;flex:1;min-width:120px}
+#remarques{flex:none;padding:6px 12px;border-bottom:1px solid var(--bord);background:#FBF4EA;font-size:13px;max-height:30vh;overflow:auto}
+#remarques[hidden]{display:none}
+#remarques ul{margin:2px 0 0;padding-left:18px}
+#remarques li.erreur{color:var(--ko)}
+#remarques summary{cursor:pointer;color:var(--texte2)}
 #phrases{flex:1;overflow:auto;padding:6px 8px 60px}
 .phrase{display:grid;grid-template-columns:64px 1fr auto;gap:6px;align-items:start;padding:5px 4px;border-radius:6px;border:1px solid transparent}
 .phrase.active{background:#FBF3E7;border-color:var(--sand)}
@@ -143,6 +148,7 @@ label.coche{display:flex;gap:5px;align-items:center;white-space:nowrap}
       <span class="info" id="info"></span>
       <label class="coche" title="Marque ce pas comme relu par l'auteur"><input type="checkbox" id="relu"> Relu</label>
     </div>
+    <div id="remarques" role="note" aria-label="Remarques de la vérification" hidden></div>
     <div id="phrases"></div>
     <div id="aide">
       <kbd>Échap</kbd> lire / pause · <kbd>Alt</kbd>+<kbd>↑</kbd> <kbd>↓</kbd> phrase précédente / suivante ·
@@ -183,19 +189,34 @@ async function charger() {
   if (preparees) message(preparees + " pas : phrases préparées d'après la transcription, à enregistrer");
 }
 
+const remarquesDe = id => (C && C.remarques && C.remarques[id]) || [];
+function compte(liste) {
+  const e = liste.filter(r => r.niveau === "erreur").length, a = liste.length - e;
+  return [e && e + " erreur" + (e > 1 ? "s" : ""), a && a + " avertissement" + (a > 1 ? "s" : "")].filter(Boolean).join(", ");
+}
+function afficherRemarques() {
+  const z = $("remarques"), r = P ? remarquesDe(P.id) : [], g = (C && C.generales) || [];
+  z.textContent = "";
+  const liste = items => { const ul = document.createElement("ul"); for (const x of items) { const li = document.createElement("li"); li.className = x.niveau; li.textContent = (x.niveau === "erreur" ? "Erreur : " : "") + x.texte; ul.appendChild(li); } return ul; };
+  if (r.length) { const t = document.createElement("strong"); t.textContent = "À vérifier sur ce pas (" + compte(r) + ")"; z.append(t, liste(r)); }
+  if (g.length) { const d = document.createElement("details"), s = document.createElement("summary"); s.textContent = "Reste du chapitre : " + compte(g); d.append(s, liste(g)); z.appendChild(d); }
+  z.hidden = !r.length && !g.length;
+}
+function prendreRemarques(r) { if (r && r.remarques) { C.remarques = r.remarques; C.generales = r.generales || []; } }
+
 function listePas() {
   const s = $("pas"); s.textContent = ""; let groupe = null, nomG = null;
   C.pas.forEach((p, i) => {
     if (p.section !== nomG) { groupe = document.createElement("optgroup"); groupe.label = p.section; s.appendChild(groupe); nomG = p.section; }
     const o = document.createElement("option"); o.value = i;
-    o.textContent = (p.relu ? "✓ " : "") + (modifies.has(p.id) ? "● " : "") + p.nom + (p.titre ? " — " + p.titre : "") + (p.phrases.length ? "" : " (sans texte)");
+    o.textContent = (p.relu ? "✓ " : "") + (modifies.has(p.id) ? "● " : "") + (remarquesDe(p.id).length ? "⚠ " : "") + p.nom + (p.titre ? " — " + p.titre : "") + (p.phrases.length ? "" : " (sans texte)");
     groupe.appendChild(o);
   });
   s.value = rang;
 }
 
 function ouvrir(i) {
-  rang = Math.max(0, Math.min(C.pas.length - 1, i)); P = C.pas[rang];
+  rang = Math.max(0, Math.min(C.pas.length - 1, i)); P = C.pas[rang]; afficherRemarques();
   son.pause(); arretA = null; choisi = null; phraseChoisie = -1; choisirOutil(null);
   if (P.audio) { son.src = "/media/" + P.audio; son.playbackRate = +$("vitesse").value; } else son.removeAttribute("src");
   $("pas").value = rang; $("relu").checked = !!P.relu; location.hash = P.id;
@@ -490,8 +511,9 @@ async function enregistrer() {
     const r = await (await fetch("/api/pas", { method: "POST", body: JSON.stringify(envoi) })).json();
     if (!r.ok) { message(r.message || "Enregistrement impossible", true); return false; }
     for (const id of modifies) { const p = C.pas.find(x => x.id === id); p.prepare = false; p.reluChange = false; p.phrases = p.phrases.filter(ph => ph.texte.trim()); }
-    modifies.clear(); etat(); listePas(); dessiner(); suivre(true);
-    message(r.erreurs && r.erreurs.length ? r.message + " — " + r.erreurs.length + " erreur(s) signalée(s) par « verifier »" : r.message, r.erreurs && r.erreurs.length);
+    prendreRemarques(r); modifies.clear(); etat(); listePas(); afficherRemarques(); dessiner(); suivre(true);
+    const ici = remarquesDe(P.id);
+    message(ici.length ? r.message + " — ce pas : " + compte(ici) : r.message, ici.some(x => x.niveau === "erreur"));
     return true;
   } catch (e) { message("Le serveur ne répond pas : la fenêtre « capsuleforge relire » est-elle encore ouverte ?", true); return false; }
 }
