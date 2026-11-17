@@ -2,15 +2,15 @@
 
 <p><img src="../../_static/identite/icones/capsuleforge_icone_jour_64.png#gh-light-mode-only" alt="CapsuleForge" align="right"><img src="../../_static/identite/icones/capsuleforge_icone_nuit_64.png#gh-dark-mode-only" alt="CapsuleForge" align="right"></p>
 
-CapsuleForge produit des cours et des didacticiels interactifs à partir de fichiers source texte : un **chapitre de cours** (`chapitre.yaml`, format 2, voir [FORMAT.md](FORMAT.md)) construit à partir d'un diaporama PowerPoint narré, de vidéos ou d'enregistrements d'écran, avec questions QuizForge, exercices ExoForge, sous-titres, traduction et voix de synthèse ; ou une **capsule de simulation logicielle** (`capsule.yaml`, format 1 : montrer puis faire faire une manipulation dans FreeCAD, ABAQUS, Excel…). Le fichier source est la seule référence : on le relit, on le corrige, et le lecteur HTML (ou le paquet SCORM) est reconstruit à chaque fois.
+CapsuleForge produit des **capsules** : des cours et des didacticiels interactifs, décrits dans un fichier texte (`chapitre.yaml`, voir [FORMAT.md](FORMAT.md)). Une capsule part d'un diaporama PowerPoint narré, d'une vidéo, d'un enregistrement d'écran ou d'une manipulation enregistrée dans un logiciel (FreeCAD, ABAQUS, Excel…), et peut mêler ces sources ; elle reçoit des questions QuizForge, des exercices ExoForge, des sous-titres, une traduction et une voix de synthèse. Le fichier texte est la seule référence : on le relit, on le corrige, et le lecteur HTML (ou le paquet SCORM) est reconstruit à chaque fois.
 
-Le **chapitre de cours** est la forme principale : un diaporama narré (ou des vidéos) devient un cours découpé en sections de quelques minutes, avec plusieurs parcours, des questions en fin de section et des exercices, lu dans un lecteur HTML ou déposé dans Moodle en paquet SCORM. La **capsule de simulation logicielle** remplace le mode « simulation interactive » d'ActivePresenter sans son défaut principal (une diapositive par action, à la durée de l'enregistrement) : les pas enregistrés sont regroupés en étapes pédagogiques qui portent la narration et l'arrêt ; elle se joue aussi dans le lecteur de chapitre.
+Une capsule est découpée en parties et en sections de quelques minutes, avec plusieurs parcours, des questions en fin de section et des exercices ; elle se lit dans un lecteur HTML ou se dépose dans Moodle en paquet SCORM. Un didacticiel montre une manipulation puis la fait faire (« Regarder » puis « À vous ») : il remplace le mode « simulation interactive » d'ActivePresenter sans son défaut principal (une diapositive par action, à la durée de l'enregistrement). Les premiers didacticiels étaient écrits pour un ancien lecteur (`capsule.yaml`) ; l'Atelier Forge les met à jour pour le lecteur actuel (dernière partie de cette page).
 
 Statut : outil en développement, utilisé sur un chapitre pilote. Essayés en conditions réelles : reprise d'un diaporama narré, transcription, relecture, lecteur de chapitre, questions et exercices, paquets SCORM 2004 et 1.2 dans Moodle, traduction et voix de synthèse, import de vidéo, enregistrement d'écran. Pas encore : caméo dans le lecteur, éditeur d'assemblage, simulation ActivePresenter dans le chapitre, export H5P. L'état détaillé est sur la page « État des outils » du site.
 
-Dans cette page, `capsuleforge …` abrège `python scripts/capsuleforge/capsuleforge.py …`, lancé depuis le dossier du dépôt. Un nom seul (`fiabilite`) désigne le dossier `data/capsuleforge/fiabilite/`. Sous Windows, un double-clic sur `scripts/capsuleforge/CapsuleForge.bat` ouvre un menu qui pose les questions une à une (enregistrer, construire, vérifier, reprendre un diaporama, relire…), sans ligne de commande.
+Dans cette page, `capsuleforge …` abrège `python scripts/capsuleforge/capsuleforge.py …`, lancé depuis le dossier du dépôt. Un nom seul (`fiabilite`) désigne le dossier `data/capsuleforge/fiabilite/`. Sous Windows, le plus simple est l'**Atelier Forge** (double-clic sur `Forge.bat`, à la racine du dépôt), écran « Capsules » : on choisit la capsule, son état s'affiche section par section (diapositives reprises, images, texte dit, relu, traduction, voix, questions) et chaque étape se lance par un bouton (reprendre un diaporama, importer une vidéo, transcrire, relire, traduire, faire la voix, vérifier, construire avec ou sans paquets SCORM), sans ligne de commande. Un double-clic sur `scripts/capsuleforge/CapsuleForge.bat` ouvre aussi un menu qui pose les questions une à une (enregistrer, construire, vérifier, reprendre un diaporama, relire…), sans ligne de commande.
 
-## Un chapitre de cours (format 2)
+## Préparer une capsule
 
 ### Chaîne
 
@@ -26,7 +26,7 @@ capsuleforge traduire / voix                        traduction, sous-titres, voi
 
 Des vidéos (`video`) et des enregistrements d'écran (`filmer`) entrent dans les mêmes sections que les diapositives.
 
-### Le format 2 : chapitre, parties, sections, pas
+### Le fichier `chapitre.yaml` : parties, sections, pas
 
 Le chapitre est décrit dans [FORMAT.md](FORMAT.md) : des parties (tronc, annexes, exercices), des sections de 5 à 6 min et des pas qui sont des scènes (fond, objets, gestes attendus, retours), avec plusieurs parcours sur le même contenu (par exemple vue d'ensemble, lecture détaillée, lecture immersive). Une section renvoie aux diapositives qui la composent (`source: {fichier: cours.pptx, diapos: [6, 7]}`) ; un chapitre en cours d'écriture porte `source: {statut: squelette}` (une section encore vide n'est alors qu'un avertissement).
 
@@ -172,7 +172,7 @@ Une partie annexe appelée par aucune partie du tronc n'entre dans aucun paquet 
 
 Les pas de didacticiel (captures de l'enregistreur, chapitres convertis d'une capsule) se jouent dans le même lecteur que les cours et les vidéos : `capsuleforge construire tuto1 --lecteur 2`. **Regarder** : la souris va à la zone (arc ou trajet enregistré), clique, tape la saisie, la bulle et le cadre apparaissent ; c'est une fonction du temps du pas, donc la piste, le saut, la pause et la vitesse marchent comme pour un cours. **À vous** (bouton de la barre, visible dans une section qui a des gestes) : la bulle donne la consigne, l'étudiant fait le geste (clic, double-clic, clic droit, molette, glisser, touche, saisie, variantes `ou`), avec les essais, l'indice et les retours du chapitre (`reglages`) ; bilan « Réussi du premier coup » en fin de section ; une interaction `geste:…` par pas dans la plateforme. **« À vous » est la pratique du didacticiel** : une section faite jusqu'au bout en « À vous » compte dans la jauge « Pratique » et l'anneau de la partie (plan : « ✋ 83 % », meilleure tentative) ; dans la note SCORM, elle pèse sa durée en minutes (au moins 1 ; une question pèse 1) et compte la part des gestes réussis du premier coup. Les masques du chapitre (barre des tâches…) sont floutés sur les images. Pas encore : formules LaTeX dans les bulles, narration d'étape lue par la voix du navigateur.
 
-## Une capsule de simulation logicielle (format 1)
+## Ancien lecteur : didacticiels enregistrés (`capsule.yaml`)
 
 ### Chaîne
 
@@ -308,13 +308,13 @@ python scripts/capsuleforge/capsuleforge.py approj data/sources/projet.approj --
 
 Repris : image de chaque diapositive, trajectoire de la souris, zone de clic et nom du contrôle, type d'action. Non repris : audio, objets ajoutés à la main, mise en forme des légendes. Unités d'ActivePresenter 10 : millièmes de pixel.
 
-### Passer au format 2
+### Mettre à jour pour le lecteur actuel
 
 ```
 capsuleforge convertir tuto1      capsule.yaml -> chapitre.yaml (l'original n'est pas touché)
 ```
 
-`capsule.yaml` reste la source tant que l'éditeur visuel ne lit que le format 1 ; `chapitre.yaml` se refait par `convertir`. Quand les deux fichiers existent, `construire` prend le plus récent (ou `--lecteur 1|2`).
+`capsule.yaml` reste la source tant que l'éditeur visuel ne lit que lui ; `chapitre.yaml` se refait par `convertir`. Quand les deux fichiers existent, `construire` prend le plus récent (ou `--lecteur 1|2`).
 
 ## À venir (dans l'ordre proposé)
 

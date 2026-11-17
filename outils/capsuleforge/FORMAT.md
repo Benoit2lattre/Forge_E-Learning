@@ -1,8 +1,8 @@
-# CapsuleForge — format du chapitre (`capsuleforge/2`)
+# CapsuleForge — le fichier `chapitre.yaml` d'une capsule
 
-Un chapitre (un cours interactif ou un didacticiel) est décrit par un seul fichier, `chapitre.yaml`, rangé avec ses médias (`images/`, `audio/`). Ce format remplace `capsule.yaml` (format 1, étapes et pas à action unique), que `capsuleforge convertir` reprend sans perte.
+Une capsule (un cours interactif ou un didacticiel) est décrite par un seul fichier, `chapitre.yaml`, rangé avec ses médias (`images/`, `audio/`) ; sa première ligne utile est `format: capsuleforge/2`. Il remplace l'ancien `capsule.yaml` (étapes et pas à action unique), que `capsuleforge convertir` (« Mettre à jour pour le lecteur actuel » dans l'Atelier Forge) reprend sans perte.
 
-Statut : format écrit et vérifié par `scripts/capsuleforge/format_chapitre.py` (conversion, noms, plan par parcours, contrôles), lu par le lecteur de chapitre (`lecteur_chapitre.html`, construit par `construire_chapitre.py`). L'éditeur visuel lit encore le format 1.
+Statut : format écrit et vérifié par `scripts/capsuleforge/format_chapitre.py` (conversion, noms, plan par parcours, contrôles), lu par le lecteur de chapitre (`lecteur_chapitre.html`, construit par `construire_chapitre.py`). L'éditeur visuel lit encore l'ancien `capsule.yaml`.
 
 ## Les quatre niveaux
 
@@ -148,9 +148,9 @@ capsuleforge relire fiabilite                 relecture dans le navigateur : son
 capsuleforge verifier fiabilite               contrôles des deux formats
 ```
 
-## Correspondance avec le format 1
+## Correspondance avec l'ancien `capsule.yaml`
 
-| Format 1 | Format 2 |
+| `capsule.yaml` | `chapitre.yaml` |
 | --- | --- |
 | `etapes` | les `sections` d'une partie unique `principale` |
 | `pas.image` | `pas.fond` |

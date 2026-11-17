@@ -11,6 +11,8 @@ Routes :
   GET  /                      la page (``atelier.html``)
   GET  /api/etat              état du poste, profils, version
   GET  /api/exoforge/fiches   fiches ExoForge trouvées (exemples et data/exoforge)
+  GET  /api/capsules          capsules de data/capsuleforge
+  GET  /api/capsule/<nom>     état d'une capsule, section par section (``capsules.detail``)
   GET  /api/taches            résumé des tâches de la séance
   GET  /api/tache/<id>?depuis=n   lignes du journal d'une tâche à partir de la n-ième
   GET  /dist/<chemin>         fichiers construits (essayer un exercice, ouvrir un lecteur)
@@ -40,10 +42,11 @@ from pathlib import Path
 ICI = Path(__file__).resolve().parent
 sys.path.insert(0, str(ICI.parent / "commun"))
 sys.path.insert(0, str(ICI.parent / "capsuleforge"))
+import capsules as C              # noqa: E402
 import chemins                    # noqa: E402
 import serveur_local as S         # noqa: E402
 
-VERSION = "0.1"
+VERSION = "0.2"
 RACINE = chemins.RACINE
 PY = sys.executable
 PORT = 8770
@@ -52,6 +55,7 @@ TYPES = dict(S.TYPES, **{".svg": "image/svg+xml", ".woff": "font/woff", ".woff2"
                          ".mp4": "video/mp4", ".webm": "video/webm", ".xml": "application/xml", ".txt": "text/plain; charset=utf-8",
                          ".zip": "application/zip", ".pdf": "application/pdf", ".gif": "image/gif"})
 WINDOWS = os.name == "nt"
+ADRESSE = re.compile(r"http://127\.0\.0\.1:\d+/")
 
 
 def rel(p: Path) -> str:
@@ -108,13 +112,17 @@ class Tache:
             self.fin = time.time()
             if self.code == 0 and self.apres:
                 try:
-                    self.liens = self.apres(self) or {}
+                    self.liens = {**{k: v for k, v in self.liens.items() if k != "ouvrir"}, **(self.apres(self) or {})}
                 except Exception as e:                     # un lien manquant ne fait pas échouer la tâche
                     self.ajouter(f"(liens non trouvés : {e})")
             quand_fini(self)
         threading.Thread(target=lire, daemon=True).start()
 
     def ajouter(self, ligne: str):
+        if "ouvrir" not in self.liens:
+            m = ADRESSE.search(ligne)
+            if m and self.outil == "capsuleforge":
+                self.liens = dict(self.liens, ouvrir=m.group(0))
         self.lignes.append(ligne)
         if len(self.lignes) > MAX_LIGNES:
             del self.lignes[:500]
@@ -161,7 +169,12 @@ class Atelier:
         self.page_partie_le: float | None = None
         self.arreter = lambda: None            # remplacé par srv.shutdown
         self.journal = chemins.DATA / "_atelier" / "journal.jsonl"
-        self.actions = {"exoforge.construire": self.a_exo_construire}
+        self.actions = {"exoforge.construire": self.a_exo_construire, "capsule.pptx": self.a_cap_pptx,
+                        "capsule.transcrire": self.a_cap_transcrire, "capsule.relire": self.a_cap_relire,
+                        "capsule.traduire": self.a_cap_traduire, "capsule.voix": self.a_cap_voix,
+                        "capsule.verifier": self.a_cap_simple("verifier", "Vérifier"),
+                        "capsule.convertir": self.a_cap_simple("convertir", "Mettre à jour pour le lecteur actuel"),
+                        "capsule.construire": self.a_cap_construire, "capsule.video": self.a_cap_video}
 
     # ------------------------------------------------------------------ tâches
     def lancer(self, action: str, params: dict) -> dict:
@@ -236,6 +249,147 @@ class Atelier:
             return out
         return Tache(self.nouvel_id(), f"Construire « {d['titre']} »", "exoforge", argv,
                      verrou=str(f.resolve()), apres=liens)
+
+    # ------------------------------------------------------------------ CapsuleForge
+    def _cap(self, p: dict):
+        d = C.dossier(p.get("capsule") or "")
+        titre = C.texte(C.F().lire(d / "chapitre.yaml").get("titre")) if (d / "chapitre.yaml").is_file() else d.name
+        return d, titre or d.name
+
+    def _tache_cap(self, d: Path, titre: str, argv: list[str], apres=None) -> Tache:
+        return Tache(self.nouvel_id(), titre, "capsuleforge", argv, verrou=str(d.resolve()), apres=apres)
+
+    def a_cap_simple(self, cmd: str, libelle: str):
+        def action(p):
+            d, t = self._cap(p)
+            return self._tache_cap(d, f"{libelle} « {t} »", C.argv_base(PY, cmd) + [str(d)])
+        return action
+
+    def a_cap_pptx(self, p: dict) -> Tache:
+        d, t = self._cap(p)
+        f = Path(p.get("chemin") or "")
+        if f.suffix.lower() != ".pptx" or not f.is_file():
+            raise ValueError("diaporama introuvable : choisissez le fichier .pptx")
+        attendu = p.get("fichier")
+        if attendu and f.name != attendu:
+            raise ValueError(f"le fichier choisi s'appelle « {f.name} », la capsule attend « {attendu} »")
+        connus = C.reglages().get("diaporamas") or {}
+        connus[f.name] = str(f)
+        C.garder_reglage("diaporamas", connus)
+        argv = C.argv_base(PY, "pptx") + [str(f), "--chapitre", str(d)]
+        if p.get("sans_images"):
+            argv.append("--sans-images")
+        return self._tache_cap(d, f"Reprendre « {f.name} » dans « {t} »", argv)
+
+    def a_cap_transcrire(self, p: dict) -> Tache:
+        d, t = self._cap(p)
+        modele = p.get("modele") or "small"
+        if modele not in ("small", "medium"):
+            raise ValueError("modèle inconnu")
+        argv = C.argv_base(PY, "transcrire") + [str(d), "--modele", modele]
+        if p.get("refaire"):
+            argv.append("--refaire")
+        secs = C.sections_valides(d, p.get("sections"))
+        if secs:
+            argv += ["--sections", ",".join(secs)]
+        return self._tache_cap(d, f"Transcrire « {t} »", argv)
+
+    def a_cap_relire(self, p: dict) -> Tache:
+        d, t = self._cap(p)
+        return self._tache_cap(d, f"Relire « {t} »", C.argv_base(PY, "relire") + [str(d), "--sans-navigateur"])
+
+    def a_cap_traduire(self, p: dict) -> Tache:
+        d, t = self._cap(p)
+        langue = C.langue_valide(p.get("langue"))
+        moteur = p.get("moteur") or "aucun"
+        if moteur not in ("aucun", "argos", "deepl"):
+            raise ValueError("moteur de traduction inconnu")
+        argv = C.argv_base(PY, "traduire") + [str(d), "--langue", langue, "--moteur", moteur]
+        if p.get("mode") == "importer":
+            return self._tache_cap(d, f"Importer la traduction ({langue}) dans « {t} »", argv + ["--importer"])
+        return self._tache_cap(d, f"Relire la traduction ({langue}) de « {t} »", argv + ["--relire", "--sans-navigateur"])
+
+    def a_cap_voix(self, p: dict) -> Tache:
+        d, t = self._cap(p)
+        langue = C.langue_valide(p.get("langue"))
+        moteur = p.get("moteur") or "piper"
+        if moteur not in ("piper", "edge"):
+            raise ValueError("moteur de voix inconnu")
+        argv = C.argv_base(PY, "voix") + [str(d), "--langue", langue, "--moteur", moteur]
+        nom = (p.get("voix") or "").replace(" (à télécharger)", "")
+        if nom:
+            if not re.fullmatch(r"[A-Za-z0-9_.-]+", nom):
+                raise ValueError("nom de voix invalide")
+            argv += ["--voix", nom]
+        vitesse = float(p.get("vitesse") or 1.0)
+        if not 0.5 <= vitesse <= 2.0:
+            raise ValueError("vitesse entre 0,5 et 2")
+        argv += ["--vitesse", f"{vitesse:g}"]
+        if p.get("refaire"):
+            argv.append("--refaire")
+        secs = C.sections_valides(d, p.get("sections"))
+        if secs:
+            argv += ["--sections", ",".join(secs)]
+        return self._tache_cap(d, f"Voix ({langue}) de « {t} »", argv)
+
+    def a_cap_construire(self, p: dict) -> Tache:
+        d, t = self._cap(p)
+        argv = C.argv_base(PY, "construire") + [str(d)]
+        scorm = p.get("scorm") or ""
+        if scorm:
+            if scorm not in ("chapitre", "parties", "tout"):
+                raise ValueError("découpage SCORM inconnu")
+            version = p.get("version") or "2004"
+            if version not in ("2004", "1.2"):
+                raise ValueError("version SCORM inconnue")
+            argv += ["--scorm", scorm, "--scorm-version", version]
+        if p.get("audio") == "origine":
+            argv += ["--audio", "origine"]
+        if p.get("lecteur") in ("1", "2"):
+            argv += ["--lecteur", p["lecteur"]]
+        elif (d / "capsule.yaml").is_file() and (d / "chapitre.yaml").is_file():
+            argv += ["--lecteur", "2"]                   # la capsule a été mise à jour : le lecteur actuel
+        nom = d.name
+
+        def liens(tache):
+            out = {}
+            if (C.SORTIES / nom / "index.html").is_file():
+                out["lecteur"] = f"/dist/capsuleforge/{nom}/index.html"
+            neufs = [z for z in C.SORTIES.glob(f"{nom}_*.zip") if z.stat().st_mtime >= tache.debut - 1]
+            if neufs:
+                out["paquet"] = rel(sorted(neufs)[0])
+            return out
+        return self._tache_cap(d, f"Construire « {t} »", argv, apres=liens)
+
+    def a_cap_video(self, p: dict) -> Tache:
+        d, t = self._cap(p)
+        f = Path(p.get("chemin") or "")
+        if not f.is_file():
+            raise ValueError("vidéo introuvable : choisissez le fichier")
+        chap = C.F().lire(d / "chapitre.yaml")
+        parties = {x.get("id"): x for x in chap.get("parties") or []}
+        partie = p.get("partie") or ""
+        if partie not in parties:
+            raise ValueError("partie inconnue")
+        argv = C.argv_base(PY, "video") + [str(f), "--chapitre", str(d)]
+        if p.get("section"):
+            if p["section"] not in {s.get("id") for s in parties[partie].get("sections") or []}:
+                raise ValueError("section inconnue")
+            argv += ["--section", f"{partie}/{p['section']}"]
+        else:
+            titre = (p.get("titre") or "").strip() or f.stem
+            ids = {s.get("id") for x in parties.values() for s in x.get("sections") or []}
+            argv += ["--section", f"{partie}/{C.ident_section(titre, ids)}", "--titre", titre]
+        son = p.get("son")
+        if son:
+            if not Path(son).is_file():
+                raise ValueError("fichier de son introuvable")
+            argv += ["--son", str(son)]
+        if p.get("decoupe") == "aucune":
+            argv += ["--decoupe", "aucune"]
+        if p.get("remplacer"):
+            argv.append("--remplacer")
+        return self._tache_cap(d, f"Importer « {f.name} » dans « {t} »", argv)
 
     # ------------------------------------------------------------------ poste
     def etat_poste(self) -> list[dict]:
@@ -396,6 +550,13 @@ def gestionnaire(at: Atelier):
                                    "profils": noms_profils(), "windows": WINDOWS})
             if chemin == "/api/exoforge/fiches":
                 return self._json({"ok": True, "fiches": at.fiches_exoforge()})
+            if chemin == "/api/capsules":
+                return self._json({"ok": True, "capsules": C.liste()})
+            if chemin.startswith("/api/capsule/"):
+                try:
+                    return self._json({"ok": True, **C.detail(chemin[13:])})
+                except ValueError as e:
+                    return self._json({"ok": False, "message": str(e)})
             if chemin == "/api/taches":
                 return self._json({"ok": True, "taches": [at.taches[i].resume() for i in at.ordre]})
             if chemin.startswith("/api/tache/"):

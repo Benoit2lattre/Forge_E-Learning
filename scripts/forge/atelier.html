@@ -11,7 +11,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{font-family:Inter,"Segoe UI",system-ui,sans-serif;color:var(--texte);background:var(--fond);font-size:15px;
-  display:grid;grid-template-rows:56px 1fr auto;grid-template-columns:224px 1fr;grid-template-areas:"tete tete" "nav main" "nav taches"}
+  display:grid;grid-template-rows:56px minmax(0,1fr) auto;overflow:hidden;grid-template-columns:224px 1fr;grid-template-areas:"tete tete" "nav main" "nav taches"}
 button,select,input{font:inherit}
 :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 main:focus,main:focus-visible{outline:none}
@@ -58,7 +58,32 @@ td .sous{display:block;color:var(--texte2);font-size:12.5px;margin-top:2px}
 .barre label{display:flex;align-items:center;gap:8px;color:var(--texte2)}
 .barre select,.barre input[type=search]{padding:6px 8px;border:1px solid var(--bord);border-radius:6px;background:#fff;min-width:200px}
 .vide{color:var(--texte2);font-style:italic;padding:14px}
-#taches{grid-area:taches;border-top:2px solid var(--navy);background:#fff;display:grid;grid-template-columns:300px 1fr;height:260px;min-height:0}
+.barre select.large{min-width:420px}
+.sous{color:var(--texte2);font-size:13px}
+.resume{margin:0 0 14px;color:var(--texte)}
+.remarques{display:inline-block;margin-left:6px}.remarques summary{cursor:pointer;color:#6B4A1E}.remarques ul{margin:6px 0 0;max-height:220px;overflow:auto;font-size:13px}.remarques li.erreur{color:#7C2F25}
+.etapes{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:12px;margin-bottom:8px;align-items:start}
+.etapes .carte p{flex:none}
+.etapes .carte{gap:8px}.etapes .carte .nom{font-size:15px}
+.etapes label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--texte2)}
+.etapes label select{padding:5px 6px;border:1px solid var(--bord);border-radius:6px;background:#fff;color:var(--texte);font-size:14px}
+label.case{flex-direction:row !important;align-items:center;gap:6px}
+.ligne{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ligne b{display:block;font-size:13.5px;word-break:break-all}
+.diaporama{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding-bottom:8px;border-bottom:1px solid #ECE9E3}
+.diaporama b{font-size:13.5px;word-break:break-all}
+.btn.petit{padding:3px 9px;font-size:13px}
+.carte.etroite{max-width:640px}
+table.sections td,table.sections th{padding:6px 8px;font-size:13px}
+table.sections tr.partie td{background:#F0EEEA;font-weight:600}
+table.sections tr.partie .pastille{margin-left:8px;font-weight:400}
+table.sections tr.partie .sous{margin-left:10px;font-weight:400}
+dialog.formulaire{border:1px solid var(--bord);border-radius:10px;padding:18px 22px;min-width:460px;display:flex;flex-direction:column;gap:10px}
+dialog.formulaire[open]{display:flex}
+dialog.formulaire label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--texte2)}
+dialog.formulaire select,dialog.formulaire input[type=text]{padding:6px;border:1px solid var(--bord);border-radius:6px;font-size:14px}
+dialog.formulaire h3{margin:0 0 4px}
+#taches{grid-area:taches;overflow:hidden;border-top:2px solid var(--navy);background:#fff;display:grid;grid-template-columns:300px 1fr;height:260px;min-height:0}
 #taches.replie{height:38px}
 #taches .liste{border-right:1px solid var(--bord);overflow:auto;min-height:0}
 #taches .titre-zone{display:flex;align-items:center;gap:10px;padding:8px 12px;font-weight:600;font-size:14px;background:#F0EEEA;position:sticky;top:0}
@@ -90,7 +115,7 @@ td .sous{display:block;color:var(--texte2);font-size:12.5px;margin-top:2px}
   <button type="button" data-ecran="accueil" aria-current="page"><img src="/static/identite/icones/exoforge_icone_jour_32.png" alt="" style="visibility:hidden">Accueil</button>
   <button type="button" data-ecran="questions"><img src="/static/identite/icones/quizforge_icone_jour_32.png" alt="">Questions<span class="bientot">lot 3</span></button>
   <button type="button" data-ecran="exercices"><img src="/static/identite/icones/exoforge_icone_jour_32.png" alt="">Exercices</button>
-  <button type="button" data-ecran="capsules"><img src="/static/identite/icones/capsuleforge_icone_jour_32.png" alt="">Capsules<span class="bientot">lot 2</span></button>
+  <button type="button" data-ecran="capsules"><img src="/static/identite/icones/capsuleforge_icone_jour_32.png" alt="">Capsules</button>
   <button type="button" data-ecran="bilans"><img src="/static/identite/icones/diagforge_icone_jour_32.png" alt="">Bilans<span class="bientot">lot 3</span></button>
   <button type="button" data-ecran="reglages"><img src="/static/identite/icones/exoforge_icone_jour_32.png" alt="" style="visibility:hidden">Réglages<span class="bientot">lot 3</span></button>
   <div class="bas" id="racine"></div>
@@ -133,7 +158,7 @@ const duree = s => s < 60 ? Math.round(s) + " s" : Math.floor(s / 60) + " min " 
 
 /* ---------- écrans ---------- */
 let ECRAN = "accueil", ETAT = null;
-const ecrans = { accueil, questions: () => bientot("quizforge", "Questions", 3), exercices, capsules: () => bientot("capsuleforge", "Capsules", 2),
+const ecrans = { accueil, questions: () => bientot("quizforge", "Questions", 3), exercices, capsules,
   bilans: () => bientot("diagforge", "Bilans", 3), reglages: () => bientot(null, "Réglages", 3) };
 function aller(nom) { ECRAN = nom; document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-current", b.dataset.ecran === nom ? "page" : "false"));
   try { sessionStorage.setItem("forge-ecran", nom); } catch (e) {} ecrans[nom](); $("main").focus({ preventScroll: true }); }
@@ -147,7 +172,7 @@ async function accueil() {
   vider(el("h2", {}, "Accueil"), el("p", { class: "chapeau" }, "Chaque bouton lance une commande Forge ; son journal s'affiche en bas de la page. Rien à taper : les fichiers se choisissent dans des listes ou par « Parcourir… »."));
   const outils = [["questions", "quizforge", "Questions", "Valider un classeur de questions et le convertir pour Moodle.", false],
     ["exercices", "exoforge", "Exercices", "Construire un exercice guidé, l'essayer, retrouver son paquet SCORM.", true],
-    ["capsules", "capsuleforge", "Capsules", "À partir d'un diaporama narré, d'un film d'écran ou d'une vidéo : relire, traduire, faire parler, construire.", false],
+    ["capsules", "capsuleforge", "Capsules", "À partir d'un diaporama narré ou d'une vidéo : transcrire, relire, traduire, faire parler, construire.", true],
     ["bilans", "diagforge", "Bilans", "Analyser les résultats d'un test Moodle, des exercices et des capsules.", false]];
   $("main").append(el("div", { class: "cartes" }, outils.map(([ecran, ic, nom, txt, pret]) => el("div", { class: "carte" },
     el("div", { class: "nom" }, el("img", { src: `/static/identite/icones/${ic}_icone_jour_64.png`, alt: "" }), nom),
@@ -208,6 +233,166 @@ async function autreFiche() {
   if (r.chemin) construire(r.chemin);
 }
 
+/* ---------- Capsules (CapsuleForge) ---------- */
+const OPT = (() => { try { return JSON.parse(sessionStorage.getItem("forge-opt") || "{}"); } catch (e) { return {}; } })();
+const opt = (k, defaut) => OPT[k] !== undefined ? OPT[k] : defaut;
+const garder = (k, v) => { OPT[k] = v; try { sessionStorage.setItem("forge-opt", JSON.stringify(OPT)); } catch (e) {} };
+const COCHEES = new Set();
+const choix = (k, valeurs, defaut, attrs = {}) => { const s = el("select", attrs, valeurs.map(([v, l]) => el("option", { value: v }, l)));
+  s.value = opt(k, defaut); if (s.selectedIndex < 0) s.selectedIndex = 0; s.onchange = () => garder(k, s.value); return s; };
+const caseA = (k, libelle) => { const c = el("input", { type: "checkbox" }); c.checked = !!opt(k, false); c.onchange = () => garder(k, c.checked); return el("label", { class: "case" }, c, libelle); };
+function pastilleEtat(e, titre) { if (!e || !e.total) return el("span", { class: "pastille p-neutre", title: titre || "sans objet" }, "–");
+  const plein = e.fait >= e.total; return el("span", { class: "pastille " + (plein ? "p-ok" : e.fait ? "p-sable" : "p-ko"), title: titre || "" }, plein ? "✓" : `${e.fait}/${e.total}`); }
+const minsec = s => !s ? "–" : `${Math.floor(s / 60)} min ${String(Math.round(s % 60)).padStart(2, "0")}`;
+async function capsules() {
+  vider(entete("capsuleforge", "Capsules"), el("p", { class: "chapeau" }, "Les capsules de data/capsuleforge. Choisissez une capsule : son état s'affiche section par section, et chaque étape de la préparation se lance ici, de la reprise du diaporama au paquet SCORM."));
+  const l = await api("/api/capsules");
+  if (!l.ok) return $("main").append(el("div", { class: "vide" }, l.message || "Lecture impossible."));
+  if (!l.capsules.length) return $("main").append(el("div", { class: "vide" }, "Aucune capsule dans data/capsuleforge."));
+  const sel = el("select", { "aria-label": "Capsule", class: "large" }, l.capsules.map(c => el("option", { value: c.nom }, `${c.titre} (${c.nom})`)));
+  sel.value = opt("capsule", l.capsules[0].nom); if (sel.selectedIndex < 0) sel.selectedIndex = 0;
+  const zone = el("div", {}, el("div", { class: "vide" }, "Lecture de la capsule…"));
+  sel.onchange = () => { garder("capsule", sel.value); COCHEES.clear(); detailCapsule(zone, sel.value); };
+  $("main").append(el("div", { class: "barre" }, el("label", {}, "Capsule", sel)), zone);
+  detailCapsule(zone, sel.value);
+}
+async function detailCapsule(zone, nom) {
+  const d = await api("/api/capsule/" + encodeURIComponent(nom));
+  if (!d.ok) return zone.replaceChildren(el("div", { class: "vide" }, d.message || "Lecture impossible."));
+  const lancer = (action, params) => lancerTache(action, { capsule: nom, ...params });
+  const haut = el("div", { class: "barre" },
+    el("button", { class: "btn second", type: "button", disabled: !d.lecteur, onclick: () => window.open(d.lecteur, "_blank", "noopener") }, "Ouvrir le lecteur"),
+    el("button", { class: "btn second", type: "button", onclick: () => montrer("data/capsuleforge/" + nom) }, "Dossier de la capsule"),
+    el("span", { class: "sous" }, d.construit ? "Lecteur construit " + quand(d.construit) : "Lecteur pas encore construit"));
+  if (d.ancienne) return zone.replaceChildren(haut, el("div", { class: "carte etroite" },
+    el("div", { class: "nom" }, "Didacticiel enregistré pour l'ancien lecteur"),
+    el("p", {}, `${d.etapes} étape(s), ${d.pas} pas. La mise à jour le reprend dans le lecteur actuel (parties, sections, sous-titres, traduction, paquets SCORM) ; le fichier d'origine est gardé.`),
+    el("div", { class: "actions" }, el("button", { class: "btn", type: "button", onclick: () => lancer("capsule.convertir", {}) }, "Mettre à jour pour le lecteur actuel"),
+      el("button", { class: "btn second", type: "button", onclick: () => lancer("capsule.construire", { lecteur: "1" }) }, "Construire avec l'ancien lecteur"))));
+  const sections = d.parties.flatMap(p => p.sections);
+  const nbSec = sections.length;
+  const portee = () => COCHEES.size ? [...COCHEES] : [];
+  const libPortee = el("span", { class: "sous" });
+  const majPortee = () => libPortee.textContent = typo(COCHEES.size ? `Transcrire et voix : ${COCHEES.size} section(s) cochée(s)` : "Transcrire et voix : toutes les sections (cochez des sections dans le tableau pour en choisir)");
+  majPortee();
+  /* résumé */
+  const pl = (n, mot) => `${n} ${mot}${n > 1 ? "s" : ""}`;
+  const resume = el("p", { class: "resume" }, `${pl(d.parties.length, "partie")}, ${pl(nbSec, "section")}, ${minsec(d.duree_s)} en tout ; langue ${d.noms_langues[d.langue] || d.langue}` + (d.autres.length ? `, traduite en ${d.autres.map(l => d.noms_langues[l] || l).join(", ")}` : "") + ". ",
+    d.erreurs.length || d.avertissements.length ? el("details", { class: "remarques" }, el("summary", {}, `${pl(d.erreurs.length, "erreur")}, ${pl(d.avertissements.length, "point")} à revoir`),
+      el("ul", {}, d.erreurs.map(e => el("li", { class: "erreur" }, e)), d.avertissements.map(a => el("li", {}, a)))) : el("span", { class: "pastille p-ok" }, "✓ aucune remarque"));
+  /* étapes */
+  const sources = el("div", { class: "carte" }, el("div", { class: "nom" }, "1. Sources"),
+    d.diaporamas.length ? d.diaporamas.map(x => el("div", { class: "diaporama" }, el("b", {}, x.fichier), el("span", { class: "sous" }, `${pl(x.sections.length, "section")} : ${x.sections.join(", ")}` + (x.chemin ? "" : " · fichier à retrouver")),
+      el("button", { class: "btn", type: "button", onclick: () => reprendre(nom, x) }, "Reprendre le diaporama"))) : el("p", {}, "Aucun diaporama cité par les sections."),
+    caseA("sans_images", "sans images (sans PowerPoint)"),
+    el("button", { class: "btn second", type: "button", onclick: () => formulaireVideo(nom, d) }, "Importer une vidéo…"));
+  const texteDit = el("div", { class: "carte" }, el("div", { class: "nom" }, "2. Texte dit"),
+    el("p", {}, "La transcription donne un premier texte ; la relecture le corrige phrase par phrase, avec le son et l'image."),
+    el("label", {}, "Transcription ", choix("modele", [["small", "rapide"], ["medium", "plus juste, plus lente"]], "small")),
+    caseA("refaire_tr", "retranscrire aussi le texte déjà là"),
+    el("div", { class: "actions" }, el("button", { class: "btn second", type: "button", onclick: () => lancer("capsule.transcrire", { modele: opt("modele", "small"), refaire: opt("refaire_tr", false), sections: portee() }) }, "Transcrire"),
+      el("button", { class: "btn", type: "button", onclick: () => lancerAvecEcran("capsule.relire", { capsule: nom }) }, "Relire")));
+  const langues = [...d.autres, ...Object.keys(d.noms_langues).filter(l => l !== d.langue && !d.autres.includes(l))];
+  const selLangue = choix("langue_trad", langues.map(l => [l, (d.noms_langues[l] || l) + (d.autres.includes(l) ? "" : " (nouvelle)")]), d.autres[0] || "en");
+  const etatTrad = el("span", { class: "sous" });
+  const majTrad = () => { const t = d.traductions[selLangue.value]; etatTrad.textContent = typo(t && t.fichier ? `${t.relus}/${t.elements} textes relus` : "pas encore commencée"); };
+  selLangue.addEventListener("change", majTrad); majTrad();
+  const traduction = el("div", { class: "carte" }, el("div", { class: "nom" }, "3. Traduction"),
+    el("label", {}, "Langue ", selLangue), etatTrad,
+    el("label", {}, "Pré-remplir ", choix("moteur_trad", [["aucun", "non (à la main)"], ["argos", "Argos (hors ligne)"], ["deepl", "DeepL (clé)"]], "aucun")),
+    el("div", { class: "actions" }, el("button", { class: "btn", type: "button", onclick: () => lancerAvecEcran("capsule.traduire", { capsule: nom, langue: selLangue.value, moteur: opt("moteur_trad", "aucun") }) }, "Relire la traduction"),
+      el("button", { class: "btn second", type: "button", onclick: () => lancer("capsule.traduire", { langue: selLangue.value, moteur: "aucun", mode: "importer" }) }, "Importer dans la capsule")));
+  const selVoixL = choix("langue_voix", [[d.langue, (d.noms_langues[d.langue] || d.langue) + " (diapositives sans enregistrement)"], ...d.autres.map(l => [l, d.noms_langues[l] || l])], d.autres[0] || d.langue);
+  const selMoteur = choix("moteur_voix", [["piper", "Piper (sur cet ordinateur)"], ["edge", "Edge (en ligne)"]], "piper");
+  const selVoix = el("select", { "aria-label": "Voix" });
+  const majVoix = () => { const l = selVoixL.value.split("-")[0], liste = (d.voix[selMoteur.value] || {})[l] || [];
+    selVoix.replaceChildren(el("option", { value: "" }, "voix par défaut"), ...liste.map(v => el("option", { value: v }, v))); selVoix.value = opt("voix_" + selMoteur.value + "_" + l, ""); if (selVoix.selectedIndex < 0) selVoix.selectedIndex = 0; };
+  selVoix.onchange = () => garder("voix_" + selMoteur.value + "_" + selVoixL.value.split("-")[0], selVoix.value);
+  selVoixL.addEventListener("change", majVoix); selMoteur.addEventListener("change", majVoix); majVoix();
+  const voix = el("div", { class: "carte" }, el("div", { class: "nom" }, "4. Voix de synthèse"),
+    el("label", {}, "Langue ", selVoixL), el("label", {}, "Moteur ", selMoteur), el("label", {}, "Voix ", selVoix),
+    el("label", {}, "Vitesse ", choix("vitesse", [["0.9", "0,9"], ["1", "normale"], ["1.1", "1,1"], ["1.2", "1,2"]], "1")),
+    caseA("refaire_voix", "refaire même si le texte n'a pas changé"),
+    el("button", { class: "btn", type: "button", onclick: () => lancer("capsule.voix", { langue: selVoixL.value, moteur: selMoteur.value, voix: selVoix.value, vitesse: opt("vitesse", "1"), refaire: opt("refaire_voix", false), sections: portee() }) }, "Faire la voix"));
+  const construire = el("div", { class: "carte" }, el("div", { class: "nom" }, "5. Construire"),
+    el("label", {}, "Paquets SCORM ", choix("scorm", [["", "aucun (lecteur seul)"], ["chapitre", "un pour la capsule"], ["parties", "un par partie"], ["tout", "les deux"]], "")),
+    el("label", {}, "Format ", choix("version", [["1.2", "SCORM 1.2 (conseillé pour Moodle)"], ["2004", "SCORM 2004"]], "1.2")),
+    el("div", { class: "actions" }, el("button", { class: "btn second", type: "button", onclick: () => lancer("capsule.verifier", {}) }, "Vérifier"),
+      el("button", { class: "btn", type: "button", onclick: () => lancer("capsule.construire", { scorm: opt("scorm", ""), version: opt("version", "1.2") }) }, "Construire")),
+    d.paquets.length ? el("div", { class: "paquets" }, d.paquets.map(z => el("div", { class: "ligne" }, el("span", { class: "sous" }, `${z.fichier} · ${quand(z.date)}`), el("button", { class: "btn second petit", type: "button", onclick: () => montrer(z.chemin) }, "Montrer")))) : null);
+  /* sections */
+  const entetes = ["", "Section", "Genre", "Durée", "Pas", "Diapos reprises", "Images", "Texte dit", "Relu", ...d.autres.flatMap(l => [`Texte ${l}`, `Voix ${l}`]), "Questions"];
+  const corps = el("tbody", {});
+  for (const p of d.parties) {
+    corps.append(el("tr", { class: "partie" }, el("td", { colspan: entetes.length }, `${p.nom}  ${p.titre}`, p.type !== "tronc" ? el("span", { class: "pastille p-neutre" }, p.type === "annexe" ? "annexe" : "exercice") : null,
+      p.exercices.length ? el("span", { class: "sous" }, "Exercice : " + p.exercices.join(", ")) : null)));
+    for (const s of p.sections) {
+      const c = el("input", { type: "checkbox", "aria-label": "Choisir " + s.nom }); c.checked = COCHEES.has(s.id);
+      c.onchange = () => { c.checked ? COCHEES.add(s.id) : COCHEES.delete(s.id); majPortee(); };
+      corps.append(el("tr", {}, el("td", {}, c), el("td", {}, el("b", {}, s.nom + " "), s.titre, s.source ? el("span", { class: "sous" }, s.source) : null),
+        el("td", {}, s.types.join(", ") || "vide"), el("td", {}, minsec(s.duree_s)), el("td", {}, String(s.pas)),
+        el("td", {}, pastilleEtat(s.repris, "diapositives reprises du diaporama")), el("td", {}, pastilleEtat(s.images, "pas dont l'image existe")),
+        el("td", {}, pastilleEtat(s.texte, "pas qui ont un texte dit")), el("td", {}, pastilleEtat(s.relu, "pas relus (case « Relu »)")),
+        ...d.autres.flatMap(l => [el("td", {}, pastilleEtat(s.langues[l].texte, "phrases traduites")), el("td", {}, pastilleEtat(s.langues[l].voix, "pas avec la voix"))]),
+        el("td", {}, s.questions ? String(s.questions) : "–")));
+    }
+  }
+  zone.replaceChildren(haut, resume, el("div", { class: "etapes" }, sources, texteDit, traduction, voix, construire), libPortee,
+    el("h3", {}, "Sections"), el("table", { class: "sections" }, el("thead", {}, el("tr", {}, entetes.map(h => el("th", {}, h)))), corps));
+}
+async function lancerTache(action, params) {
+  const r = await api("/api/lancer", { action, params });
+  if (!r.ok) { message(r.message || "Lancement impossible.", true); return null; }
+  CHOISIE = r.id; deplier(); rafraichir(); return r.id;
+}
+/* écran ouvert dans un onglet (relecture, traduction) : l'onglet est ouvert au clic, puis reçoit son adresse */
+async function lancerAvecEcran(action, params) {
+  const w = window.open("about:blank", "_blank");
+  if (w) w.document.write("<p style='font:16px sans-serif;padding:30px'>Ouverture de l'écran…</p>");
+  const id = await lancerTache(action, params);
+  if (!id) { if (w) w.close(); return; }
+  for (let i = 0; i < 60; i++) {
+    await new Promise(r => setTimeout(r, 500));
+    const d = await api(`/api/tache/${id}?depuis=999999`);
+    if (d.ok && d.liens && d.liens.ouvrir) { if (w) w.location = d.liens.ouvrir; else window.open(d.liens.ouvrir, "_blank"); return; }
+    if (d.ok && d.etat !== "en_cours") break;
+  }
+  if (w) w.close();
+}
+async function reprendre(nom, x) {
+  let chemin = x.chemin;
+  if (!chemin) {
+    message(`Retrouvez « ${x.fichier} » dans la fenêtre qui s'ouvre (elle peut être derrière le navigateur).`);
+    const r = await api("/api/parcourir", { titre: "Où est " + x.fichier + " ?", types: [["Diaporama PowerPoint", "*.pptx"]] });
+    if (!r.ok) return message(r.message || "Dialogue impossible.", true);
+    if (!r.chemin) return; chemin = r.chemin;
+  }
+  lancerTache("capsule.pptx", { capsule: nom, chemin, fichier: x.fichier, sans_images: opt("sans_images", false) });
+}
+async function formulaireVideo(nom, d) {
+  const dlg = el("dialog", { class: "formulaire" });
+  let fichier = null, son = null;
+  const nomF = el("span", { class: "sous" }, "aucune"), nomS = el("span", { class: "sous" }, "le son de la vidéo");
+  const parcourir = async (titre, types, cb) => { const r = await api("/api/parcourir", { titre, types }); if (!r.ok) return message(r.message || "Dialogue impossible.", true); if (r.chemin) cb(r.chemin); };
+  const partie = el("select", {}, d.parties.filter(p => p.type !== "exercice").map(p => el("option", { value: p.id }, `${p.nom}  ${p.titre}`)));
+  const section = el("select", {});
+  const majS = () => { const p = d.parties.find(x => x.id === partie.value); section.replaceChildren(el("option", { value: "" }, "nouvelle section"), ...p.sections.map(s => el("option", { value: s.id }, `${s.nom}  ${s.titre}`))); titreL.hidden = false; };
+  const titre = el("input", { type: "text", placeholder: "titre de la nouvelle section" }), titreL = el("label", {}, "Titre ", titre);
+  partie.onchange = majS; section.onchange = () => titreL.hidden = !!section.value; majS();
+  const decoupe = el("select", {}, el("option", { value: "silences" }, "en pas, aux silences"), el("option", { value: "aucune" }, "un seul pas"));
+  const remplacer = el("input", { type: "checkbox" });
+  dlg.append(el("h3", {}, "Importer une vidéo"),
+    el("div", { class: "ligne" }, el("button", { class: "btn second", type: "button", onclick: () => parcourir("Choisir la vidéo", [["Vidéo", "*.mp4 *.mov *.mkv *.webm *.avi"]], c => { fichier = c; nomF.textContent = c; }) }, "Vidéo…"), nomF),
+    el("div", { class: "ligne" }, el("button", { class: "btn second", type: "button", onclick: () => parcourir("Son pris à part (export ActivePresenter : audio_NNN.mp4)", [["Son", "*.mp4 *.m4a *.wav *.mp3"]], c => { son = c; nomS.textContent = c; }) }, "Son à part…"), nomS),
+    el("label", {}, "Partie ", partie), el("label", {}, "Section ", section), titreL, el("label", {}, "Découpe ", decoupe),
+    el("label", { class: "case" }, remplacer, "remplacer les pas déjà importés de ce fichier"),
+    el("div", { class: "actions" }, el("button", { class: "btn second", type: "button", onclick: () => dlg.close() }, "Annuler"),
+      el("button", { class: "btn", type: "button", onclick: () => { if (!fichier) return message("Choisissez d'abord la vidéo.", true); dlg.close();
+        lancerTache("capsule.video", { capsule: nom, chemin: fichier, son, partie: partie.value, section: section.value, titre: titre.value, decoupe: decoupe.value, remplacer: remplacer.checked }); } }, "Importer")));
+  dlg.addEventListener("close", () => dlg.remove());
+  document.body.append(dlg); dlg.showModal();
+}
+
 /* ---------- tâches ---------- */
 let TACHES = [], CHOISIE = null, LUES = {}, SUIVI = null;
 const ICONES = { en_cours: "⟳", reussie: "✓", echec: "✗", arretee: "■" };
@@ -218,6 +403,7 @@ async function rafraichir() {
   for (const t of TACHES) if (avant[t.id] === "en_cours" && t.etat !== "en_cours") {
     message(`${t.etat === "reussie" ? "Terminé" : t.etat === "echec" ? "Échec" : "Arrêté"} : ${t.titre}`, t.etat === "echec");
     if (ECRAN === "exercices" && t.outil === "exoforge") exercices();
+    if (ECRAN === "capsules" && t.outil === "capsuleforge") capsules();
   }
   if (!CHOISIE && TACHES.length) CHOISIE = TACHES.at(-1).id;
   $("nb-taches").textContent = TACHES.filter(t => t.etat === "en_cours").length ? TACHES.filter(t => t.etat === "en_cours").length + " en cours" : String(TACHES.length);
@@ -238,7 +424,9 @@ async function journal() {
   o.replaceChildren(...[el("span", { class: "etat" }, `${ICONES[t.etat]} ${t.titre}`), el("span", { class: "pastille " + (t.etat === "reussie" ? "p-ok" : t.etat === "echec" ? "p-ko" : "p-neutre") }, LIBELLES[t.etat] + " · " + duree(t.duree)),
     t.etat === "en_cours" ? el("button", { class: "btn second", type: "button", onclick: async () => { await api("/api/arreter", { id: t.id }); rafraichir(); } }, "Arrêter") : null,
     t.liens && t.liens.essayer ? el("button", { class: "btn", type: "button", onclick: () => essayer(t.liens.essayer, true) }, "Essayer l'exercice") : null,
-    t.liens && t.liens.paquet ? el("button", { class: "btn second", type: "button", onclick: () => montrer(t.liens.paquet) }, "Montrer le paquet SCORM") : null].filter(Boolean));
+    t.liens && t.liens.paquet ? el("button", { class: "btn second", type: "button", onclick: () => montrer(t.liens.paquet) }, "Montrer le paquet SCORM") : null,
+    t.liens && t.liens.lecteur ? el("button", { class: "btn", type: "button", onclick: () => window.open(t.liens.lecteur, "_blank", "noopener") }, "Ouvrir le lecteur") : null,
+    t.liens && t.liens.ouvrir && t.etat === "en_cours" ? el("button", { class: "btn", type: "button", onclick: () => window.open(t.liens.ouvrir, "_blank") }, "Revenir à l'écran") : null].filter(Boolean));
 }
 function deplier() { $("taches").classList.remove("replie"); $("replier").textContent = "Replier ▾"; $("replier").setAttribute("aria-expanded", "true"); }
 $("replier").onclick = () => { const r = $("taches").classList.toggle("replie"); $("replier").textContent = r ? "Déplier ▴" : "Replier ▾"; $("replier").setAttribute("aria-expanded", String(!r)); };
