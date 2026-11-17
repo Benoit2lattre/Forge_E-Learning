@@ -158,10 +158,8 @@ def _norme(mot: str) -> str:
 
 
 def decouper_phrases(texte: str) -> list[str]:
-    """Découpe un texte en phrases (coupure après « . ! ? … » suivis d'un espace et d'une majuscule ou d'un guillemet)."""
-    import re
-    morceaux = re.split(r"(?<=[.!?…])\s+(?=[A-ZÀ-ÖØ-Þ«\"])", " ".join((texte or "").split()))
-    return [m for m in morceaux if m.strip()]
+    """Découpe un texte en phrases (règle commune : :func:`format2.decouper_phrases`)."""
+    return F.decouper_phrases(texte)
 
 
 def mots_du_fichier(transcription: dict) -> list[dict]:

@@ -10,6 +10,7 @@ Chaque outil a son propre numéro de version (voir la page « État des outils �
 - CapsuleForge : un seul serveur local (`serveur_local.py`) pour l'éditeur, la relecture et la relecture des traductions (sans changement visible).
 - CapsuleForge : la reprise d'un diaporama (`pptx`) est dans `pptx_lire.reprendre` (sans changement visible).
 - CapsuleForge : raccourcis clavier et bips communs à `enregistrer` et `filmer` (`raccourcis.py`) ; bips joués par la sortie son de Windows (ils étaient muets sur beaucoup de portables).
+- CapsuleForge : une seule règle de découpage en phrases (`format2.decouper_phrases`) pour la relecture, la transcription et la voix de synthèse ; une diapositive sans enregistrement garde son gras dans les sous-titres.
 - CapsuleForge : `filmer` vérifie la section avant de filmer (et non après) ; `--section` facultatif avec `--sans-import` ; message d'erreur avec la liste des parties.
 - CapsuleForge : réponses numériques des exercices arrondies dans les traces (0,66 au lieu de 0.6599999999999999) ; écran de départ d'une section mis à jour quand on change de langue.
 

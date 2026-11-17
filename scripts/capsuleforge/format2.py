@@ -61,6 +61,20 @@ def texte(valeur, langue: str | None = None) -> str:
     return valeur or ""
 
 
+FIN_DE_PHRASE = re.compile(r"(?<=[.!?…])\s+(?=[A-ZÀ-ÖØ-Þ«\"])")
+
+
+def decouper_phrases(texte: str) -> list[str]:
+    """Découpe un texte en phrases : seule règle de CapsuleForge (relecture, transcription, voix de synthèse).
+
+    Coupure après « . ! ? … » suivis d'un espace puis d'une majuscule ou d'un guillemet ; un chiffre ne commence
+    pas une phrase (« fig. 2 », « p. 12 » restent entiers). Les espaces sont normalisés ; le gras ``**…**`` est
+    gardé (il est affiché, pas prononcé : la voix de synthèse le retire au moment de dire la phrase).
+    """
+    morceaux = FIN_DE_PHRASE.split(" ".join(str(texte or "").split()))
+    return [m for m in morceaux if m.strip()]
+
+
 # --------------------------------------------------------------------------- conversion du format 1
 
 def narration_pas(pas: dict, langue: str | None = None) -> str:

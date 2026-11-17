@@ -26,7 +26,6 @@ Licence : GPL v3.
 from __future__ import annotations
 
 import hashlib
-import re
 import shutil
 import time
 import wave
@@ -129,12 +128,6 @@ def _ecrire_wav(chemin: Path, a: np.ndarray, taux: int) -> None:
 
 # --------------------------------------------------------------------------- un pas
 
-def decouper(narration: str) -> list[str]:
-    """Découpe une narration en phrases (fin de phrase « . ! ? … » suivie d'une majuscule, d'un chiffre ou de la fin)."""
-    t = " ".join(str(narration or "").replace("**", "").split())
-    return [p.strip() for p in re.split(r"(?<=[.!?…])\s+(?=[«\"A-ZÀ-ÖØ-Þ0-9])", t) if p.strip()]
-
-
 def _textes(pas: dict, langue: str) -> list[str] | None:
     """Renvoie les textes des phrases du pas dans cette langue (``None`` si une phrase n'est pas traduite)."""
     res = []
@@ -215,7 +208,7 @@ def voix_chapitre(yaml_chap: Path, langue: str, moteur: str = "piper", nom: str 
                     if q.get("audio") and source.get("voix") != "synthese":
                         continue                                # enregistrement de l'auteur : jamais remplacé
                     if not q.get("phrases") and F.texte(q.get("narration"), src).strip():
-                        q["phrases"] = [{"texte": t} for t in decouper(F.texte(q.get("narration"), src))]
+                        q["phrases"] = [{"texte": t} for t in F.decouper_phrases(F.texte(q.get("narration"), src))]
                     textes = [F.texte(ph.get("texte"), src) for ph in q.get("phrases") or []]
                     textes = [" ".join(t.replace("**", "").split()) for t in textes]
                 else:
