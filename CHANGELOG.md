@@ -9,6 +9,8 @@ Chaque outil a son propre numéro de version (voir la page « État des outils �
 - CapsuleForge : remarques de `verifier` affichées dans l'écran de relecture (encadré « À vérifier sur ce pas », « ⚠ » dans la liste des pas).
 - CapsuleForge : un seul serveur local (`serveur_local.py`) pour l'éditeur, la relecture et la relecture des traductions (sans changement visible).
 - CapsuleForge : la reprise d'un diaporama (`pptx`) est dans `pptx_lire.reprendre` (sans changement visible).
+- CapsuleForge : raccourcis clavier et bips communs à `enregistrer` et `filmer` (`raccourcis.py`) ; bips joués par la sortie son de Windows (ils étaient muets sur beaucoup de portables).
+- CapsuleForge : `filmer` vérifie la section avant de filmer (et non après) ; `--section` facultatif avec `--sans-import` ; message d'erreur avec la liste des parties.
 - CapsuleForge : réponses numériques des exercices arrondies dans les traces (0,66 au lieu de 0.6599999999999999) ; écran de départ d'une section mis à jour quand on change de langue.
 
 ## Forge E-Learning 0.2.1 — en préparation

@@ -37,6 +37,7 @@ from datetime import date
 from pathlib import Path
 
 import assemblage as A
+from raccourcis import Intercepteur, bip, modificateurs_enfonces
 
 DOUBLE_CLIC_MS = 450         # deux clics plus rapprochés = double-clic
 DOUBLE_CLIC_PX = 6
@@ -86,7 +87,7 @@ class Enregistreur:
         self.touches = {"etape": touche_etape, "pause": touche_pause, "fin": touche_fin}
         self.raccourcis = {k: lire_raccourci(v) for k, v in self.touches.items()}
         self.kl = None
-        self._vk_bloque = None
+        self.intercepteur = Intercepteur(self._action_vk)
         self.avec_acc = accessibilite
 
         self.t0 = time.perf_counter()
@@ -395,28 +396,14 @@ class Enregistreur:
             bip(1)
             print("  ---- nouvelle étape ----")
 
-    def _filtre(self, msg, data):
-        """Filtre Windows du clavier : exécute les raccourcis de l'enregistreur et les retire du flux,
-        pour que l'application enregistrée ne les reçoive pas."""
-        if msg not in (0x100, 0x101, 0x104, 0x105):        # WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
-            return True
-        vk = data.vkCode
-        relache = msg in (0x101, 0x105)
-        if relache and vk == self._vk_bloque:
-            self._vk_bloque = None
-            self.kl.suppress_event()
+    def _action_vk(self, vk: int):
+        """Renvoie l'action à exécuter si la touche ``vk``, avec les modificateurs enfoncés, est un raccourci de
+        l'enregistreur (voir :class:`raccourcis.Intercepteur`), sinon ``None``."""
         nom = nom_vk(vk)
         if nom is None:
-            return True
+            return None
         action = self._quel_raccourci(nom, modificateurs_enfonces())
-        if action is None:
-            return True
-        if not relache:
-            if vk != self._vk_bloque:                       # pas de répétition si la touche reste enfoncée
-                self._vk_bloque = vk
-                self._faire(action)
-            self.kl.suppress_event()
-        return True
+        return None if action is None else (lambda: self._faire(action))
 
     def on_press(self, key):
         """Traite l'appui d'une touche (rappel de ``pynput``).
@@ -485,7 +472,7 @@ class Enregistreur:
 
         Bloque jusqu'au raccourci de fin, attend l'écriture des images puis ferme le journal.
         """
-        from pynput import keyboard, mouse
+        from pynput import mouse
         _dpi_physique()
         th_cap = threading.Thread(target=self._boucle_captures, daemon=True)
         th_ecr = threading.Thread(target=self._boucle_ecriture, daemon=True)
@@ -510,8 +497,7 @@ class Enregistreur:
             time.sleep(1)
         print("  ● enregistrement")
         self.trajet = []
-        kl = keyboard.Listener(on_press=self.on_press, on_release=self.on_release,
-                               win32_event_filter=self._filtre)
+        kl = self.intercepteur.ecouteur_clavier(on_press=self.on_press, on_release=self.on_release)
         self.kl = kl
         with mouse.Listener(on_move=self.on_move, on_click=self.on_click, on_scroll=self.on_scroll):
             kl.start()
@@ -576,33 +562,6 @@ def nom_vk(vk: int) -> str | None:
     if 0x70 <= vk <= 0x87:
         return f"f{vk - 0x6F}"
     return None
-
-
-def modificateurs_enfonces() -> set:
-    """Renvoie les modificateurs réellement enfoncés (Windows) : ``ctrl``, ``shift``, ``alt``, ``cmd``."""
-    try:
-        etat = ctypes.windll.user32.GetAsyncKeyState
-    except Exception:
-        return set()
-    m = set()
-    if etat(0x11) & 0x8000: m.add("ctrl")
-    if etat(0x10) & 0x8000: m.add("shift")
-    if etat(0x12) & 0x8000: m.add("alt")
-    if (etat(0x5B) | etat(0x5C)) & 0x8000: m.add("cmd")
-    return m
-
-
-def bip(n: int = 1):
-    """Signal sonore (sans bloquer l'enregistrement) : 1 = étape, 2 = pause, 3 = fin."""
-    def _jouer():
-        try:
-            import winsound
-            for _ in range(n):
-                winsound.Beep(1000, 90)
-                time.sleep(0.06)
-        except Exception:
-            pass
-    threading.Thread(target=_jouer, daemon=True).start()
 
 
 MODIFICATEURS = ("ctrl_l", "ctrl_r", "ctrl", "alt_l", "alt_r", "alt_gr", "alt", "cmd", "cmd_l", "cmd_r",

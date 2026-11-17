@@ -361,8 +361,11 @@ def cmd_filmer(a):
         print("Caméras :", v or "aucune")
         print("Micros :", m or "aucun")
         return 0
-    if not a.chapitre or not a.section:
-        raise SystemExit("filmer : --section partie/section et le nom du chapitre sont demandés")
+    if not a.chapitre:
+        raise SystemExit("filmer : le nom du chapitre est demandé")
+    if not a.section and not a.sans_import:
+        raise SystemExit("filmer : --section partie/section est demandé (section où importer la vidéo) ; "
+                         "sans import : --sans-import")
     y = trouver_chapitre(a.chapitre)
     if not y.is_file():
         raise SystemExit(f"Pas de chapitre : {y}")

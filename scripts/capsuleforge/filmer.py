@@ -30,6 +30,8 @@ from pathlib import Path
 
 import numpy as np
 
+from raccourcis import Intercepteur, bip, modificateurs_enfonces
+
 TAUX = 48000
 
 
@@ -222,34 +224,6 @@ class Micro(threading.Thread):
 
 # --------------------------------------------------------------------------- l'enregistrement
 
-def modificateurs() -> set:
-    """Modificateurs réellement enfoncés (Windows)."""
-    try:
-        import ctypes
-        etat = ctypes.windll.user32.GetAsyncKeyState
-    except Exception:
-        return set()
-    m = set()
-    if etat(0x11) & 0x8000: m.add("ctrl")
-    if etat(0x10) & 0x8000: m.add("shift")
-    if etat(0x12) & 0x8000: m.add("alt")
-    if (etat(0x5B) | etat(0x5C)) & 0x8000: m.add("cmd")
-    return m
-
-
-def bip(n: int = 1):
-    """Signal sonore sans bloquer : 1 = départ, 2 = pause / reprise, 3 = fin."""
-    def jouer():
-        try:
-            import winsound
-            for _ in range(n):
-                winsound.Beep(880, 110)
-                time.sleep(0.07)
-        except Exception:
-            pass
-    threading.Thread(target=jouer, daemon=True).start()
-
-
 def enregistrer(dossier: Path, ecran: int | None = 1, webcam: str | bool | None = None, micro: str | bool | None = True,
                 ips: int = 20, duree: float | None = None, essai: bool = False, journal=print) -> dict:
     """Filme l'écran, le micro et la webcam demandés dans ``dossier`` jusqu'à la fin demandée.
@@ -308,8 +282,6 @@ def enregistrer(dossier: Path, ecran: int | None = 1, webcam: str | bool | None 
     ecouteur = None
     try:
         if not essai:
-            from pynput import keyboard
-            bloque = {"vk": None}
 
             def pause():
                 p = h.basculer()
@@ -321,21 +293,9 @@ def enregistrer(dossier: Path, ecran: int | None = 1, webcam: str | bool | None 
                 bip(3)
             actions = {0x50: pause, 0x46: fin}                                # P, F (avec Ctrl+Maj exactement)
 
-            def filtre(msg, data):
-                if msg not in (0x100, 0x101, 0x104, 0x105):
-                    return True
-                vk, relache = data.vkCode, msg in (0x101, 0x105)
-                if relache and vk == bloque["vk"]:
-                    bloque["vk"] = None
-                    ecouteur.suppress_event()
-                if vk in actions and modificateurs() == {"ctrl", "shift"}:
-                    if not relache:
-                        if vk != bloque["vk"]:
-                            bloque["vk"] = vk
-                            actions[vk]()
-                        ecouteur.suppress_event()
-                return True
-            ecouteur = keyboard.Listener(win32_event_filter=filtre)
+            def action_de(vk):
+                return actions[vk] if vk in actions and modificateurs_enfonces() == {"ctrl", "shift"} else None
+            ecouteur = Intercepteur(action_de).ecouteur_clavier()
             ecouteur.start()
     except Exception as ex:
         journal(f"  raccourcis indisponibles ({type(ex).__name__}) : Entrée pour finir")
@@ -383,10 +343,15 @@ def filmer(yaml_chap: Path, section: str, titre: str | None = None, ecran: int |
            ips: int = 20, duree: float | None = None, importer: bool = True, essai: bool = False, journal=print) -> Path:
     """Filme dans ``enregistrements/<date_heure>/`` du chapitre puis importe la vidéo dans la section.
 
-    ``section`` est de la forme ``partie/section`` ; ``titre`` sert si la section est à créer. Avec
-    ``importer=False``, les fichiers sont gardés et la commande d'import est affichée. Renvoie le dossier de
+    ``section`` est de la forme ``partie/section`` ; ``titre`` sert si la section est à créer. La section est
+    vérifiée avant de filmer. Avec ``importer=False``, la section peut manquer : les fichiers sont gardés et la
+    commande d'import est affichée. Renvoie le dossier de
     l'enregistrement.
     """
+    if importer:                        # section vérifiée avant de filmer, pas après
+        import format2 as F
+        import video
+        video._section(F.lire(yaml_chap), section, titre)
     dossier = yaml_chap.parent / "enregistrements" / time.strftime("%Y%m%d_%H%M%S")
     journal(f"Enregistrement dans {dossier}")
     res = enregistrer(dossier, ecran, webcam, micro, ips, duree, essai, journal)
@@ -395,5 +360,5 @@ def filmer(yaml_chap: Path, section: str, titre: str | None = None, ecran: int |
         video.importer(yaml_chap, res["ecran"], section, titre=titre, son=res.get("micro"), camera=res.get("camera"),
                        journal=journal)
     else:
-        journal(f"  import : capsuleforge video \"{res['ecran']}\" --son \"{res.get('micro')}\" --chapitre {yaml_chap.parent.name} --section {section}")
+        journal(f"  import : capsuleforge video \"{res['ecran']}\" --son \"{res.get('micro')}\" --chapitre {yaml_chap.parent.name} --section {section or 'partie/section'}")
     return dossier

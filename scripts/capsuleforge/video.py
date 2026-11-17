@@ -214,7 +214,8 @@ def _section(chap: dict, ref: str, titre: str | None):
         pid, sid = ref.split("/", 1)
         p = next((x for x in chap.get("parties") or [] if x.get("id") == pid), None)
         if not p:
-            raise SystemExit(f"Partie introuvable : {pid}")
+            ids = ", ".join(str(x.get("id")) for x in chap.get("parties") or [])
+            raise SystemExit(f"Partie introuvable : {pid} (parties du chapitre : {ids} ; « capsuleforge plan <chapitre> » les montre)")
         s = next((x for x in p.get("sections") or [] if x.get("id") == sid), None)
         if not s:
             if not titre:
