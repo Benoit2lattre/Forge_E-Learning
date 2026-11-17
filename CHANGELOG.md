@@ -34,7 +34,7 @@ Chaque outil a son propre numéro de version (voir la page « État des outils �
 - ExoForge : lecture des `\input` / `\include` des fichiers LaTeX écrite une seule fois (`generique._fichiers_inclus`).
 - CapsuleForge : `SeanceEditeur`, `SeanceRelecture`, `SeanceTraduction` (trois classes `Seance` auparavant).
 
-## Forge E-Learning 0.2.1 — en préparation
+## Forge E-Learning 0.2.1 — novembre 2026
 
 Corrections sans changement de format :
 

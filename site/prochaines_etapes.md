@@ -6,14 +6,15 @@ Un plan grossier, outil par outil, de la version 0.2 vers la 0.3 puis au-delà. 
 
 | Outil | Prochaines étapes |
 | --- | --- |
-| **CapsuleForge** | essai dans Moodle de l'**export SCORM 1.2** (Moodle ne prend officiellement en charge que SCORM 1.2) ; afficher le **caméo** (vidéo de l'enseignant en médaillon) dans le lecteur, calé sur le pas, puis recaler un caméo filmé à part par comparaison des sons ; jouer une **simulation ActivePresenter** (gestes, mode « À vous ») dans le chapitre ; premier **éditeur d'assemblage** du chapitre (sources mêlées, chronologie, objets) |
-| **QuizForge** | rappel des réglages Moodle conseillés selon l'usage (classe ou examen), avec une alerte contre la combinaison tentatives multiples, meilleure note et relecture question par question ; pénalité par essai ; classeurs d'exemple régénérés |
-| **ExoForge** | fonction Φ (loi normale) dans les expressions ; rejet des tirages où une erreur type donne la bonne réponse ; retour gradué ; journal SCORM détaillé ; mode d'emploi à jour |
+| **CapsuleForge** | afficher le **caméo** (vidéo de l'enseignant en médaillon) dans le lecteur, calé sur le pas, puis recaler un caméo filmé à part par comparaison des sons ; jouer une **simulation ActivePresenter** (gestes, mode « À vous ») dans le chapitre ; premier **éditeur d'assemblage** du chapitre (sources mêlées, chronologie, objets) |
+| **QuizForge** | rappel des réglages Moodle conseillés selon l'usage (classe ou examen), avec une alerte contre la combinaison tentatives multiples, meilleure note et relecture question par question ; pénalité par essai |
+| **ExoForge** | fonction Φ (loi normale) dans les expressions ; rejet des tirages où une erreur type donne la bonne réponse ; retour gradué ; journal SCORM détaillé |
 | **DiagForge** | essai sur une vraie promotion ; première **restitution aux étudiants** (repère par notion, pas de classement, stratégie d'étude sous le seuil) ; lecture des traces SCORM d'ExoForge et de CapsuleForge |
-| **Ensemble** | site publié (branche `gh-pages`) ; **cours de démonstration** entièrement fictif qui montre la chaîne complète (questions, exercice, chapitre, bilan) ; licences des éléments embarqués vérifiées |
+| **Ensemble** | **interface graphique** qui lance toute la suite Forge avec des boutons et des listes (chapitres, sections, profils, micros, langues choisis au lieu d'être tapés), sans ligne de commande ; **cours de démonstration** entièrement fictif qui montre la chaîne complète (questions, exercice, chapitre, bilan) ; licences des éléments embarqués vérifiées |
 
 ## Au-delà
 
+- **Voix de synthèse pour les exercices et les questions** (Piper, la voix du cours), au lieu de la voix du navigateur, dont la qualité dépend de l'ordinateur : en option pour un exercice seul, et à étudier pour les exercices intégrés à un chapitre (taille des paquets).
 - **Export H5P** (CapsuleForge, puis questions) : scénario à embranchements et vidéo interactive, après validation du SCORM.
 - **Skill de création à partir d'un syllabus** : brouillon de banque de questions et de fiches d'exercices, avec un **catalogue d'erreurs types** par domaine (statique, résistance des matériaux, dynamique, calcul, vibrations, fatigue) partagé par QuizForge, ExoForge et DiagForge. Voir {doc}`../skills/creation-syllabus`.
 - **Skill d'aide à la préparation des capsules** (découpage, scénario, questions, traduction, relecture).
