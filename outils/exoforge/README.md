@@ -112,7 +112,7 @@ Chaque étape a un `id` (unique) et un `type`.
 
 Pour toutes : `tentatives`, `points_par_tentative`, `repeter: 3` (répète l'étape avec k = 0, 1, 2 et i = k + 1), `si: <expression>` (étape affichée seulement si la condition est vraie), `audio: <emplacement>`, `focus_rappel: <id>` (met en évidence un élément de l'encadré), `ajoute_au_rappel` (complète la zone « modèle » de l'encadré : `remplace`, `apres`, `exergue`), `fin: {graphique: …}` (pilote le graphique à la fin de l'étape).
 
-**Blocs de contenu** : `texte`, `liste`, `formule` (avec `legende`), `image`.
+**Blocs de contenu** : `texte`, `liste`, `formule` (avec `legende`), `image` (avec `alt`), `graphique` (même écriture que le graphique de l'encadré, voir plus bas : un graphique propre à l'étape, piloté comme lui).
 
 **Fin de l'exercice** (`conclusion`) : `titre`, `recommencer: true` (ou le texte du bouton) pour refaire l'exercice avec de nouvelles données.
 
@@ -120,7 +120,31 @@ Pour toutes : `tentatives`, `points_par_tentative`, `repeter: 3` (répète l'ét
 
 Toujours visible à gauche : `texte`, `image`, `tableau` (lignes calculées), `graphique`, `formules`, et une zone `modele` qui se remplit au fil des étapes.
 
-**Graphique** : axes `x` et `y` (`titre`, `log`, `min`, `max`, `pas`, bornes calculables), `courbes: [{id, y: <f(x)>, etiquette, cachee, pointilles}]`, `points` (`x`, `y`, `etiquette`, `lecture` : pointillés vers les axes, `apparait: revele`), `description` (texte lu et affiché, pour l'accessibilité). Les étapes le pilotent : `graphique: {actif, lecture, revele, montre}`.
+**Graphique** (dans l'encadré ou dans une étape) :
+
+- `id`, `largeur` et `hauteur` (pixels, 540 × 330 par défaut), `alt`, `description` (texte affiché sous le graphique et lu à voix haute, pour l'accessibilité ; `{texte, voix}` si la version lue diffère) ;
+- axes `x` et `y` : `titre`, `log`, `min`, `max`, `pas` (bornes et pas calculables, ex. `max: "Rm"`) ;
+- `courbes` : `{id, y: <f(x)>, etiquette, position_etiquette, couleur, epaisseur, pointilles, cachee}`. `position_etiquette` place l'étiquette le long de la courbe (de 0 à 1 ; 0,15 par défaut) ; `couleur` accepte un code (`"#748CAB"`) ou une couleur de rôle du profil (`"var(--graphique)"`, `"var(--erreur)"`…) ; `epaisseur` en pixels (3 par défaut, 1,5 en pointillés) ; une courbe `cachee` n'apparaît que quand une étape la montre ; une expression qui vaut `NaN` interrompt la courbe ;
+- `points` : une série `{x, y, …}` ou une liste de séries. `x` et `y` sont des expressions qui donnent une valeur ou une liste (`"[muC]"`, `"[0.55*M, 0.58*M]"`) ; chaque série a `id`, `couleur`, `etiquette` (`{j}` : rang du point dans la série), `position_etiquette: gauche`, `marque: false` (étiquette seule, sans losange : utile pour nommer une zone), `apparait: revele` (point caché jusqu'à ce qu'une étape le révèle) et `lecture: {x, etiquette}` (pointillés de lecture vers les axes). Les points sont numérotés à la suite d'une série à l'autre, à partir de 0.
+
+Les étapes pilotent les graphiques : `graphique: {actif, lecture, revele, montre, si}` à l'affichage de l'étape, `fin: {graphique: …}` une fois l'étape réussie. `actif` entoure un point ; `lecture` et `revele` prennent un numéro de point ou une liste ; `montre` prend le nom d'une courbe cachée ; `si` réserve l'action à une condition.
+
+```yaml
+contenu:
+  - graphique:
+      id: plan
+      largeur: 420
+      x: {titre: "Contrainte C (kN)", min: 0, max: "M"}
+      y: {titre: "Résistance R (kN)", min: 0, max: "M"}
+      courbes:
+        - {id: egal, y: "x", couleur: "var(--erreur)", epaisseur: 2, etiquette: "C = R", position_etiquette: 0.8}
+      points:
+        - {x: "[muC]", y: "[muR]", etiquette: "moyennes"}                     # point n° 0
+        - {x: "[cP]", y: "[cP]", etiquette: "P", apparait: revele}            # point n° 1
+        - {x: "[0.6*M]", y: "[0.1*M]", etiquette: "Défaillance", marque: false}
+      description: "Plan contrainte-résistance ; la droite C = R sépare la sécurité de la défaillance."
+fin: {graphique: {revele: 1}}          # P apparaît quand l'étape est réussie
+```
 
 ![Profil Delattre : données tirées, graphique en échelle logarithmique, choix du parcours](../../_static/captures/exoforge/exercice_profil_delattre.png)
 
