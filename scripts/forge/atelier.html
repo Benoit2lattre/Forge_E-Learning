@@ -7,7 +7,12 @@
 <link rel="icon" href="/static/identite/icones/exoforge_icone_jour_32.png">
 <style>
 :root{--navy:#14213D;--navy2:#28406B;--slate:#748CAB;--slate-l:#D3DDEC;--sand:#E0B989;--sand-l:#F4E6D2;--fond:#F7F6F4;--carte:#fff;--bord:#CDC9C0;
-  --texte:#1A1815;--texte2:#615C52;--ok:#5C8A66;--ok-l:#E4F0E6;--ko:#B85C50;--ko-l:#F6E3E0;--focus:#FFCD00}
+  --texte:#1A1815;--texte2:#615C52;--ok:#5C8A66;--ok-l:#E4F0E6;--ko:#B85C50;--ko-l:#F6E3E0;--focus:#FFCD00;
+  --filet:#ECE9E3;--entete-t:#F0EEEA;--fond-pre:#FBFAF8;--ok-t:#2E5A38;--ko-t:#7C2F25;--sable-t:#6B4A1E;--bouton:#14213D;--bouton2:#28406B;--bouton-t:#fff;color-scheme:light}
+:root[data-theme=nuit]{--navy:#0B1222;--navy2:#1F3354;--slate:#5E7799;--slate-l:#2A3A55;--sand:#E0B989;--sand-l:#4A3A24;--fond:#14171C;--carte:#1D2127;--bord:#3A3F47;
+  --texte:#E8E6E1;--texte2:#A7A39A;--ok:#7FB08A;--ok-l:#1F3526;--ko:#D98C80;--ko-l:#3D2320;--filet:#2A2E35;--entete-t:#252A31;--fond-pre:#171A1F;
+  --ok-t:#A9D4B2;--ko-t:#F0B3A9;--sable-t:#E8C99C;--bouton:#C9D6EA;--bouton2:#E0E8F4;--bouton-t:#0B1222;color-scheme:dark}
+.btn.second{background:var(--carte);color:var(--texte);border:1px solid var(--slate)}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{font-family:Inter,"Segoe UI",system-ui,sans-serif;color:var(--texte);background:var(--fond);font-size:15px;
@@ -17,11 +22,11 @@ button,select,input{font:inherit}
 main:focus,main:focus-visible{outline:none}
 header{grid-area:tete;background:var(--navy);color:#fff;display:flex;align-items:center;gap:14px;padding:0 18px}
 header h1{font-size:18px;margin:0;font-weight:600}
-header .version{color:var(--slate-l);font-size:13px}
+header .version{color:#B7C4DA;font-size:13px}
 header .espace{flex:1}
-header button{background:transparent;color:#fff;border:1px solid var(--slate);border-radius:6px;padding:6px 12px;cursor:pointer}
+header button{margin-left:8px;background:transparent;color:#fff;border:1px solid var(--slate);border-radius:6px;padding:6px 12px;cursor:pointer}
 header button:hover{background:var(--navy2)}
-nav{grid-area:nav;background:#fff;border-right:1px solid var(--bord);padding:14px 10px;display:flex;flex-direction:column;gap:4px}
+nav{grid-area:nav;background:var(--carte);border-right:1px solid var(--bord);padding:14px 10px;display:flex;flex-direction:column;gap:4px}
 nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:9px 10px;cursor:pointer;color:var(--texte)}
 nav button img{width:24px;height:24px}
 nav button .bientot{margin-left:auto;font-size:11px;color:var(--texte2);background:var(--fond);border-radius:10px;padding:1px 7px}
@@ -42,44 +47,44 @@ main .chapeau{color:var(--texte2);margin:0 0 18px;max-width:900px}
 .carte button{align-self:flex-start}
 h3{font-size:16px;margin:22px 0 8px}
 table{border-collapse:collapse;width:100%;background:var(--carte);border:1px solid var(--bord);border-radius:10px;overflow:hidden}
-th,td{text-align:left;padding:8px 12px;border-bottom:1px solid #ECE9E3;vertical-align:top;font-size:14px}
-th{background:#F0EEEA;font-weight:600;color:var(--texte2);font-size:13px}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--filet);vertical-align:top;font-size:14px}
+th{background:var(--entete-t);font-weight:600;color:var(--texte2);font-size:13px}
 tr:last-child td{border-bottom:0}
 td .sous{display:block;color:var(--texte2);font-size:12.5px;margin-top:2px}
 .pastille{display:inline-block;border-radius:10px;padding:1px 8px;font-size:12.5px;white-space:nowrap}
-.p-ok{background:var(--ok-l);color:#2E5A38}.p-ko{background:var(--ko-l);color:#7C2F25}.p-neutre{background:#ECE9E3;color:var(--texte2)}.p-sable{background:var(--sand-l);color:#6B4A1E}
-.btn{background:var(--navy);color:#fff;border:0;border-radius:7px;padding:7px 13px;cursor:pointer;white-space:nowrap}
-.btn:hover{background:var(--navy2)}
-.btn.second{background:#fff;color:var(--navy);border:1px solid var(--slate)}
+.p-ok{background:var(--ok-l);color:var(--ok-t)}.p-ko{background:var(--ko-l);color:var(--ko-t)}.p-neutre{background:var(--filet);color:var(--texte2)}.p-sable{background:var(--sand-l);color:var(--sable-t)}
+.btn{background:var(--bouton);color:var(--bouton-t);border:0;border-radius:7px;padding:7px 13px;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--bouton2)}
+
 .btn.second:hover{background:var(--fond)}
 .btn:disabled{opacity:.45;cursor:default}
 .actions{display:flex;flex-wrap:wrap;gap:6px}
 .barre{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:0 0 14px}
 .barre label{display:flex;align-items:center;gap:8px;color:var(--texte2)}
-.barre select,.barre input[type=search]{padding:6px 8px;border:1px solid var(--bord);border-radius:6px;background:#fff;min-width:200px}
+.barre select,.barre input[type=search]{padding:6px 8px;border:1px solid var(--bord);border-radius:6px;background:var(--carte);min-width:200px}
 .vide{color:var(--texte2);font-style:italic;padding:14px}
 .barre select.large{min-width:420px}
 .sous{color:var(--texte2);font-size:13px}
 .resume{margin:0 0 14px;color:var(--texte)}
-.remarques{display:inline-block;margin-left:6px}.remarques summary{cursor:pointer;color:#6B4A1E}.remarques ul{margin:6px 0 0;max-height:220px;overflow:auto;font-size:13px}.remarques li.erreur{color:#7C2F25}
+.remarques{display:inline-block;margin-left:6px}.remarques summary{cursor:pointer;color:var(--sable-t)}.remarques ul{margin:6px 0 0;max-height:220px;overflow:auto;font-size:13px}.remarques li.erreur{color:var(--ko-t)}
 .etapes{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:12px;margin-bottom:8px;align-items:start}
 .etapes .carte p{flex:none}
 .etapes .carte{gap:8px}.etapes .carte .nom{font-size:15px}
 .etapes label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--texte2)}
-.etapes label select{padding:5px 6px;border:1px solid var(--bord);border-radius:6px;background:#fff;color:var(--texte);font-size:14px}
+.etapes label select{padding:5px 6px;border:1px solid var(--bord);border-radius:6px;background:var(--carte);color:var(--texte);font-size:14px}
 label.case{flex-direction:row !important;align-items:center;gap:6px}
 .ligne{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .ligne b{display:block;font-size:13.5px;word-break:break-all}
-.diaporama{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding-bottom:8px;border-bottom:1px solid #ECE9E3}
+.diaporama{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding-bottom:8px;border-bottom:1px solid var(--filet)}
 .diaporama b{font-size:13.5px;word-break:break-all}
 .btn.petit{padding:3px 9px;font-size:13px}
-.paquets{display:flex;flex-direction:column;gap:6px;border-top:1px solid #ECE9E3;padding-top:8px}
+.paquets{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--filet);padding-top:8px}
 .paquet{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
 .paquet b{display:block;font-size:13px;font-weight:600}
 .paquet .sous{display:block;font-size:12px}
 .carte.etroite{max-width:640px}
 table.sections td,table.sections th{padding:6px 8px;font-size:13px}
-table.sections tr.partie td{background:#F0EEEA;font-weight:600}
+table.sections tr.partie td{background:var(--entete-t);font-weight:600}
 table.sections tr.partie .pastille{margin-left:8px;font-weight:400}
 table.sections tr.partie .sous{margin-left:10px;font-weight:400}
 dialog.formulaire{border:1px solid var(--bord);border-radius:10px;padding:18px 22px;min-width:460px;max-width:620px;display:flex;flex-direction:column;gap:10px}
@@ -87,14 +92,17 @@ dialog.formulaire[open]{display:flex}
 dialog.formulaire label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--texte2)}
 dialog.formulaire select,dialog.formulaire input[type=text]{padding:6px;border:1px solid var(--bord);border-radius:6px;font-size:14px}
 dialog.formulaire h3{margin:0 0 4px}
+dialog.formulaire input[type=number]{padding:6px;border:1px solid var(--bord);border-radius:6px;font-size:14px;width:140px}
+.ligne.gauche{justify-content:flex-start;gap:18px}
+main > .carte.etroite{margin-bottom:14px}
 dialog.formulaire .bloc{display:flex;flex-direction:column;gap:10px;border-left:3px solid var(--slate-l);padding-left:12px}
 dialog.formulaire .bloc[hidden]{display:none}
-#taches{grid-area:taches;overflow:hidden;border-top:2px solid var(--navy);background:#fff;display:grid;grid-template-columns:300px 1fr;height:260px;min-height:0}
+#taches{grid-area:taches;overflow:hidden;border-top:2px solid var(--navy);background:var(--carte);display:grid;grid-template-columns:300px 1fr;height:260px;min-height:0}
 #taches.replie{height:38px}
 #taches .liste{border-right:1px solid var(--bord);overflow:auto;min-height:0}
-#taches .titre-zone{display:flex;align-items:center;gap:10px;padding:8px 12px;font-weight:600;font-size:14px;background:#F0EEEA;position:sticky;top:0}
+#taches .titre-zone{display:flex;align-items:center;gap:10px;padding:8px 12px;font-weight:600;font-size:14px;background:var(--entete-t);position:sticky;top:0}
 #taches .titre-zone button{margin-left:auto;background:none;border:0;cursor:pointer;color:var(--texte2);font-size:13px}
-.tache{display:flex;gap:8px;align-items:flex-start;width:100%;text-align:left;border:0;background:none;padding:8px 12px;border-bottom:1px solid #F0EEEA;cursor:pointer;font-size:13.5px}
+.tache{display:flex;gap:8px;align-items:flex-start;width:100%;text-align:left;border:0;background:none;padding:8px 12px;border-bottom:1px solid var(--entete-t);cursor:pointer;font-size:13.5px}
 .tache:hover{background:var(--fond)}
 .tache[aria-selected="true"]{background:var(--slate-l)}
 .tache .icone{width:18px;flex:none;text-align:center}
@@ -102,11 +110,11 @@ dialog.formulaire .bloc[hidden]{display:none}
 .journal{display:flex;flex-direction:column;min-height:0}
 .journal .outils{display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid var(--bord);min-height:40px;flex-wrap:wrap}
 .journal .outils .etat{font-weight:600;font-size:14px;margin-right:6px}
-.journal pre{margin:0;padding:8px 12px;overflow:auto;flex:1;font:12.5px/1.45 Consolas,"Cascadia Mono",monospace;white-space:pre-wrap;background:#FBFAF8}
+.journal pre{margin:0;padding:8px 12px;overflow:auto;flex:1;font:12.5px/1.45 Consolas,"Cascadia Mono",monospace;white-space:pre-wrap;background:var(--fond-pre)}
 .tourne{display:inline-block;animation:tour 1s linear infinite}
 @keyframes tour{to{transform:rotate(360deg)}}
 .message{position:fixed;right:20px;top:68px;background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px;max-width:420px;box-shadow:0 4px 18px #0003;z-index:9}
-.message.erreur{background:#7C2F25}
+.message.erreur{background:var(--ko-t)}
 @media (max-width:900px){body{grid-template-columns:1fr;grid-template-areas:"tete" "nav" "main" "taches"}nav{flex-direction:row;overflow:auto}nav .bas{display:none}}
 </style>
 </head>
@@ -115,15 +123,16 @@ dialog.formulaire .bloc[hidden]{display:none}
   <img src="/static/identite/logos/forge_e-learning_logo_nuit.png" alt="" height="30" onerror="this.remove()">
   <h1>Atelier Forge</h1><span class="version" id="version"></span>
   <span class="espace"></span>
+  <button type="button" id="theme" title="Apparence : jour ou nuit">☾ Nuit</button>
   <button type="button" id="quitter" title="Arrêter l'atelier (la fenêtre de commande se ferme)">Quitter</button>
 </header>
 <nav aria-label="Écrans">
   <button type="button" data-ecran="accueil" aria-current="page"><img src="/static/identite/icones/exoforge_icone_jour_32.png" alt="" style="visibility:hidden">Accueil</button>
-  <button type="button" data-ecran="questions"><img src="/static/identite/icones/quizforge_icone_jour_32.png" alt="">Questions<span class="bientot">lot 3</span></button>
+  <button type="button" data-ecran="questions"><img src="/static/identite/icones/quizforge_icone_jour_32.png" alt="">Questions</button>
   <button type="button" data-ecran="exercices"><img src="/static/identite/icones/exoforge_icone_jour_32.png" alt="">Exercices</button>
   <button type="button" data-ecran="capsules"><img src="/static/identite/icones/capsuleforge_icone_jour_32.png" alt="">Capsules</button>
-  <button type="button" data-ecran="bilans"><img src="/static/identite/icones/diagforge_icone_jour_32.png" alt="">Bilans<span class="bientot">lot 3</span></button>
-  <button type="button" data-ecran="reglages"><img src="/static/identite/icones/exoforge_icone_jour_32.png" alt="" style="visibility:hidden">Réglages<span class="bientot">lot 3</span></button>
+  <button type="button" data-ecran="bilans"><img src="/static/identite/icones/diagforge_icone_jour_32.png" alt="">Bilans</button>
+  <button type="button" data-ecran="reglages"><img src="/static/identite/icones/exoforge_icone_jour_32.png" alt="" style="visibility:hidden">Réglages</button>
   <div class="bas" id="racine"></div>
 </nav>
 <main id="main" tabindex="-1"></main>
@@ -139,6 +148,22 @@ dialog.formulaire .bloc[hidden]{display:none}
 </section>
 <script>
 "use strict";
+/* ---------- apparence : jour, nuit ou celle du système ; logos et icônes « _jour » / « _nuit » suivent ---------- */
+const sombreSysteme = window.matchMedia("(prefers-color-scheme: dark)");
+function themeEffectif(choix) { return choix === "nuit" || (choix !== "jour" && sombreSysteme.matches) ? "nuit" : "jour"; }
+function appliquerTheme(choix) {
+  const th = themeEffectif(choix); document.documentElement.dataset.theme = th;
+  document.querySelectorAll("img[src*='_jour'], img[src*='_nuit']").forEach(majImage);
+  const b = document.getElementById("theme"); if (b) b.textContent = th === "nuit" ? "☀ Jour" : "☾ Nuit";
+}
+function majImage(img) { const th = document.documentElement.dataset.theme, s = img.getAttribute("src");
+  const n = th === "nuit" ? s.replace("_jour", "_nuit") : s.replace("_nuit", "_jour"); if (n !== s) img.setAttribute("src", n); }
+let THEME = (() => { try { return localStorage.getItem("forge-theme") || "auto"; } catch (e) { return "auto"; } })();
+appliquerTheme(THEME);
+new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType !== 1) return;
+  if (n.tagName === "IMG") majImage(n); n.querySelectorAll && n.querySelectorAll("img").forEach(majImage); }))).observe(document.documentElement, { childList: true, subtree: true });
+sombreSysteme.addEventListener("change", () => appliquerTheme(THEME));
+function choisirTheme(choix) { THEME = choix; try { localStorage.setItem("forge-theme", choix); } catch (e) {} appliquerTheme(choix); }
 /* ---------- jeton (dans l'adresse, gardé pour un rechargement) ---------- */
 const JETON = (() => { const m = location.search.match(/[?&]j=([\w-]+)/); if (m) { try { sessionStorage.setItem("forge-jeton", m[1]); } catch (e) {} history.replaceState(null, "", location.pathname); return m[1]; }
   try { return sessionStorage.getItem("forge-jeton") || ""; } catch (e) { return ""; } })();
@@ -164,8 +189,7 @@ const duree = s => s < 60 ? Math.round(s) + " s" : Math.floor(s / 60) + " min " 
 
 /* ---------- écrans ---------- */
 let ECRAN = "accueil", ETAT = null;
-const ecrans = { accueil, questions: () => bientot("quizforge", "Questions", 3), exercices, capsules,
-  bilans: () => bientot("diagforge", "Bilans", 3), reglages: () => bientot(null, "Réglages", 3) };
+const ecrans = { accueil, questions, exercices, capsules, bilans, reglages };
 function aller(nom) { ECRAN = nom; document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-current", b.dataset.ecran === nom ? "page" : "false"));
   try { sessionStorage.setItem("forge-ecran", nom); } catch (e) {} ecrans[nom](); $("main").focus({ preventScroll: true }); }
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => aller(b.dataset.ecran));
@@ -176,10 +200,10 @@ function bientot(outil, titre, lot) { vider(entete(outil, titre), el("p", { clas
 
 async function accueil() {
   vider(el("h2", {}, "Accueil"), el("p", { class: "chapeau" }, "Chaque bouton lance une commande Forge ; son journal s'affiche en bas de la page. Rien à taper : les fichiers se choisissent dans des listes ou par « Parcourir… »."));
-  const outils = [["questions", "quizforge", "Questions", "Valider un classeur de questions et le convertir pour Moodle.", false],
+  const outils = [["questions", "quizforge", "Questions", "Valider un classeur de questions et le convertir pour Moodle.", true],
     ["exercices", "exoforge", "Exercices", "Construire un exercice guidé, l'essayer, retrouver son paquet SCORM.", true],
     ["capsules", "capsuleforge", "Capsules", "À partir d'un diaporama narré ou d'une vidéo : transcrire, relire, traduire, faire parler, construire.", true],
-    ["bilans", "diagforge", "Bilans", "Analyser les résultats d'un test Moodle, des exercices et des capsules.", false]];
+    ["bilans", "diagforge", "Bilans", "Analyser les résultats d'un test Moodle : notes, questions à revoir, erreurs types.", true]];
   $("main").append(el("div", { class: "cartes" }, outils.map(([ecran, ic, nom, txt, pret]) => el("div", { class: "carte" },
     el("div", { class: "nom" }, el("img", { src: `/static/identite/icones/${ic}_icone_jour_64.png`, alt: "" }), nom),
     el("p", {}, txt), el("button", { class: pret ? "btn" : "btn second", type: "button", onclick: () => aller(ecran) }, pret ? "Ouvrir" : "Bientôt")))));
@@ -200,7 +224,8 @@ async function exercices() {
   vider(entete("exoforge", "Exercices"), el("p", { class: "chapeau" }, "Les fiches des exemples publiés et de data/exoforge. « Construire » produit l'exercice et son paquet SCORM 1.2 dans dist/exoforge ; « Essayer » l'ouvre dans un nouvel onglet."));
   if (!ETAT) ETAT = await api("/api/etat");
   const profil = el("select", { id: "profil", "aria-label": "Profil" }, el("option", { value: "" }, "profil de la fiche"), (ETAT.profils || []).map(p => el("option", { value: p }, p)));
-  profil.value = PROFIL; profil.onchange = () => PROFIL = profil.value;
+  const R = await reglagesAtelier(); PROFIL = opt("profil", R.profil || "");
+  profil.value = PROFIL; if (profil.selectedIndex < 0) profil.selectedIndex = 0; profil.onchange = () => { PROFIL = profil.value; garder("profil", PROFIL); };
   const filtre = el("input", { type: "search", placeholder: "Filtrer par titre ou fichier", "aria-label": "Filtrer les fiches", value: FILTRE });
   $("main").append(el("div", { class: "barre" }, el("label", {}, "Profil", profil), filtre,
     el("button", { class: "btn second", type: "button", onclick: autreFiche }, "Autre fiche…")));
@@ -448,6 +473,181 @@ async function formulaireVideo(nom, d) {
   document.body.append(dlg); dlg.showModal();
 }
 
+/* ---------- profil commun aux écrans (réglage de l'atelier, puis choix de la séance) ---------- */
+let REGLAGES = null;
+async function reglagesAtelier() { if (!REGLAGES) { const r = await api("/api/reglages"); REGLAGES = r.ok ? r.reglages : {}; } return REGLAGES; }
+async function choixProfil(defautLibelle) {
+  if (!ETAT) ETAT = await api("/api/etat");
+  const R = await reglagesAtelier();
+  const s = el("select", { "aria-label": "Profil" }, el("option", { value: "" }, defautLibelle), (ETAT.profils || []).map(p => el("option", { value: p }, p)));
+  s.value = opt("profil", R.profil || ""); if (s.selectedIndex < 0) s.selectedIndex = 0;
+  s.onchange = () => garder("profil", s.value); return s;
+}
+async function ouvrir(chemin, bouton) {
+  if (bouton) { bouton.disabled = true; setTimeout(() => bouton.disabled = false, 4000); }
+  const r = await api("/api/ouvrir", { chemin });
+  if (!r.ok) return message(r.message || "Ouverture impossible.", true);
+  message(r.deja ? "Le fichier est déjà en train de s'ouvrir." : "Ouverture du fichier… (la fenêtre peut s'ouvrir derrière le navigateur)");
+}
+const champ = (libelle, entree) => el("label", {}, libelle + " ", entree);
+function dialogue(titre, contenu, libelleOk, ok) {
+  const dlg = el("dialog", { class: "formulaire" });
+  dlg.append(el("h3", {}, titre), ...contenu, el("div", { class: "actions" }, el("button", { class: "btn second", type: "button", onclick: () => dlg.close() }, "Annuler"),
+    el("button", { class: "btn", type: "button", onclick: async () => { if (await ok() !== false) dlg.close(); } }, libelleOk)));
+  dlg.addEventListener("close", () => dlg.remove()); document.body.append(dlg); dlg.showModal(); return dlg;
+}
+async function parcourirFichier(titre, types, depart) {
+  message("Choisissez dans la fenêtre qui s'ouvre (elle peut être derrière le navigateur).");
+  const r = await api("/api/parcourir", { titre, types, depart });
+  if (!r.ok) { message(r.message || "Dialogue impossible.", true); return null; }
+  return r.chemin;
+}
+async function parcourirDossier(titre, depart) {
+  message("Choisissez le dossier dans la fenêtre qui s'ouvre (elle peut être derrière le navigateur).");
+  const r = await api("/api/parcourir", { titre, dossier: true, depart });
+  if (!r.ok) { message(r.message || "Dialogue impossible.", true); return null; }
+  return r.chemin;
+}
+
+/* ---------- Questions (QuizForge) ---------- */
+async function questions() {
+  vider(entete("quizforge", "Questions"), el("p", { class: "chapeau" }, "Les classeurs de questions de data/quizforge et le modèle. « Valider » relit les questions sans rien écrire (points d'écriture à vérifier, score au hasard) ; « Convertir » écrit le Moodle XML (et le GIFT) dans le dossier <classeur>_QuizForge, avec, si on le demande, le plan du quiz d'une séance."));
+  const profil = await choixProfil("profil par défaut");
+  $("main").append(el("div", { class: "barre" }, champ("Profil", profil),
+    el("button", { class: "btn", type: "button", onclick: nouveauClasseur }, "Nouveau classeur…"),
+    el("button", { class: "btn second", type: "button", onclick: autreClasseur }, "Autre classeur…"),
+    el("button", { class: "btn second", type: "button", onclick: () => fusion(null) }, "Réunir un classeur et sa traduction…")));
+  const zone = el("div", {}, el("div", { class: "vide" }, "Recherche des classeurs…")); $("main").append(zone);
+  const d = await api("/api/quizforge/classeurs");
+  if (!d.ok) return zone.replaceChildren(el("div", { class: "vide" }, d.message || "Lecture impossible."));
+  if (!d.classeurs.length) return zone.replaceChildren(el("div", { class: "vide" }, "Aucun classeur : « Nouveau classeur… » en crée un à partir du modèle."));
+  zone.replaceChildren(el("table", {}, el("thead", {}, el("tr", {}, el("th", {}, "Classeur"), el("th", {}, "Modifié"), el("th", {}, "Converti"), el("th", {}, "Actions"))),
+    el("tbody", {}, d.classeurs.map(x => el("tr", {},
+      el("td", {}, el("b", {}, x.nom), el("span", { class: "sous" }, x.dossier + ({ data: " (privé)", exemple: " (exemple)", ajoute: " (ajouté)" }[x.origine] || ""))),
+      el("td", {}, quand(x.modifie)),
+      el("td", {}, x.converti ? quand(x.converti) : "jamais", x.a_refaire ? el("span", { class: "sous" }, el("span", { class: "pastille p-sable" }, "classeur modifié depuis")) : null,
+        x.plans.length ? el("span", { class: "sous" }, `${x.plans.length} plan(s) de séance`) : null),
+      el("td", {}, el("div", { class: "actions" },
+        el("button", { class: "btn second", type: "button", onclick: e => ouvrir(x.classeur, e.currentTarget) }, "Ouvrir dans Excel"),
+        el("button", { class: "btn second", type: "button", onclick: () => lancerTache("quiz.valider", { classeur: x.classeur }) }, "Valider"),
+        el("button", { class: "btn", type: "button", onclick: () => convertir(x.classeur, x.nom) }, "Convertir…"),
+        el("button", { class: "btn second", type: "button", disabled: !x.sortie, onclick: e => montrer(x.sortie, e.currentTarget) }, "Sorties"),
+        x.origine === "ajoute" ? el("button", { class: "btn second", type: "button", title: "Retirer de la liste (le fichier n'est pas touché)", onclick: async () => { const r = await api("/api/reglages", { reglages: { retirer_classeur: x.classeur } }); if (r.ok) { REGLAGES = r.reglages; questions(); } } }, "Retirer") : null)))))));
+}
+function convertir(classeur, nom) {
+  const categorie = el("input", { type: "text", placeholder: "ex. MEF/TP3 (facultatif)", value: opt("q_categorie", "") });
+  const nomCat = el("input", { type: "text", placeholder: "nom du classeur par défaut", value: "" });
+  const tags = el("input", { type: "text", placeholder: "ex. MEF;S1 (facultatif)", value: "" });
+  const xml = el("input", { type: "checkbox" }); xml.checked = true; const gift = el("input", { type: "checkbox" }); gift.checked = opt("q_gift", false);
+  const reparer = el("input", { type: "checkbox" });
+  const seance = el("input", { type: "number", min: "1", max: "99", placeholder: "aucune" }), etudiants = el("input", { type: "number", min: "1", placeholder: "facultatif" });
+  dialogue(`Convertir « ${nom} » pour Moodle`, [
+    champ("Catégorie Moodle (racine)", categorie), champ("Nom de la catégorie", nomCat), champ("Tags ajoutés à toutes les questions", tags),
+    el("div", { class: "ligne gauche" }, el("label", { class: "case" }, xml, "Moodle XML"), el("label", { class: "case" }, gift, "GIFT")),
+    el("label", { class: "case" }, reparer, "réparer les textes abîmés (plusFin → plus fin)"),
+    champ("Plan du quiz de la séance n°", seance), champ("Effectif de la promotion", etudiants),
+    el("p", { class: "sous" }, "Le plan de séance (sections Moodle, nombre de questions à tirer, rappels) suit le bloc « quiz » du profil.")],
+    "Convertir", async () => {
+      garder("q_categorie", categorie.value); garder("q_gift", gift.checked);
+      const formats = [xml.checked ? "xml" : null, gift.checked ? "gift" : null].filter(Boolean);
+      if (!formats.length) { message("Choisissez au moins un format.", true); return false; }
+      await lancerTache("quiz.convertir", { classeur, profil: opt("profil", ""), categorie: categorie.value, nom: nomCat.value, tags: tags.value, formats,
+        reparer: reparer.checked, seance: seance.value || null, etudiants: etudiants.value || null });
+    });
+}
+function nouveauClasseur() {
+  const nom = el("input", { type: "text", placeholder: "ex. MEF_P2027" });
+  const vide = el("select", {}, el("option", { value: "" }, "avec les exemples de chaque type de question"), el("option", { value: "1" }, "vide (en-têtes seulement)"));
+  dialogue("Nouveau classeur de questions", [champ("Nom du classeur (dans data/quizforge)", nom), champ("Contenu", vide)], "Créer", async () => {
+    if (!nom.value.trim()) { message("Donnez un nom au classeur.", true); return false; }
+    const id = await lancerTache("quiz.modele", { nom: nom.value.trim(), vide: !!vide.value }); if (!id) return false;
+    SUITES[id] = () => { const t = TACHES.find(x => x.id === id); if (t && t.liens.classeur) ouvrir(t.liens.classeur); };
+  });
+}
+async function autreClasseur() {
+  const c = await parcourirFichier("Choisir un classeur de questions", [["Classeur Excel", "*.xlsx"]], "data");
+  if (!c) return;
+  const r = await api("/api/reglages", { reglages: { ajouter_classeur: c } });
+  if (!r.ok) return message(r.message || "Ajout impossible.", true);
+  REGLAGES = r.reglages; message("Classeur ajouté à la liste."); questions();
+}
+async function fusion() {
+  let fr = null, tr = null; const nf = el("span", { class: "sous" }, "aucun"), nt = el("span", { class: "sous" }, "aucun");
+  const langue = el("select", {}, [["en", "anglais"], ["es", "espagnol"], ["de", "allemand"], ["it", "italien"]].map(([v, l]) => el("option", { value: v }, l)));
+  dialogue("Réunir un classeur et sa traduction", [
+    el("div", { class: "ligne" }, el("button", { class: "btn second", type: "button", onclick: async () => { const c = await parcourirFichier("Classeur d'origine", [["Classeur Excel", "*.xlsx"]], "data/quizforge"); if (c) { fr = c; nf.textContent = c; } } }, "Classeur d'origine…"), nf),
+    el("div", { class: "ligne" }, el("button", { class: "btn second", type: "button", onclick: async () => { const c = await parcourirFichier("Classeur traduit", [["Classeur Excel", "*.xlsx"]], "data/quizforge"); if (c) { tr = c; nt.textContent = c; } } }, "Classeur traduit…"), nt),
+    champ("Langue de la traduction", langue), el("p", { class: "sous" }, "Écrit un classeur bilingue à côté du classeur d'origine.")],
+    "Réunir", async () => { if (!fr || !tr) { message("Choisissez les deux classeurs.", true); return false; } await lancerTache("quiz.fusionner", { classeur: fr, traduction: tr, langue: langue.value }); });
+}
+
+/* ---------- Bilans (DiagForge) ---------- */
+async function bilans() {
+  vider(entete("diagforge", "Bilans"), el("p", { class: "chapeau" }, "Les dossiers d'exports Moodle de data/diagforge et les exemples. Un dossier contient au moins l'export « Notes » et l'export « Réponses » d'un test, et si possible l'export XML des questions. Le bilan écrit, dans le même dossier, un classeur d'analyse, la fiche du professeur et des images pour les étudiants."));
+  const profil = await choixProfil("profil par défaut");
+  $("main").append(el("div", { class: "barre" }, champ("Profil", profil),
+    champ("Tentatives", choix("tentatives", [["toutes", "toutes (comme Moodle)"], ["premiere", "la première de chaque étudiant"], ["derniere", "la dernière"], ["meilleure", "la meilleure"]], "toutes")),
+    caseA("sans_images", "sans images"),
+    el("button", { class: "btn second", type: "button", onclick: autreDossier }, "Autre dossier…")));
+  const zone = el("div", {}, el("div", { class: "vide" }, "Recherche des exports…")); $("main").append(zone);
+  const d = await api("/api/diagforge/dossiers");
+  if (!d.ok) return zone.replaceChildren(el("div", { class: "vide" }, d.message || "Lecture impossible."));
+  if (!d.dossiers.length) return zone.replaceChildren(el("div", { class: "vide" }, "Aucun export : déposez les exports Moodle d'un test dans un dossier de data/diagforge."));
+  zone.replaceChildren(el("table", {}, el("thead", {}, el("tr", {}, el("th", {}, "Exports"), el("th", {}, "Fichiers"), el("th", {}, "Bilan"), el("th", {}, "Actions"))),
+    el("tbody", {}, d.dossiers.map(x => el("tr", {},
+      el("td", {}, el("b", {}, x.nom), el("span", { class: "sous" }, x.parent + (x.origine === "data" ? " (privé)" : " (exemple)"))),
+      el("td", {}, el("span", { class: "sous" }, x.fichiers.join(" · "))),
+      el("td", {}, x.bilan_date ? quand(x.bilan_date) : "pas encore", x.a_refaire ? el("span", { class: "sous" }, el("span", { class: "pastille p-sable" }, "exports plus récents")) : null),
+      el("td", {}, el("div", { class: "actions" },
+        el("button", { class: "btn", type: "button", onclick: () => faireBilan(x) }, "Faire le bilan…"),
+        el("button", { class: "btn second", type: "button", disabled: !x.fiche, onclick: e => ouvrir(x.fiche, e.currentTarget) }, "Fiche du professeur"),
+        el("button", { class: "btn second", type: "button", disabled: !x.bilan, onclick: e => ouvrir(x.bilan, e.currentTarget) }, "Classeur"),
+        el("button", { class: "btn second", type: "button", onclick: e => montrer(x.dossier, e.currentTarget) }, "Dossier"))))))));
+}
+function faireBilan(x) {
+  let questions = x.xml[0] || "", roster = x.roster[0] || "", autres = [];
+  const nq = el("span", { class: "sous" }, questions || "aucun (questions sans texte complet ni thème)"), nr = el("span", { class: "sous" }, roster || "aucune (groupes tirés du nom du test)");
+  const na = el("span", { class: "sous" }, "aucun");
+  dialogue(`Bilan de « ${x.nom} »`, [
+    el("div", { class: "ligne" }, el("span", {}, el("b", {}, "Questions (export XML) "), nq), el("button", { class: "btn second petit", type: "button", onclick: async () => { const c = await parcourirFichier("Export XML des questions", [["Moodle XML", "*.xml"]], x.parent); if (c) { questions = c; nq.textContent = c; } } }, "Choisir…")),
+    el("div", { class: "ligne" }, el("span", {}, el("b", {}, "Liste des étudiants "), nr), el("button", { class: "btn second petit", type: "button", onclick: async () => { const c = await parcourirFichier("Liste des étudiants (colonne Groupe)", [["CSV ou classeur", "*.csv *.xlsx"]], x.dossier); if (c) { roster = c; nr.textContent = c; } } }, "Choisir…")),
+    el("div", { class: "ligne" }, el("span", {}, el("b", {}, "Autres exports du même test "), na), el("button", { class: "btn second petit", type: "button", onclick: async () => { const c = await parcourirDossier("Dossier d'exports à ajouter", x.parent); if (c) { autres.push(c); na.textContent = autres.join(" · "); } } }, "Ajouter…")),
+    el("p", { class: "sous" }, `Tentatives : ${{ toutes: "toutes", premiere: "la première", derniere: "la dernière", meilleure: "la meilleure" }[opt("tentatives", "toutes")]} ; profil : ${opt("profil", "") || "par défaut"} (barre de l'écran).`)],
+    "Faire le bilan", async () => {
+      const id = await lancerTache("diag.bilan", { dossier: x.dossier, questions, roster, autres, profil: opt("profil", ""), tentatives: opt("tentatives", "toutes"), sans_images: opt("sans_images", false) });
+      if (id) SUITES[id] = () => { const t = TACHES.find(y => y.id === id); if (t && t.liens.fiche) ouvrir(t.liens.fiche); };
+    });
+}
+async function autreDossier() {
+  const c = await parcourirDossier("Dossier des exports Moodle d'un test", "data");
+  if (c) faireBilan({ nom: c.split(/[\\/]/).pop(), dossier: c, parent: c, xml: [], roster: [] });
+}
+
+/* ---------- Réglages ---------- */
+async function reglages() {
+  vider(el("div", { class: "entete" }, el("h2", {}, "Réglages")), el("p", { class: "chapeau" }, "Réglages de l'atelier, gardés dans data/_atelier/reglages.json. Chaque écran garde aussi les derniers choix de la séance."));
+  if (!ETAT) ETAT = await api("/api/etat");
+  REGLAGES = null; const R = await reglagesAtelier();
+  const profil = el("select", {}, el("option", { value: "" }, "celui que les outils prennent par défaut"), (ETAT.profils || []).map(p => el("option", { value: p }, p)));
+  profil.value = R.profil || "";
+  const dia = Object.entries(R.diaporamas || {}), cls = R.classeurs || [];
+  const app = el("select", {}, el("option", { value: "auto" }, "comme Windows"), el("option", { value: "jour" }, "jour (fond clair)"), el("option", { value: "nuit" }, "nuit (fond sombre)"));
+  app.value = R.apparence || THEME;
+  app.onchange = async () => { choisirTheme(app.value); const r = await api("/api/reglages", { reglages: { apparence: app.value } }); if (r.ok) REGLAGES = r.reglages; };
+  $("main").append(el("div", { class: "carte etroite" }, el("div", { class: "nom" }, "Apparence"), el("p", {}, "Aussi par le bouton ☾ / ☀ en haut de la page."), champ("Apparence", app)));
+  $("main").append(el("div", { class: "carte etroite" }, el("div", { class: "nom" }, "Classeurs ajoutés"),
+    cls.length ? el("ul", { class: "sous" }, cls.map(c => el("li", {}, c))) : el("p", {}, "Aucun : « Autre classeur… » (écran Questions) en ajoute un pris hors de data/quizforge."),
+    cls.length ? el("button", { class: "btn second", type: "button", onclick: async () => { await api("/api/reglages", { reglages: { classeurs: [] } }); reglages(); } }, "Retirer ces classeurs de la liste") : null));
+  $("main").append(el("div", { class: "carte etroite" },
+    el("div", { class: "nom" }, "Profil d'établissement"), el("p", {}, "Proposé d'office dans les écrans Exercices, Questions et Bilans (couleurs, barème, tirage des quiz)."),
+    champ("Profil", profil), el("button", { class: "btn", type: "button", onclick: async () => { const r = await api("/api/reglages", { reglages: { profil: profil.value } }); if (r.ok) { REGLAGES = r.reglages; garder("profil", profil.value); message("Profil enregistré."); } else message(r.message, true); } }, "Enregistrer")),
+    el("div", { class: "carte etroite" }, el("div", { class: "nom" }, "Diaporamas retrouvés"),
+      dia.length ? el("ul", { class: "sous" }, dia.map(([n, c]) => el("li", {}, `${n} → ${c}`))) : el("p", {}, "Aucun : l'atelier cherche les diaporamas dans data/capsuleforge et dans le dossier e_learning voisin du dépôt."),
+      dia.length ? el("button", { class: "btn second", type: "button", onclick: async () => { await api("/api/reglages", { reglages: { diaporamas: {} } }); reglages(); } }, "Oublier ces chemins") : null),
+    el("div", { class: "carte etroite" }, el("div", { class: "nom" }, "Journal des tâches"), el("p", {}, "Toutes les tâches lancées par l'atelier sont notées dans data/_atelier/journal.jsonl (date, commande, état, durée)."),
+      el("button", { class: "btn second", type: "button", onclick: e => montrer("data/_atelier", e.currentTarget) }, "Dossier de l'atelier")));
+}
+
 /* ---------- tâches ---------- */
 let TACHES = [], CHOISIE = null, LUES = {}, SUIVI = null;
 const ICONES = { en_cours: "⟳", reussie: "✓", echec: "✗", arretee: "■" };
@@ -461,6 +661,8 @@ async function rafraichir() {
     if (t.etat === "reussie" && t.liens && t.liens.capsule) garder("capsule", t.liens.capsule);
     if (t.etat === "reussie" && SUITES[t.id]) { const f = SUITES[t.id]; delete SUITES[t.id]; setTimeout(f, 300); }
     if (ECRAN === "capsules" && t.outil === "capsuleforge") capsules();
+    if (ECRAN === "questions" && t.outil === "quizforge") questions();
+    if (ECRAN === "bilans" && t.outil === "diagforge") bilans();
   }
   if (!CHOISIE && TACHES.length) CHOISIE = TACHES.at(-1).id;
   $("nb-taches").textContent = TACHES.filter(t => t.etat === "en_cours").length ? TACHES.filter(t => t.etat === "en_cours").length + " en cours" : String(TACHES.length);
@@ -482,12 +684,22 @@ async function journal() {
     t.etat === "en_cours" ? el("button", { class: "btn second", type: "button", onclick: async () => { await api("/api/arreter", { id: t.id }); rafraichir(); } }, "Arrêter") : null,
     t.liens && t.liens.essayer ? el("button", { class: "btn", type: "button", onclick: () => essayer(t.liens.essayer, true) }, "Essayer l'exercice") : null,
     t.liens && t.liens.paquet ? el("button", { class: "btn second", type: "button", onclick: e => montrer(t.liens.paquet, e.currentTarget) }, "Montrer le paquet SCORM") : null,
+    t.liens && t.liens.fiche ? el("button", { class: "btn", type: "button", onclick: e => ouvrir(t.liens.fiche, e.currentTarget) }, "Fiche du professeur") : null,
+    t.liens && t.liens.classeur && t.outil === "diagforge" ? el("button", { class: "btn second", type: "button", onclick: e => ouvrir(t.liens.classeur, e.currentTarget) }, "Classeur du bilan") : null,
+    t.liens && t.liens.classeur && t.outil === "quizforge" ? el("button", { class: "btn", type: "button", onclick: e => ouvrir(t.liens.classeur, e.currentTarget) }, "Ouvrir le classeur") : null,
+    t.liens && t.liens.plan ? el("button", { class: "btn second", type: "button", onclick: e => ouvrir(t.liens.plan, e.currentTarget) }, "Plan de séance") : null,
+    t.liens && t.liens.dossier ? el("button", { class: "btn second", type: "button", onclick: e => montrer(t.liens.dossier, e.currentTarget) }, "Dossier des sorties") : null,
     t.liens && t.liens.lecteur ? el("button", { class: "btn", type: "button", onclick: () => window.open(t.liens.lecteur, "_blank", "noopener") }, "Ouvrir le lecteur") : null,
     t.liens && t.liens.ouvrir && t.etat === "en_cours" ? el("button", { class: "btn", type: "button", onclick: () => window.open(t.liens.ouvrir, "_blank") }, "Revenir à l'écran") : null].filter(Boolean));
 }
 function deplier() { $("taches").classList.remove("replie"); $("replier").textContent = "Replier ▾"; $("replier").setAttribute("aria-expanded", "true"); }
 $("replier").onclick = () => { const r = $("taches").classList.toggle("replie"); $("replier").textContent = r ? "Déplier ▴" : "Replier ▾"; $("replier").setAttribute("aria-expanded", String(!r)); };
 SUIVI = setInterval(rafraichir, 1000);
+
+/* ---------- thème ---------- */
+$("theme").onclick = async () => { const nouveau = document.documentElement.dataset.theme === "nuit" ? "jour" : "nuit"; choisirTheme(nouveau);
+  const r = await api("/api/reglages", { reglages: { apparence: nouveau } }); if (r.ok) REGLAGES = r.reglages; };
+reglagesAtelier().then(R => { if (R.apparence && R.apparence !== THEME) choisirTheme(R.apparence); });
 
 /* ---------- quitter ---------- */
 let FINI = false;

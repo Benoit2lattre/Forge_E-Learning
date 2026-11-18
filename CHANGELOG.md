@@ -4,11 +4,14 @@ Chaque outil a son propre numéro de version (voir la page « État des outils �
 
 ## Forge E-Learning 0.3 — en préparation
 
-### Atelier Forge 0.2 (nouveau)
+### Atelier Forge 0.3 (nouveau)
 
-- Une page dans le navigateur qui lance les outils Forge sans ligne de commande : double-clic sur `Forge.bat` à la racine du dépôt. Premier lot : état de l'ordinateur (modules, PowerPoint, voix) et écran Exercices (ExoForge : construire, essayer avec des valeurs fixes ou tirées, montrer le paquet SCORM, choisir une autre fiche par le dialogue de fichiers de Windows) ; journal des tâches en direct, arrêt d'une tâche, fermeture avec l'onglet. Les écrans suivent l'ordre des outils, du plus simple au plus complet (Questions, Exercices, Capsules, Bilans) ; Questions, Bilans et Réglages arrivent ensuite.
+- Une page dans le navigateur qui lance les outils Forge sans ligne de commande : double-clic sur `Forge.bat` à la racine du dépôt. Premier lot : état de l'ordinateur (modules, PowerPoint, voix) et écran Exercices (ExoForge : construire, essayer avec des valeurs fixes ou tirées, montrer le paquet SCORM, choisir une autre fiche par le dialogue de fichiers de Windows) ; journal des tâches en direct, arrêt d'une tâche, fermeture avec l'onglet. Les écrans suivent l'ordre des outils, du plus simple au plus complet (Questions, Exercices, Capsules, Bilans) ; 
 - Écran Capsules (CapsuleForge) : état de chaque capsule section par section (diapositives reprises, images, texte dit, relu, traduction et voix par langue, questions, remarques de `verifier`) et toute la préparation par boutons : reprendre un diaporama (retrouvé seul dans e_learning ou par « Parcourir… »), importer une vidéo, transcrire, relire, traduire et relire la traduction, voix de synthèse, vérifier, construire avec paquets SCORM 1.2 ou 2004. Les écrans de relecture s'ouvrent dans un onglet. Une capsule écrite pour l'ancien lecteur se met à jour d'un bouton.
-- « Montrer » met l'explorateur au premier plan (il restait derrière le navigateur, l'icône clignotant dans la barre des tâches) ; un deuxième clic pendant l'ouverture n'en ouvre plus un autre. Paquets SCORM listés par contenu (capsule entière, partie B…) et format, au lieu du nom de fichier.
+- « Montrer » et « Ouvrir » mettent l'explorateur, le classeur ou la fiche au premier plan (Windows les laissait derrière le navigateur, l'icône clignotant dans la barre des tâches) ; un deuxième clic pendant l'ouverture n'en ouvre plus un autre.
+- Apparence jour ou nuit (bouton en haut de la page, ou comme Windows dans Réglages) ; logos et icônes suivent.
+- « Autre classeur… » ajoute à la liste un classeur pris hors de data/quizforge (gardé, à retirer d'un bouton). Paquets SCORM listés par contenu (capsule entière, partie B…) et format, au lieu du nom de fichier.
+- Écrans Questions (QuizForge : ouvrir dans Excel, valider, convertir pour Moodle avec plan de séance, nouveau classeur, réunir un classeur et sa traduction), Bilans (DiagForge : bilan d'un dossier d'exports Moodle, fiche du professeur ouverte à la fin) et Réglages (profil proposé d'office, chemins des diaporamas retrouvés) : toute la suite Forge se lance désormais depuis l'atelier.
 - « Nouvelle capsule… » : à partir d'un diaporama (plan proposé, reprise du diaporama enchaînée) ou vide (pour une vidéo).
 - Mode d'emploi de CapsuleForge et page du fichier `chapitre.yaml` sans « format 1 / format 2 » : on parle de capsules (cours ou didacticiels) et de l'ancien lecteur.
 

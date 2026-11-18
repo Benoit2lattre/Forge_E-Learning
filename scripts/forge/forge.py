@@ -13,6 +13,8 @@ Routes :
   GET  /api/exoforge/fiches   fiches ExoForge trouvées (exemples et data/exoforge)
   GET  /api/capsules          capsules de data/capsuleforge
   GET  /api/capsule/<nom>     état d'une capsule, section par section (``capsules.detail``)
+  GET  /api/quizforge/classeurs, /api/diagforge/dossiers   listes des écrans Questions et Bilans
+  GET  /api/reglages          réglages de l'atelier (data/_atelier/reglages.json)
   GET  /api/taches            résumé des tâches de la séance
   GET  /api/tache/<id>?depuis=n   lignes du journal d'une tâche à partir de la n-ième
   GET  /dist/<chemin>         fichiers construits (essayer un exercice, ouvrir un lecteur)
@@ -20,6 +22,8 @@ Routes :
   POST /api/arreter           {id} : arrête une tâche
   POST /api/parcourir         {dossier?, types?} : dialogue de fichiers de Windows, renvoie le chemin choisi
   POST /api/montrer           {chemin} : ouvre l'explorateur sur un fichier ou un dossier du dépôt
+  POST /api/ouvrir            {chemin} : ouvre un fichier du dépôt avec son programme (Excel, navigateur…)
+  POST /api/reglages          {reglages: {profil?, diaporamas?: {}}} : enregistre les réglages
   POST /api/quitter           arrête l'atelier (refusé si une tâche tourne, sauf {forcer: true})
   POST /api/depart            la page se ferme : arrêt dans 4 s si elle ne revient pas et qu'aucune tâche ne tourne
 
@@ -43,10 +47,11 @@ ICI = Path(__file__).resolve().parent
 sys.path.insert(0, str(ICI.parent / "commun"))
 sys.path.insert(0, str(ICI.parent / "capsuleforge"))
 import capsules as C              # noqa: E402
+import questions_bilans as QB      # noqa: E402
 import chemins                    # noqa: E402
 import serveur_local as S         # noqa: E402
 
-VERSION = "0.2.1"
+VERSION = "0.3"
 RACINE = chemins.RACINE
 PY = sys.executable
 PORT = 8770
@@ -67,11 +72,16 @@ def rel(p: Path) -> str:
 
 
 def dans_depot(chemin: str) -> Path:
-    """Chemin absolu d'un fichier du dépôt ; refuse ce qui sort du dépôt."""
+    """Chemin absolu d'un fichier du dépôt (ou d'un classeur ajouté, et de son dossier de sortie) ; refuse le reste."""
     p = (RACINE / chemin).resolve() if not Path(chemin).is_absolute() else Path(chemin).resolve()
-    if p != RACINE and RACINE not in p.parents:
-        raise ValueError("chemin hors du dépôt")
-    return p
+    if p == RACINE or RACINE in p.parents:
+        return p
+    for c in C.reglages().get("classeurs") or []:
+        c = Path(c).resolve()
+        sortie = c.parent / f"{c.stem}_QuizForge"
+        if p == c or p == sortie or sortie in p.parents:
+            return p
+    raise ValueError("chemin hors du dépôt")
 
 
 # --------------------------------------------------------------------------------------------- tâches
@@ -176,7 +186,10 @@ class Atelier:
                         "capsule.verifier": self.a_cap_simple("verifier", "Vérifier"),
                         "capsule.convertir": self.a_cap_simple("convertir", "Mettre à jour pour le lecteur actuel"),
                         "capsule.construire": self.a_cap_construire, "capsule.video": self.a_cap_video,
-                        "capsule.nouvelle": self.a_cap_nouvelle}
+                        "capsule.nouvelle": self.a_cap_nouvelle,
+                        "quiz.valider": self.a_quiz_valider, "quiz.convertir": self.a_quiz_convertir,
+                        "quiz.modele": self.a_quiz_modele, "quiz.fusionner": self.a_quiz_fusionner,
+                        "diag.bilan": self.a_diag_bilan}
 
     # ------------------------------------------------------------------ tâches
     def lancer(self, action: str, params: dict) -> dict:
@@ -422,6 +435,102 @@ class Atelier:
             argv.append("--remplacer")
         return self._tache_cap(d, f"Importer « {f.name} » dans « {t} »", argv)
 
+    # ------------------------------------------------------------------ QuizForge
+    def _profil(self, p: dict) -> list[str]:
+        profil = p.get("profil") or ""
+        if not profil:
+            return []
+        if profil not in noms_profils():
+            raise ValueError(f"profil inconnu : {profil}")
+        return ["--profil", profil]
+
+    def a_quiz_valider(self, p: dict) -> Tache:
+        f = QB.classeur_valide(p.get("classeur") or "")
+        return Tache(self.nouvel_id(), f"Valider « {f.name} »", "quizforge", [PY, str(QB.QUIZFORGE), "valider", str(f)])
+
+    def a_quiz_convertir(self, p: dict) -> Tache:
+        f = QB.classeur_valide(p.get("classeur") or "")
+        argv = [PY, str(QB.QUIZFORGE), "convertir", str(f)] + self._profil(p)
+        for cle, option in (("categorie", "--categorie"), ("nom", "--nom"), ("tags", "--tags")):
+            v = QB.texte_court(p.get(cle) or "")
+            if v:
+                argv += [option, v]
+        formats = [x for x in (p.get("formats") or []) if x in ("xml", "gift")]
+        if formats:
+            argv += ["--formats", ";".join(formats)]
+        if p.get("reparer"):
+            argv.append("--reparer")
+        if p.get("seance"):
+            seance = int(p["seance"])
+            if not 1 <= seance <= 99:
+                raise ValueError("séance entre 1 et 99")
+            argv += ["--seance", str(seance)]
+            if p.get("etudiants"):
+                argv += ["--etudiants", str(max(1, int(p["etudiants"])))]
+        sortie = f.parent / f"{f.stem}_QuizForge"
+
+        def liens(t):
+            out = {"dossier": rel(sortie)} if sortie.is_dir() else {}
+            plans = sorted(f.parent.glob(f"{f.stem}_plan_S*.md"), key=lambda x: x.stat().st_mtime)
+            if plans and plans[-1].stat().st_mtime >= t.debut - 1:
+                out["plan"] = rel(plans[-1])
+            return out
+        return Tache(self.nouvel_id(), f"Convertir « {f.name} » pour Moodle", "quizforge", argv, verrou=str(f.resolve()), apres=liens)
+
+    def a_quiz_modele(self, p: dict) -> Tache:
+        nom = (p.get("nom") or "").strip()
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 _-]{0,60}", nom):
+            raise ValueError("nom du classeur : lettres sans accent, chiffres, espaces, - et _")
+        dossier = chemins.DATA / "quizforge"
+        f = dossier / f"{nom}.xlsx"
+        if f.exists():
+            raise ValueError(f"{rel(f)} existe déjà : choisissez un autre nom")
+        dossier.mkdir(parents=True, exist_ok=True)
+        argv = [PY, str(QB.QUIZFORGE), "modele", "--sortie", str(f)] + (["--vide"] if p.get("vide") else [])
+        return Tache(self.nouvel_id(), f"Créer le classeur « {f.name} »", "quizforge", argv,
+                     apres=lambda t: {"classeur": rel(f)} if f.is_file() else {})
+
+    def a_quiz_fusionner(self, p: dict) -> Tache:
+        f = QB.classeur_valide(p.get("classeur") or "")
+        tr = QB.classeur_valide(p.get("traduction") or "")
+        langue = C.langue_valide(p.get("langue") or "en")
+        return Tache(self.nouvel_id(), f"Réunir « {f.name} » et « {tr.name} »", "quizforge",
+                     [PY, str(QB.QUIZFORGE), "fusionner", str(f), str(tr), "--langue", langue], verrou=str(f.resolve()))
+
+    # ------------------------------------------------------------------ DiagForge
+    def a_diag_bilan(self, p: dict) -> Tache:
+        d = QB.dossier_valide(p.get("dossier") or "")
+        argv = [PY, str(QB.DIAGFORGE), str(d)] + [str(QB.dossier_valide(x)) for x in (p.get("autres") or [])][:4] + self._profil(p)
+        if p.get("questions"):
+            argv += ["--questions", str(QB.fichier_dans(d, p["questions"], (".xml",)))]
+        if p.get("roster"):
+            argv += ["--roster", str(QB.fichier_dans(d, p["roster"], (".csv", ".xlsx")))]
+        tent = p.get("tentatives") or "toutes"
+        if tent not in ("toutes", "premiere", "derniere", "meilleure"):
+            raise ValueError("tentatives : toutes, premiere, derniere ou meilleure")
+        argv += ["--tentatives", tent]
+        if p.get("sans_images"):
+            argv.append("--sans-images")
+        return Tache(self.nouvel_id(), f"Bilan de « {d.name} »", "diagforge", argv, verrou=str(d.resolve()),
+                     apres=lambda t: QB.liens_bilan(d, t.debut))
+
+    def ouvrir(self, p: dict) -> dict:
+        """Ouvre un fichier du dépôt avec son programme habituel (Excel, navigateur…)."""
+        f = dans_depot(p.get("chemin") or "")
+        if not f.is_file() or f.suffix.lower() not in (".xlsx", ".html", ".md", ".txt", ".xml", ".csv", ".pdf", ".yaml"):
+            return {"ok": False, "message": "fichier introuvable ou d'un type que l'atelier n'ouvre pas"}
+        cle, maintenant = "ouvrir:" + str(f), time.time()
+        if maintenant - self.montres.get(cle, 0) < 8:
+            return {"ok": True, "deja": True}
+        self.montres[cle] = maintenant
+        if WINDOWS:
+            avant = set(fenetres())
+            os.startfile(str(f))                         # noqa: S606 (fichier du dépôt)
+            threading.Thread(target=premier_plan, args=(avant, f.stem, 20.0, False), daemon=True).start()
+        else:
+            subprocess.Popen(["xdg-open", str(f)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return {"ok": True}
+
     # ------------------------------------------------------------------ poste
     def etat_poste(self) -> list[dict]:
         def module(nom):
@@ -530,48 +639,56 @@ class Atelier:
 
 
 # --------------------------------------------------------------------------------------------- Windows : explorateur
-def fenetres_explorateur() -> set:
-    """Fenêtres de l'explorateur Windows ouvertes (classe CabinetWClass)."""
+def fenetres() -> dict:
+    """Fenêtres visibles de premier niveau : {hwnd: (classe, titre)}."""
     import ctypes
     from ctypes import wintypes
     u = ctypes.windll.user32
-    trouvees = set()
-    classe = ctypes.create_unicode_buffer(64)
+    trouvees = {}
+    classe, titre = ctypes.create_unicode_buffer(64), ctypes.create_unicode_buffer(300)
 
     @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
     def chaque(hwnd, _):
-        u.GetClassNameW(hwnd, classe, 64)
-        if classe.value == "CabinetWClass" and u.IsWindowVisible(hwnd):
-            trouvees.add(hwnd)
+        if u.IsWindowVisible(hwnd):
+            u.GetClassNameW(hwnd, classe, 64)
+            u.GetWindowTextW(hwnd, titre, 300)
+            trouvees[hwnd] = (classe.value, titre.value)
         return True
     u.EnumWindows(chaque, 0)
     return trouvees
 
 
-def premier_plan(avant: set, titre: str, delai: float = 6.0):
-    """Met au premier plan la fenêtre d'explorateur qui vient de s'ouvrir (ou celle qui porte ``titre``).
+def fenetres_explorateur() -> set:
+    """Fenêtres de l'explorateur Windows ouvertes (classe CabinetWClass)."""
+    return {h for h, (c, _) in fenetres().items() if c == "CabinetWClass"}
 
-    Windows refuse le premier plan à un programme qui n'a pas la main (l'icône clignote dans la barre des tâches) ;
-    l'appui simulé sur Alt, d'usage courant, lève ce refus.
+
+def premier_plan(avant, titre: str, delai: float = 6.0, explorateur: bool = True):
+    """Met au premier plan la fenêtre qui vient de s'ouvrir.
+
+    ``explorateur`` : une fenêtre d'explorateur nouvelle, ou déjà ouverte sur le dossier ``titre`` ; sinon : une fenêtre
+    dont le titre contient ``titre`` (nom du fichier ouvert dans Excel, le navigateur…), nouvelle de préférence.
+    Windows refuse le premier plan à un programme qui n'a pas la main (l'icône clignote dans la barre des tâches) :
+    l'atelier emprunte la file d'entrée de la fenêtre active et simule un appui sur Alt, ce qui lève ce refus.
     """
     try:
         import ctypes
         from ctypes import wintypes
         u = ctypes.windll.user32
-        fin = time.time() + delai
-        cible = None
-        while time.time() < fin and not cible:
-            time.sleep(0.15)
-            nouvelles = fenetres_explorateur() - avant
+        debut, cible, cle = time.time(), None, titre.lower()
+        while time.time() < debut + delai and not cible:
+            time.sleep(0.2)
+            f = fenetres()
+            if explorateur:
+                nouvelles = [h for h, (c, _) in f.items() if c == "CabinetWClass" and h not in avant]
+                anciennes = [h for h, (c, x) in f.items() if c == "CabinetWClass" and x == titre]
+            else:
+                nouvelles = [h for h, (c, x) in f.items() if h not in avant and cle in x.lower()]
+                anciennes = [h for h, (c, x) in f.items() if cle in x.lower()]
             if nouvelles:
-                cible = next(iter(nouvelles))
-            else:                                        # explorateur déjà ouvert sur ce dossier : il est réutilisé
-                tampon = ctypes.create_unicode_buffer(260)
-                for h in fenetres_explorateur():
-                    u.GetWindowTextW(h, tampon, 260)
-                    if tampon.value == titre and time.time() > fin - delai + 1.5:
-                        cible = h
-                        break
+                cible = nouvelles[0]
+            elif anciennes and time.time() > debut + 1.5:      # fenêtre réutilisée (dossier ou fichier déjà ouvert)
+                cible = anciennes[0]
         if not cible:
             return
         if u.IsIconic(cible):
@@ -660,6 +777,12 @@ def gestionnaire(at: Atelier):
                                    "profils": noms_profils(), "windows": WINDOWS})
             if chemin == "/api/exoforge/fiches":
                 return self._json({"ok": True, "fiches": at.fiches_exoforge()})
+            if chemin == "/api/quizforge/classeurs":
+                return self._json({"ok": True, "classeurs": QB.classeurs(C.reglages().get("classeurs"))})
+            if chemin == "/api/diagforge/dossiers":
+                return self._json({"ok": True, "dossiers": QB.dossiers_exports()})
+            if chemin == "/api/reglages":
+                return self._json({"ok": True, "reglages": C.reglages()})
             if chemin == "/api/capsules":
                 return self._json({"ok": True, "capsules": C.liste()})
             if chemin.startswith("/api/capsule/"):
@@ -697,6 +820,29 @@ def gestionnaire(at: Atelier):
                     return self._json(at.parcourir(p))
                 if chemin == "/api/montrer":
                     return self._json(at.montrer(p))
+                if chemin == "/api/ouvrir":
+                    return self._json(at.ouvrir(p))
+                if chemin == "/api/reglages":
+                    r = p.get("reglages") or {}
+                    if "profil" in r:
+                        if r["profil"] and r["profil"] not in noms_profils():
+                            raise ValueError("profil inconnu")
+                        C.garder_reglage("profil", r["profil"])
+                    if "diaporamas" in r and r["diaporamas"] == {}:
+                        C.garder_reglage("diaporamas", {})
+                    if r.get("apparence") in ("auto", "jour", "nuit"):
+                        C.garder_reglage("apparence", r["apparence"])
+                    liste = C.reglages().get("classeurs") or []
+                    if r.get("ajouter_classeur"):
+                        f = QB.classeur_valide(r["ajouter_classeur"])
+                        if str(f) not in liste:
+                            C.garder_reglage("classeurs", liste + [str(f)])
+                    if r.get("retirer_classeur"):
+                        cible = str(QB.classeur_valide(r["retirer_classeur"]))
+                        C.garder_reglage("classeurs", [x for x in liste if x != cible])
+                    if r.get("classeurs") == []:
+                        C.garder_reglage("classeurs", [])
+                    return self._json({"ok": True, "reglages": C.reglages()})
                 if chemin == "/api/quitter":
                     if at.en_cours() and not p.get("forcer"):
                         return self._json({"ok": False, "en_cours": at.en_cours(),
