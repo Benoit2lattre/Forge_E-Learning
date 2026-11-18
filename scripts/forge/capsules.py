@@ -171,7 +171,10 @@ def detail(nom: str) -> dict:
             "diaporamas": [{"fichier": f, "sections": secs, "chemin": _diaporama(f, connus)} for f, secs in diaporamas.items()],
             "construit": _date(SORTIES / nom / "index.html"),
             "lecteur": f"/dist/capsuleforge/{nom}/index.html" if (SORTIES / nom / "index.html").is_file() else None,
-            "paquets": paquets(nom), "voix": voix_disponibles()}
+            "paquets": paquets(nom), "voix": voix_disponibles(),
+            "cameo": dict({"position": "bas-droite", "taille": 0.22, "forme": "rond"}, **(chap.get("cameo") or {}),
+                          pas=sum(1 for p in chap.get("parties") or [] for s in p.get("sections") or []
+                                  for q in s.get("pas") or [] if q.get("camera") and not q.get("ecarte")))}
 
 
 def _plage(diapos) -> str:

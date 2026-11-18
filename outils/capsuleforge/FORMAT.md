@@ -104,7 +104,7 @@ Un pas de didacticiel porte en plus les gestes attendus et les retours :
 
 ## Référence des champs
 
-**Chapitre** : `format`, `titre`, `langues` (`source`, `autres`), `ecran` (`largeur`, `hauteur`, `echelle`), `vue`, `source`, `reglages` (`modes`, `essais`, `trajectoire`, `retours`), `masques`, `parcours`, `variantes`, `parties`, `image_finale`.
+**Chapitre** : `format`, `titre`, `langues` (`source`, `autres`), `ecran` (`largeur`, `hauteur`, `echelle`), `vue`, `source`, `reglages` (`modes`, `essais`, `trajectoire`, `retours`), `masques`, `parcours`, `variantes`, `parties`, `image_finale`, `cameo` (`position` : `bas-droite` par défaut, `bas-gauche`, `haut-droite`, `haut-gauche` ; `taille` : part de la largeur de l'image, 0,22 par défaut ; `forme` : `rond` ou `rectangle` ; écrit par `capsuleforge cameo`).
 
 **Parcours** : `id`, `titre`, `annexes` (`aucune`, `a_la_demande`, `integrees`), `questions` (`aucune`, `proposees`, `obligatoires`), `exercices`.
 
@@ -116,7 +116,7 @@ Un pas de didacticiel porte en plus les gestes attendus et les retours :
 
 **Pas** : `id`, `fond`, `vue`, `source`, `narration`, `phrases` (`debut_s`, `fin_s`, `texte`), `audio`, `duree_s`, `voix`, `objets`, `gestes`, `a_vous` (`observer`, `indice`), `retours` (`juste`, `faux`), `ecarte`, `raison`.
 
-**Pas vidéo** : `video` = `{fichier: videos/<nom>.mp4, debut_s, fin_s}` (extrait de la vidéo joué pendant le pas) ; le pas garde `fond` (image d'affiche), `audio` (son de l'extrait, horloge du pas), `duree_s`, `phrases` et `objets` comme une diapositive ; `source: {type: video, fichier, debut_s, fin_s}` (instants dans le fichier d'origine). Écrit par `capsuleforge video`. `camera` = `{fichier: videos/<nom>_camera.mp4, debut_s, fin_s}` : webcam filmée en même temps (caméo), même découpage que `video` (écrit par `capsuleforge filmer --webcam`).
+**Pas vidéo** : `video` = `{fichier: videos/<nom>.mp4, debut_s, fin_s}` (extrait de la vidéo joué pendant le pas) ; le pas garde `fond` (image d'affiche), `audio` (son de l'extrait, horloge du pas), `duree_s`, `phrases` et `objets` comme une diapositive ; `source: {type: video, fichier, debut_s, fin_s}` (instants dans le fichier d'origine). Écrit par `capsuleforge video`. `camera` = `{fichier: videos/<nom>_camera.mp4, debut_s, fin_s}` : webcam filmée en même temps (caméo), même découpage que `video` (écrit par `capsuleforge filmer --webcam`) ; le lecteur la montre en médaillon, calée sur la vidéo (bouton « Caméo », touche V) ; `position`, `taille` et `forme` sur un pas remplacent ceux du chapitre.
 
 **Langues** : tout texte (titre, objectif, ouverture, texte d'une phrase, narration, texte d'un objet) peut être une chaîne (langue source) ou `{fr: …, en: …}` ; `langues.autres` liste les langues traduites (écrit par `traduire --importer`). `voix.<langue>` d'un pas (écrit par `capsuleforge voix`) : `audio`, `duree_s`, `phrases` (une paire [début, fin] par phrase du pas, dans le son synthétisé), `moteur`, `nom`, `empreinte` (texte + voix : refait si elle change), `date`. Un pas dont le son source est synthétisé porte `source.voix: synthese` (et `voix_moteur`, `voix_nom`, `voix_empreinte`).
 

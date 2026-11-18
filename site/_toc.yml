@@ -9,6 +9,7 @@ parts:
       - file: CHANGELOG
   - caption: Les outils
     chapters:
+      - file: outils/atelier/README
       - file: outils/quizforge/README
       - file: outils/exoforge/README
       - file: outils/capsuleforge/README

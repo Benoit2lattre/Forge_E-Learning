@@ -85,6 +85,10 @@ nav .renvoi button{background:none;border:0;color:var(--navy2);text-decoration:u
 #b-mode[hidden]{display:none}
 #film{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
 #film[hidden]{display:none}
+#cameo{position:absolute;z-index:4;object-fit:cover;background:#000;box-shadow:0 2px 12px #0008;border:3px solid #fff;pointer-events:none}
+#cameo.rond{border-radius:50%;aspect-ratio:1/1}#cameo.rectangle{border-radius:10px;aspect-ratio:16/9}
+#cameo.bas-droite{right:2.5%;bottom:4%}#cameo.bas-gauche{left:2.5%;bottom:4%}#cameo.haut-droite{right:2.5%;top:4%}#cameo.haut-gauche{left:2.5%;top:4%}
+#cameo[hidden]{display:none}
 #calque{position:absolute;inset:0;pointer-events:none}
 #calque svg{position:absolute;inset:0;width:100%;height:100%}
 #calque .o{position:absolute}
@@ -174,6 +178,7 @@ nav .exo-score{color:var(--navy2);white-space:nowrap}
         <img id="image" alt="">
         <video id="film" muted playsinline preload="auto" hidden></video>
         <div id="calque"></div>
+        <video id="cameo" muted playsinline preload="auto" hidden aria-hidden="true"></video>
         <div id="didac"><div id="d-cadre" class="d-cadre"></div><div id="d-bulle" class="d-bulle" role="status"></div>
           <svg id="souris" viewBox="0 0 24 36" aria-hidden="true" style="display:none"><path d="M1 1 L1 29 L8 22 L13 34 L18 32 L13 20 L23 20 Z" fill="#fff" stroke="#000" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
         <div id="st" aria-hidden="true"></div>
@@ -188,6 +193,7 @@ nav .exo-score{color:var(--navy2);white-space:nowrap}
       <span id="synth" hidden title="Ce passage est lu par une voix de synthèse">🗣 voix de synthèse</span>
       <select id="vitesse" aria-label="Vitesse de lecture" title="Vitesse"><option value="0.75">× 0,75</option><option value="1" selected>× 1</option><option value="1.25">× 1,25</option><option value="1.5">× 1,5</option><option value="2">× 2</option></select>
       <button id="b-mode" hidden aria-pressed="false" title="Faire vous-même les gestes de cette section">✋ À vous</button>
+      <button id="b-cameo" hidden aria-pressed="true" title="Médaillon vidéo de l'enseignant (V)">👤 Caméo</button>
       <button id="b-son" aria-pressed="true" title="Son : lire avec ou sans la voix (M)">🔊 Son</button>
       <button id="b-st" aria-pressed="true" title="Sous-titres (C)">Sous-titres</button>
       <button id="b-texte" aria-pressed="false" title="Texte de la section (T)">Texte</button>
@@ -374,7 +380,7 @@ const UI = { en: {
   "Déjà fait : meilleur score {0}/100.": "Already done: best score {0}/100.", "Faites l'exercice jusqu'au bout pour l'enregistrer.": "Complete the exercise to record it.",
   "Recommencer l'exercice": "Restart the exercise", "Section déjà vue": "Section already viewed", ", questions faites.": ", questions done.", ", questions à faire.": ", questions to do.",
   "▶ Revoir la section": "▶ Watch again", "▶ Reprendre": "▶ Resume", "▶ Commencer": "▶ Start", "{0} sur {1}": "{0} of {1}", "Texte de la section": "Section text",
-  "Le son de ce passage est introuvable ou illisible ({0}).": "The audio for this passage is missing or unreadable ({0}).", "🔊 Son": "🔊 Sound", "🔇 Muet": "🔇 Muted",
+  "Le son de ce passage est introuvable ou illisible ({0}).": "The audio for this passage is missing or unreadable ({0}).", "🔊 Son": "🔊 Sound", "🔇 Muet": "🔇 Muted", "👤 Caméo": "👤 Cameo", "👤 Sans caméo": "👤 No cameo", "Médaillon vidéo de l'enseignant (V)": "Teacher video inset (V)",
   "Ce chapitre n'a pas encore de section à lire.": "This chapter has no section to play yet.", " (synthèse)": " (synthetic)",
   "☰ Plan": "☰ Outline", "Afficher ou masquer le plan": "Show or hide the outline", "Plan du chapitre": "Chapter outline", "Parcours": "Path", "Voix": "Voice", "Sous-titres": "Subtitles",
   "Langue de la voix": "Voice language", "Langue des sous-titres et des titres": "Language of subtitles and titles", "Lecture": "Playback",
@@ -564,7 +570,31 @@ function ouvrir(p, s, t, lancer, direct) {
    pour qu'elle couvre exactement la durée du pas (une voix traduite plus longue ralentit un peu l'image) */
 const film = $("film");
 const rapport = q => q.video ? (q.video.fin - q.video.debut) / Math.max(0.1, q.duree_s) : 1;
+/* caméo : vidéo de l'enseignant en médaillon, calée comme le film sur l'horloge du pas */
+const cameo = $("cameo");
+let cameoActif = memo.lire("cameo", true) !== false;
+const rapportC = q => q.camera ? (q.camera.fin - q.camera.debut) / Math.max(0.1, q.duree_s) : 1;
+function placerCameo(q) {
+  const c = q && q.camera, voir = !!(c && cameoActif);
+  if (!voir) { cameo.hidden = true; cameo.pause(); return; }
+  const d = C.cameo || {}, pos = c.position || d.position || "bas-droite", forme = c.forme || d.forme || "rond";
+  cameo.className = pos + " " + forme; cameo.style.width = (100 * (c.taille || d.taille || 0.22)) + "%";
+  const u = new URL(c.src, location.href).href; cameo.hidden = false;
+  if (cameo.src !== u) { cameo.src = u; cameo.addEventListener("loadedmetadata", () => calerCameo(true), { once: true }); } else calerCameo(true);
+}
+function calerCameo(force) {
+  const q = S && S.s.pas[iPas]; if (!q || !q.camera || cameo.hidden) return;
+  const cible = q.camera.debut + tPas * rapportC(q), ecart = Math.abs((cameo.currentTime || 0) - cible);
+  cameo.playbackRate = Math.max(0.25, Math.min(4, rapportC(q) * +$("vitesse").value));
+  if (cameo.readyState >= 1 && (force || ecart > (enLecture ? 0.3 : 0.04))) { try { cameo.currentTime = cible; } catch (e) {} }
+  if (enLecture && cameo.paused) cameo.play().catch(() => {}); else if (!enLecture && !cameo.paused) cameo.pause();
+}
+function reglerCameo(actif) { cameoActif = actif; memo.ecrire("cameo", actif); const b = $("b-cameo"); b.setAttribute("aria-pressed", actif);
+  b.textContent = actif ? T("👤 Caméo") : T("👤 Sans caméo"); placerCameo(S && S.s.pas[iPas]); }
+$("b-cameo").onclick = () => reglerCameo(!cameoActif);
+reglerCameo(cameoActif);
 function caler(force) {
+  calerCameo(force);
   const q = S && S.s.pas[iPas]; if (!q || !q.video) return;
   const cible = q.video.debut + tPas * rapport(q), ecart = Math.abs((film.currentTime || 0) - cible);
   film.playbackRate = Math.max(0.25, Math.min(4, rapport(q) * +$("vitesse").value));
@@ -576,6 +606,7 @@ function chargerPas(i, t, lancer) {
   if (q.video) { const u = new URL(q.video.src, location.href).href; film.hidden = false;
     if (film.src !== u) { film.src = u; film.addEventListener("loadedmetadata", () => caler(true), { once: true }); } else caler(true); }
   else { film.hidden = true; film.pause(); }
+  placerCameo(q); $("b-cameo").hidden = !S.s.pas.some(x => x.camera);
   if (modeAV && q.didac && avecDidac(S.s)) { dessiner(true); return avConsigne(q); }
   if (AV) avEffacer();
   for (const a of q.apparitions) { const im = new Image(); im.src = a[1]; }
@@ -592,7 +623,7 @@ function aller(t, lancer) {
   $("voile").hidden = true; $("voile").classList.remove("quiz"); enQuiz = false; chargerPas(i, t - debutPas(i), lancer === undefined ? enLecture : lancer);
 }
 function lecture() { if (modeAV && S && S.s.pas[iPas] && S.s.pas[iPas].didac) return; enLecture = true; tHorloge = performance.now(); const q = S.s.pas[iPas]; if (q.audio) son.play().catch(() => { enLecture = false; bouton(); voileDepart(); }); bouton(); }
-function pause() { enLecture = false; son.pause(); film.pause(); bouton(); }
+function pause() { enLecture = false; son.pause(); film.pause(); cameo.pause(); bouton(); }
 function bouton() { $("jouer").textContent = enLecture ? T("⏸ Pause") : T("▶ Lire"); }
 function finPas() {
   if (iPas < S.s.pas.length - 1) return chargerPas(iPas + 1, 0, true);
@@ -994,6 +1025,7 @@ document.addEventListener("keydown", e => {
   else if (e.key === "ArrowLeft") { e.preventDefault(); aller(tSection() - 10); }
   else if (e.key === "ArrowRight") { e.preventDefault(); aller(tSection() + 10); }
   else if (e.key.toLowerCase() === "m") $("b-son").click();
+  else if (e.key.toLowerCase() === "v" && !$("b-cameo").hidden) $("b-cameo").click();
   else if (e.key.toLowerCase() === "c") $("b-st").click();
   else if (e.key.toLowerCase() === "t") $("b-texte").click();
   else if (e.key.toLowerCase() === "f") $("b-ecran").click();
@@ -1026,7 +1058,7 @@ function libelles() {
     ["voix", "aria-label", "Langue de la voix"], ["stl", "aria-label", "Langue des sous-titres et des titres"], ["parcours", "aria-label", "Parcours"],
     ["barre", "aria-label", "Lecture"], ["jouer", "title", "Lire ou mettre en pause (Espace)"], ["reculer", "title", "Reculer de 10 s (←)"],
     ["reculer", "aria-label", "Reculer de 10 secondes"], ["piste", "aria-label", "Position dans la section"], ["synth", "title", "Ce passage est lu par une voix de synthèse"],
-    ["synth", "textContent", "🗣 voix de synthèse"], ["vitesse", "aria-label", "Vitesse de lecture"], ["vitesse", "title", "Vitesse"], ["b-son", "title", "Son : lire avec ou sans la voix (M)"],
+    ["synth", "textContent", "🗣 voix de synthèse"], ["vitesse", "aria-label", "Vitesse de lecture"], ["vitesse", "title", "Vitesse"], ["b-son", "title", "Son : lire avec ou sans la voix (M)"], ["b-cameo", "title", "Médaillon vidéo de l'enseignant (V)"],
     ["b-st", "title", "Sous-titres (C)"], ["b-st", "textContent", "Sous-titres"], ["b-texte", "title", "Texte de la section (T)"], ["b-texte", "textContent", "Texte"],
     ["b-ecran", "title", "Plein écran (F)"], ["b-ecran", "aria-label", "Plein écran"], ["exo-bande", "aria-label", "Exercice"], ["texte", "aria-label", "Texte de la section"]];
   for (const [id, att, k] of fixe) { const e = $(id); if (!e) continue; if (att === "textContent" || att === "title") e[att] = T(k); else e.setAttribute(att, T(k)); }
@@ -1035,7 +1067,7 @@ function libelles() {
   for (const o of $("vitesse").options) o.textContent = "× " + (langueUI === "fr" ? o.value.replace(".", ",") : o.value);
   for (const o of $("voix").options) o.textContent = nomL(o.value) + (o.value !== LG.source ? T(" (synthèse)") : "");
   for (const o of $("parcours").options) { const c = C.parcours.find(x => x.id === o.value); if (c) o.textContent = (c.tr && c.tr[stL] && c.tr[stL].titre) || c.titre; }
-  bouton(); const bs = $("b-son"); bs.textContent = bs.getAttribute("aria-pressed") === "true" ? T("🔊 Son") : T("🔇 Muet");
+  bouton(); const bs = $("b-son"); bs.textContent = bs.getAttribute("aria-pressed") === "true" ? T("🔊 Son") : T("🔇 Muet"); $("b-cameo").textContent = cameoActif ? T("👤 Caméo") : T("👤 Sans caméo");
 }
 appliquerLangues();
 $("titre").textContent = typo(C.titre); typoDom(document.querySelector(".aide"));

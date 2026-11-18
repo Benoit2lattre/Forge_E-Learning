@@ -27,7 +27,10 @@ Commandes (abréviations acceptées : « en », « ed », « cons », « conv »
         en pas aux silences, chaque pas avec son image d'affiche et son son (transcription et relecture comme une diapo).
     python capsuleforge.py filmer tuto1 --section principale/demo --titre "Démo" [--webcam] [--ecran 1] [--micro NOM]
         Filme l'écran, le micro (et la webcam) en même temps, puis importe la vidéo en pas (webcam = caméo).
-        Ctrl+Maj+P pause, Ctrl+Maj+F (ou Entrée) fin. « filmer --appareils » liste écrans, caméras et micros.
+        Ctrl+Maj+P pause, Ctrl+Maj+F (ou Entrée) fin. « filmer --appareils » liste écrans, caméras et micros ;
+        « filmer --tester-micro [NOM] » écoute le micro 4 s et dit si le niveau de la voix convient.
+    python capsuleforge.py cameo tuto1 [--position bas-droite] [--taille 0.22] [--forme rond|rectangle]
+        Place le médaillon de la webcam (caméo) dans le lecteur ; sans option, affiche le réglage actuel.
     python capsuleforge.py voix fiabilite --langue en [--moteur piper|edge] [--voix en_GB-alan-medium] [--vitesse 1.0]
         Voix de synthèse phrase par phrase (autre langue : à côté du son d'origine ; langue source : pas sans
         enregistrement seulement). Sous-titres, apparitions et objets recalés dans le lecteur.
@@ -356,6 +359,9 @@ def cmd_filmer(a):
     Avec ``--appareils``, affiche seulement les écrans, caméras et micros disponibles et renvoie 0.
     """
     import filmer
+    if a.tester_micro is not None:
+        filmer.tester_micro(a.tester_micro or a.micro or None, duree=a.duree or 4.0, essai=a.essai)
+        return 0
     if a.appareils:
         v, m = filmer.appareils()
         print("Écrans :", " ; ".join(f"n° {k + 1} {e['width']} × {e['height']}" for k, e in enumerate(filmer.ecrans())) or "?")
@@ -374,6 +380,36 @@ def cmd_filmer(a):
     micro = False if a.sans_micro else (a.micro or True)
     filmer.filmer(y, a.section, titre=a.titre, ecran=a.ecran, webcam=webcam, micro=micro, ips=a.ips, duree=a.duree,
                   importer=not a.sans_import, essai=a.essai)
+
+
+POSITIONS_CAMEO = ("bas-droite", "bas-gauche", "haut-droite", "haut-gauche")
+
+
+def cmd_cameo(a):
+    """Règle le médaillon de la webcam dans le lecteur (commande ``cameo``) : position, taille, forme.
+
+    Sans option, affiche le réglage actuel. Le chapitre est sauvegardé dans ``sauvegardes/`` avant d'être réécrit.
+    """
+    import shutil
+    import time
+    import format_chapitre as F
+    y = trouver_chapitre(a.chapitre)
+    if not y.is_file():
+        raise SystemExit(f"Pas de chapitre : {y}")
+    chap = F.lire(y)
+    c = dict(chap.get("cameo") or {})
+    if a.taille is not None and not 0.08 <= a.taille <= 0.5:
+        raise SystemExit("cameo : --taille entre 0.08 et 0.5 (part de la largeur de l'image)")
+    neuf = {k: v for k, v in (("position", a.position), ("taille", a.taille), ("forme", a.forme)) if v is not None}
+    if neuf:
+        c.update(neuf)
+        chap["cameo"] = c
+        (y.parent / "sauvegardes").mkdir(exist_ok=True)
+        shutil.copy2(y, y.parent / "sauvegardes" / f"chapitre_{time.strftime('%Y%m%d_%H%M%S')}.yaml")
+        F.ecrire(chap, y)
+    n = sum(1 for p in chap.get("parties") or [] for s in p.get("sections") or [] for q in s.get("pas") or [] if q.get("camera"))
+    print(f"Caméo : {c.get('position', 'bas-droite')}, taille {c.get('taille', 0.22)}, {c.get('forme', 'rond')} "
+          f"({n} pas avec webcam)" + ("  — refaire « construire » pour le voir dans le lecteur" if neuf else ""))
 
 
 def cmd_voix(a):
@@ -553,6 +589,8 @@ def main(argv=None):
     fl.add_argument("--duree", type=float, help="arrêt automatique après tant de secondes")
     fl.add_argument("--sans-import", action="store_true", help="garder les fichiers sans les importer")
     fl.add_argument("--appareils", action="store_true", help="lister écrans, caméras et micros")
+    fl.add_argument("--tester-micro", nargs="?", const="", metavar="NOM",
+                    help="écouter le micro quelques secondes (--duree, défaut 4) et donner le niveau de la voix")
     fl.add_argument("--essai", action="store_true", help="sources synthétiques (sans appareils)")
     vx = sp.add_parser("voix", help="voix de synthèse d'un chapitre, phrase par phrase"); vx.add_argument("chapitre")
     vx.add_argument("--langue", required=True, help="langue de la voix (fr = pas sans enregistrement ; en, es… = traduction)")
@@ -573,12 +611,15 @@ def main(argv=None):
                     help="auto : sections d'au plus --minutes min ; diapositive : une section par diapositive ; une : une section par partie")
     nv.add_argument("--minutes", type=float, default=6.0, help="durée visée d'une section (découpe auto)")
     nv.add_argument("--diapos", help="diapositives à retenir (ex. 6-12 ; toutes par défaut)")
+    cm = sp.add_parser("cameo", help="placer le médaillon de la webcam (caméo) dans le lecteur"); cm.add_argument("chapitre")
+    cm.add_argument("--position", choices=POSITIONS_CAMEO); cm.add_argument("--taille", type=float, help="part de la largeur (0.08 à 0.5 ; défaut 0.22)")
+    cm.add_argument("--forme", choices=["rond", "rectangle"])
     sp.add_parser("assistant", help="menu pas à pas")
     a = p.parse_args(argv)
     if not a.cmd:
         p.print_help(); return 0
     return {"enregistrer": cmd_enregistrer, "editer": cmd_editer, "construire": cmd_construire, "traduire": cmd_traduire, "voix": cmd_voix, "video": cmd_video, "filmer": cmd_filmer, "convertir": cmd_convertir, "plan": cmd_plan, "pptx": cmd_pptx, "transcrire": cmd_transcrire, "relire": cmd_relire, "verifier": cmd_verifier,
-            "assembler": cmd_assembler, "approj": cmd_approj, "nouvelle": cmd_nouvelle, "assistant": cmd_assistant}[a.cmd](a) or 0
+            "assembler": cmd_assembler, "approj": cmd_approj, "nouvelle": cmd_nouvelle, "cameo": cmd_cameo, "assistant": cmd_assistant}[a.cmd](a) or 0
 
 
 if __name__ == "__main__":

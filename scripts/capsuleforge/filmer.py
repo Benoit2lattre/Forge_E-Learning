@@ -6,7 +6,7 @@ Commande : ::
                         [--ips 20] [--duree s] [--sans-import] [--appareils]
 
 Raccourcis (comme l'enregistreur de didacticiel) : Ctrl+Maj+P pause / reprise (2 bips), Ctrl+Maj+F fin (3 bips) ;
-dans la fenêtre de commande, Entrée termine aussi. Un compte à rebours de 3 s précède l'enregistrement.
+dans la fenêtre de commande, Entrée termine aussi ; une ligne « pause » met en pause ou reprend (boutons de l'Atelier Forge). Un compte à rebours de 3 s précède l'enregistrement.
 
 Chaque source a son fil ; chaque image et chaque morceau de son reçoit l'instant de l'horloge commune (pauses
 retirées) : l'écran, la webcam et la voix restent calés, même si une source démarre en retard (le micro met environ
@@ -67,6 +67,46 @@ def ecrans() -> list[dict]:
             return [dict(e) for e in m.monitors[1:]]
     except Exception:
         return []
+
+
+def tester_micro(micro=None, duree: float = 4.0, essai: bool = False, journal=print) -> dict:
+    """Écoute le micro ``duree`` secondes et dit si le niveau de la voix convient (``filmer --tester-micro``).
+
+    Renvoie ``{micro, voix, crete, avis, conseil}`` (niveaux en dBFS) et l'écrit en une ligne « Micro … ».
+    """
+    import av
+    import video
+    if essai:
+        nom, entree, fmt, opts = "essai", "sine=frequency=330:sample_rate=48000,arealtime", "lavfi", {}
+    else:
+        nom = micro if isinstance(micro, str) and micro else (appareils()[1] or [None])[0]
+        if not nom:
+            raise SystemExit("Aucun micro trouvé (capsuleforge filmer --appareils)")
+        entree, fmt, opts = f"audio={nom}", "dshow", {"audio_buffer_size": "100", "rtbufsize": "50M"}
+    journal(f"Parlez normalement pendant {duree:.0f} s…")
+    morceaux, r = [], av.AudioResampler(format="flt", layout="mono", rate=TAUX)
+    t0 = time.monotonic()
+    with av.open(entree, format=fmt, options=opts) as e:
+        for tr in e.decode(e.streams.audio[0]):
+            for x in r.resample(tr):
+                morceaux.append(x.to_ndarray().reshape(-1))
+            if time.monotonic() - t0 >= duree:
+                break
+    son = np.concatenate(morceaux) if morceaux else np.zeros(0, np.float32)
+    voix, crete = video.niveau_voix(son, TAUX)
+    if crete > -1:
+        avis, conseil = "saturé", "baissez le volume du micro (Windows : Paramètres > Son > Entrée)"
+    elif voix < -55:
+        avis, conseil = "muet", "micro coupé ou mauvais micro : choisissez-en un autre"
+    elif voix < -40:
+        avis, conseil = "trop faible", ("rapprochez le micro ou montez son volume (Windows : Paramètres > Son > Entrée) ; "
+                                        "sinon la voix sera relevée à l'import, souffle compris")
+    elif voix < -28:
+        avis, conseil = "faible", "utilisable : la voix sera relevée à l'import"
+    else:
+        avis, conseil = "bon", ""
+    journal(f"Micro « {nom} » : voix {voix:.0f} dBFS, crête {crete:.0f} dBFS — {avis}" + (f" ({conseil})" if conseil else ""))
+    return {"micro": nom, "voix": round(voix, 1), "crete": round(crete, 1), "avis": avis, "conseil": conseil}
 
 
 # --------------------------------------------------------------------------- horloge commune et sources
@@ -147,6 +187,7 @@ class Video(threading.Thread):
     def _ecrire(self):
         """Encode en H.264 les images de la file, à leur instant, jusqu'à recevoir ``None``."""
         import av
+        from video import _sans_type
         l, h = self.taille
         with av.open(str(self.dst), "w") as s:
             ov = s.add_stream("libx264", rate=self.ips)
@@ -164,6 +205,7 @@ class Video(threading.Thread):
                 dernier = pts
                 im = tr.reformat(width=l, height=h, format="yuv420p")
                 im.pts, im.time_base = pts, Fraction(1, self.ips)
+                _sans_type(im)                                     # sinon toutes les images sont clés : fichier énorme
                 for p in ov.encode(im):
                     s.mux(p)
                 self.n += 1
@@ -299,8 +341,25 @@ def enregistrer(dossier: Path, ecran: int | None = 1, webcam: str | bool | None 
             ecouteur.start()
     except Exception as ex:
         journal(f"  raccourcis indisponibles ({type(ex).__name__}) : Entrée pour finir")
-    if not essai and duree is None:
-        threading.Thread(target=lambda: (input(), h.fin.set()), daemon=True).start()
+    if duree is None:
+        def commandes():
+            """Lignes reçues sur l'entrée (fenêtre de commande ou Atelier Forge) : « pause » met en pause ou reprend,
+            toute autre ligne (Entrée, « fin ») termine. Sans entrée (fichier vide), rien ne se passe."""
+            for ligne in sys.stdin:
+                if h.fin.is_set():
+                    break
+                if ligne.strip().lower() == "pause":
+                    if h.t0 is None:
+                        continue                                  # pas encore démarré (compte à rebours)
+                    p = h.basculer()
+                    bip(2)
+                    journal("  ⏸ pause" if p else "  ▶ reprise")
+                else:
+                    h.fin.set()
+                    bip(3)
+                    break
+        if not essai or not sys.stdin.isatty():
+            threading.Thread(target=commandes, daemon=True).start()
     for k in (3, 2, 1):
         journal(f"  départ dans {k}…")
         time.sleep(1)

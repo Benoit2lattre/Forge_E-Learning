@@ -4,7 +4,7 @@ Chaque outil a son propre numéro de version (voir la page « État des outils �
 
 ## Forge E-Learning 0.3 — en préparation
 
-### Atelier Forge 0.3 (nouveau)
+### Atelier Forge 0.4 (nouveau)
 
 - Une page dans le navigateur qui lance les outils Forge sans ligne de commande : double-clic sur `Forge.bat` à la racine du dépôt. Premier lot : état de l'ordinateur (modules, PowerPoint, voix) et écran Exercices (ExoForge : construire, essayer avec des valeurs fixes ou tirées, montrer le paquet SCORM, choisir une autre fiche par le dialogue de fichiers de Windows) ; journal des tâches en direct, arrêt d'une tâche, fermeture avec l'onglet. Les écrans suivent l'ordre des outils, du plus simple au plus complet (Questions, Exercices, Capsules, Bilans) ; 
 - Écran Capsules (CapsuleForge) : état de chaque capsule section par section (diapositives reprises, images, texte dit, relu, traduction et voix par langue, questions, remarques de `verifier`) et toute la préparation par boutons : reprendre un diaporama (retrouvé seul dans e_learning ou par « Parcourir… »), importer une vidéo, transcrire, relire, traduire et relire la traduction, voix de synthèse, vérifier, construire avec paquets SCORM 1.2 ou 2004. Les écrans de relecture s'ouvrent dans un onglet. Une capsule écrite pour l'ancien lecteur se met à jour d'un bouton.
@@ -12,6 +12,9 @@ Chaque outil a son propre numéro de version (voir la page « État des outils �
 - Apparence jour ou nuit (bouton en haut de la page, ou comme Windows dans Réglages) ; logos et icônes suivent.
 - « Autre classeur… » ajoute à la liste un classeur pris hors de data/quizforge (gardé, à retirer d'un bouton). Paquets SCORM listés par contenu (capsule entière, partie B…) et format, au lieu du nom de fichier.
 - Écrans Questions (QuizForge : ouvrir dans Excel, valider, convertir pour Moodle avec plan de séance, nouveau classeur, réunir un classeur et sa traduction), Bilans (DiagForge : bilan d'un dossier d'exports Moodle, fiche du professeur ouverte à la fin) et Réglages (profil proposé d'office, chemins des diaporamas retrouvés) : toute la suite Forge se lance désormais depuis l'atelier.
+- Filmer l'écran depuis l'atelier : écran, micro et caméra en listes, panneau d'enregistrement Pause / Reprendre / Fin, import dans la section à la fin. Nouvelle capsule aussi à partir d'une manipulation enregistrée dans un logiciel ou d'un projet ActivePresenter ; ancien éditeur accessible pour les capsules de l'ancien lecteur.
+- Mode d'emploi de l'atelier avec captures (page « Atelier Forge » du site, en tête des outils).
+- Filmer : bouton « Tester » du micro (niveau de la voix et conseil) ; réglage du caméo (place, taille, forme) dans la carte « Construire » ; « Nouvelle capsule » d'après une manipulation : la liste des écrans est celle de l'ordinateur (elle en proposait toujours trois).
 - « Nouvelle capsule… » : à partir d'un diaporama (plan proposé, reprise du diaporama enchaînée) ou vide (pour une vidéo).
 - Mode d'emploi de CapsuleForge et page du fichier `chapitre.yaml` sans « format 1 / format 2 » : on parle de capsules (cours ou didacticiels) et de l'ancien lecteur.
 
@@ -21,6 +24,10 @@ Chaque outil a son propre numéro de version (voir la page « État des outils �
 
 ### CapsuleForge 0.9
 
+- Caméo : la webcam filmée avec `filmer --webcam` est montrée en médaillon dans le lecteur, calée sur la vidéo (bouton « Caméo », touche V pour la masquer) ; nouvelle commande `cameo` pour sa place, sa taille et sa forme (champ `cameo` du chapitre).
+- `filmer --tester-micro` : écoute le micro 4 s et donne le niveau de la voix avec un conseil ; à l'import, une voix trop faible est relevée vers −20 dBFS (au plus +30 dB, sans saturer).
+- Correction : les vidéos d'écran (`filmer`, `video`) n'avaient que des images clés, d'où des fichiers dix à quarante fois trop lourds (une minute filmée : 100 Mo au lieu de 3 à 8 Mo) ; les vidéos déjà importées gardent leur taille (`video --remplacer` les allège, mais refait leurs pas : transcription et relecture à refaire).
+- `filmer` : une ligne « pause » reçue sur l'entrée met en pause ou reprend, toute autre ligne termine (boutons de l'Atelier Forge ; Entrée termine toujours).
 - Nouvelle commande `nouvelle` : crée une capsule (`data/capsuleforge/<nom>/chapitre.yaml`) vide, ou à partir d'un diaporama avec un plan proposé — une partie par section PowerPoint, des sections de quelques minutes d'après le minutage enregistré (`--decoupe auto --minutes 6`), une par diapositive ou une seule ; diapositives masquées laissées de côté ; rien n'est écrasé.
 - Titres et notes des diapositives : un retour à la ligne dans un paragraphe (Maj+Entrée) donne une espace (« Tenue en Servicedes structures » devenait « Tenue en Service des structures »).
 - Paquets SCORM 1.2 en plus de SCORM 2004 (`construire --scorm … --scorm-version 1.2`) ; le lecteur reconnaît seul la version de la plateforme.

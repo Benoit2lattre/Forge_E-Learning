@@ -40,6 +40,20 @@ def _pair(n: int) -> int:
     return max(2, int(n) // 2 * 2)
 
 
+def _sans_type(im):
+    """Laisse l'encodeur choisir le type de l'image : une image décodée garde son type (« I » pour une capture
+    d'écran où toutes les images sont clés), que libx264 respecte — la vidéo n'aurait alors que des images clés,
+    dix fois trop lourde."""
+    try:
+        import av
+        im.pict_type = av.video.frame.PictureType.NONE
+    except Exception:
+        try:
+            im.pict_type = 0
+        except Exception:
+            pass
+
+
 def comprimer(src: Path, dst: Path, largeur_max: int = 1440, qualite: int = 28, debut: float = 0.0,
               fin: float | None = None, ips_max: int = 30, son_src: Path | None = None, muet: bool = False,
               journal=print) -> dict:
@@ -85,6 +99,7 @@ def comprimer(src: Path, dst: Path, largeur_max: int = 1440, qualite: int = 28, 
             dernier = pts
             im = tr.reformat(width=l1, height=h1, format="yuv420p")
             im.pts, im.time_base = pts, Fraction(1, ips)
+            _sans_type(im)                                       # sinon chaque image garde « I » et devient une image clé
             n_img += 1
             for pq in ov.encode(im):
                 s.mux(pq)
@@ -128,6 +143,32 @@ def comprimer(src: Path, dst: Path, largeur_max: int = 1440, qualite: int = 28, 
     journal(f"  {src.name} -> {dst.name} : {l1} × {h1}, {ips} im/s, {duree:.1f} s"
             + (f", son de {Path(source_son).name}" if son_src and source_son else "") + f", {dst.stat().st_size / 1e6:.1f} Mo")
     return {"duree_s": duree, "largeur": l1, "hauteur": h1, "son": (son, TAUX_SON)}
+
+
+def niveau_voix(son: np.ndarray, taux: int) -> tuple[float, float]:
+    """Renvoie (niveau de la voix, crête) en dBFS : la voix est le 90e centile du niveau par tranches de 50 ms."""
+    n = max(1, int(0.05 * taux))
+    m = len(son) // n
+    if m < 4:
+        return -99.0, -99.0
+    eff = np.sqrt(np.mean(son[: m * n].astype(np.float64).reshape(m, n) ** 2, axis=1))
+    db = 20 * np.log10(np.maximum(eff, 1e-6))
+    crete = 20 * np.log10(max(float(np.max(np.abs(son))), 1e-6))
+    return float(np.percentile(db, 90)), crete
+
+
+def relever_voix(son: np.ndarray, taux: int, cible: float = -20.0, gain_max: float = 30.0, journal=print) -> np.ndarray:
+    """Remonte une voix trop faible (micro loin ou réglé bas) vers ``cible`` dBFS, sans dépasser −1 dBFS en crête
+    ni ``gain_max`` dB ; une voix déjà assez forte (au-dessus de cible − 4 dB) est laissée telle quelle."""
+    voix, crete = niveau_voix(son, taux)
+    if voix <= -90 or voix >= cible - 4:
+        return son
+    g = min(cible - voix, -1.0 - crete, gain_max)
+    if g < 1:
+        return son
+    journal(f"  voix faible ({voix:.0f} dBFS) : relevée de {g:.0f} dB"
+            + ("  — le souffle du micro monte aussi : rapprochez le micro ou montez son volume dans Windows" if voix < -45 else ""))
+    return (son * 10 ** (g / 20)).astype(son.dtype)
 
 
 def silences(son: np.ndarray, taux: int, min_s: float = 0.6) -> list[tuple[float, float]]:
@@ -248,6 +289,8 @@ def importer(yaml_chap: Path, fichier: Path, section: str, titre: str | None = N
     info = comprimer(fichier, dossier / rel, largeur_max=largeur, qualite=qualite, debut=debut, fin=fin,
                      son_src=Path(son) if son else None, journal=journal)
     signal, taux = info["son"]                              # le paramètre son est le fichier ; ici le signal lu
+    if len(signal):
+        signal = relever_voix(signal, taux, journal=journal)
     duree = info["duree_s"]
     rel_cam = None
     if camera:                                               # webcam filmée en même temps : caméo calé sur la vidéo

@@ -92,6 +92,13 @@ dialog.formulaire[open]{display:flex}
 dialog.formulaire label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--texte2)}
 dialog.formulaire select,dialog.formulaire input[type=text]{padding:6px;border:1px solid var(--bord);border-radius:6px;font-size:14px}
 dialog.formulaire h3{margin:0 0 4px}
+.panneau-rec{position:fixed;right:20px;bottom:280px;z-index:8;background:var(--carte);border:2px solid var(--ko);border-radius:12px;padding:12px 16px;box-shadow:0 6px 24px #0004;display:flex;flex-direction:column;gap:8px;max-width:340px}
+.panneau-rec p{margin:0;font-size:13px;color:var(--texte2)}
+.rec-etat{font-weight:600}.rec-etat.actif{color:var(--ko)}
+p.erreur{color:var(--ko-t)}
+.avec-bouton{display:flex;gap:8px;align-items:center}.avec-bouton select{flex:1;min-width:0}
+.mesure{margin:-4px 0 6px}.mesure .jauge{height:8px;border-radius:4px;background:var(--filet);overflow:hidden;margin-bottom:4px}
+.mesure .niveau{height:100%;width:0;background:var(--sable-t);transition:width .4s}.mesure.ok .niveau{background:var(--ok-t)}.mesure.ko .niveau{background:var(--ko-t)}
 dialog.formulaire input[type=number]{padding:6px;border:1px solid var(--bord);border-radius:6px;font-size:14px;width:140px}
 .ligne.gauche{justify-content:flex-start;gap:18px}
 main > .carte.etroite{margin-bottom:14px}
@@ -120,7 +127,7 @@ dialog.formulaire .bloc[hidden]{display:none}
 </head>
 <body>
 <header>
-  <img src="/static/identite/logos/forge_e-learning_logo_nuit.png" alt="" height="30" onerror="this.remove()">
+  <img src="/static/identite/logos/forge_e-learning_logo_nuit.png" alt="" height="30" data-fixe onerror="this.remove()">
   <h1>Atelier Forge</h1><span class="version" id="version"></span>
   <span class="espace"></span>
   <button type="button" id="theme" title="Apparence : jour ou nuit">☾ Nuit</button>
@@ -156,7 +163,7 @@ function appliquerTheme(choix) {
   document.querySelectorAll("img[src*='_jour'], img[src*='_nuit']").forEach(majImage);
   const b = document.getElementById("theme"); if (b) b.textContent = th === "nuit" ? "☀ Jour" : "☾ Nuit";
 }
-function majImage(img) { const th = document.documentElement.dataset.theme, s = img.getAttribute("src");
+function majImage(img) { if (img.hasAttribute("data-fixe")) return; const th = document.documentElement.dataset.theme, s = img.getAttribute("src");
   const n = th === "nuit" ? s.replace("_jour", "_nuit") : s.replace("_nuit", "_jour"); if (n !== s) img.setAttribute("src", n); }
 let THEME = (() => { try { return localStorage.getItem("forge-theme") || "auto"; } catch (e) { return "auto"; } })();
 appliquerTheme(THEME);
@@ -305,6 +312,7 @@ async function detailCapsule(zone, nom) {
     el("div", { class: "nom" }, "Didacticiel enregistré pour l'ancien lecteur"),
     el("p", {}, `${d.etapes} étape(s), ${d.pas} pas. La mise à jour le reprend dans le lecteur actuel (parties, sections, sous-titres, traduction, paquets SCORM) ; le fichier d'origine est gardé.`),
     el("div", { class: "actions" }, el("button", { class: "btn", type: "button", onclick: () => lancer("capsule.convertir", {}) }, "Mettre à jour pour le lecteur actuel"),
+      el("button", { class: "btn second", type: "button", onclick: () => lancerAvecEcran("capsule.editer", { capsule: nom }) }, "Ancien éditeur"),
       el("button", { class: "btn second", type: "button", onclick: () => lancer("capsule.construire", { lecteur: "1" }) }, "Construire avec l'ancien lecteur"))));
   const sections = d.parties.flatMap(p => p.sections);
   const nbSec = sections.length;
@@ -322,7 +330,8 @@ async function detailCapsule(zone, nom) {
     d.diaporamas.length ? d.diaporamas.map(x => el("div", { class: "diaporama" }, el("b", {}, x.fichier), el("span", { class: "sous" }, `${pl(x.sections.length, "section")} : ${x.sections.join(", ")}` + (x.chemin ? "" : " · fichier à retrouver")),
       el("button", { class: "btn", type: "button", onclick: () => reprendre(nom, x) }, "Reprendre le diaporama"))) : el("p", {}, "Aucun diaporama cité par les sections."),
     caseA("sans_images", "sans images (sans PowerPoint)"),
-    el("button", { class: "btn second", type: "button", onclick: () => formulaireVideo(nom, d) }, "Importer une vidéo…"));
+    el("button", { class: "btn second", type: "button", onclick: () => formulaireVideo(nom, d) }, "Importer une vidéo…"),
+    el("button", { class: "btn second", type: "button", onclick: () => formulaireFilmer(nom, d) }, "Filmer l'écran…"));
   const texteDit = el("div", { class: "carte" }, el("div", { class: "nom" }, "2. Texte dit"),
     el("p", {}, "La transcription donne un premier texte ; la relecture le corrige phrase par phrase, avec le son et l'image."),
     el("label", {}, "Transcription ", choix("modele", [["small", "rapide"], ["medium", "plus juste, plus lente"]], "small")),
@@ -354,6 +363,7 @@ async function detailCapsule(zone, nom) {
   const construire = el("div", { class: "carte" }, el("div", { class: "nom" }, "5. Construire"),
     el("label", {}, "Paquets SCORM ", choix("scorm", [["", "aucun (lecteur seul)"], ["chapitre", "un pour la capsule"], ["parties", "un par partie"], ["tout", "les deux"]], "")),
     el("label", {}, "Format ", choix("version", [["1.2", "SCORM 1.2 (conseillé, Moodle)"], ["2004", "SCORM 2004"]], "1.2")),
+    d.cameo && d.cameo.pas ? reglageCameo(d.cameo, lancer) : null,
     el("div", { class: "actions" }, el("button", { class: "btn second", type: "button", onclick: () => lancer("capsule.verifier", {}) }, "Vérifier"),
       el("button", { class: "btn", type: "button", onclick: () => lancer("capsule.construire", { scorm: opt("scorm", ""), version: opt("version", "1.2") }) }, "Construire")),
     d.paquets.length ? el("div", { class: "paquets" }, el("div", { class: "sous" }, "Paquets construits :"), d.paquets.map(z => el("div", { class: "paquet", title: z.fichier },
@@ -389,7 +399,18 @@ function formulaireNouvelle() {
   titre.oninput = () => { if (!nomTouche) nom.value = slug(titre.value); };
   nom.oninput = () => nomTouche = true;
   const langue = el("select", {}, [["fr", "français"], ["en", "anglais"], ["es", "espagnol"], ["de", "allemand"], ["it", "italien"]].map(([v, l]) => el("option", { value: v }, l)));
-  const src = el("select", {}, el("option", { value: "pptx" }, "un diaporama PowerPoint"), el("option", { value: "vide" }, "rien pour l'instant (vidéo ou film d'écran ensuite)"));
+  const src = el("select", {}, el("option", { value: "pptx" }, "un diaporama PowerPoint"), el("option", { value: "manip" }, "une manipulation dans un logiciel (didacticiel enregistré)"),
+    el("option", { value: "approj" }, "un projet ActivePresenter (.approj)"), el("option", { value: "vide" }, "rien pour l'instant (vidéo ou film d'écran ensuite)"));
+  let projet = null; const nomP = el("span", { class: "sous" }, "aucun");
+  const blocAp = el("div", { class: "bloc", hidden: true }, el("div", { class: "ligne" }, el("button", { class: "btn second", type: "button", onclick: async () => {
+    const c = await parcourirFichier("Projet ActivePresenter", [["ActivePresenter", "*.approj"]], ""); if (c) { projet = c; nomP.textContent = c; if (!titre.value) { titre.value = c.split(/[\\/]/).pop().replace(/\.approj$/i, "").replace(/_/g, " "); titre.oninput(); } } } }, "Projet…"), nomP),
+    el("p", { class: "sous" }, "Le projet est lu sans être modifié ; la capsule est ensuite mise à jour pour le lecteur actuel."));
+  const ecranM = el("select", {}, el("option", { value: "1" }, "écran principal (recherche des écrans…)"));
+  api("/api/appareils").then(a => { const v = opt("f_ecran", "1");
+    ecranM.replaceChildren(...(a.ecrans || ["n° 1"]).map((e, k) => el("option", { value: String(k + 1) }, "écran " + e + (k ? "" : " (principal)"))));
+    ecranM.value = v; if (ecranM.selectedIndex < 0) ecranM.selectedIndex = 0; ecranM.onchange = () => garder("f_ecran", ecranM.value); });
+  const blocManip = el("div", { class: "bloc", hidden: true }, champ("Écran enregistré", ecranM),
+    el("p", { class: "sous" }, "Après « Créer », faites la manipulation dans le logiciel : chaque clic et chaque saisie deviennent un pas. Ctrl+Maj+E : nouvelle étape ; Ctrl+Maj+P : pause ; Ctrl+Maj+F : fin. La capsule est ensuite mise à jour pour le lecteur actuel."));
   const nomF = el("span", { class: "sous" }, "aucun");
   const parcourir = el("button", { class: "btn second", type: "button", onclick: async () => {
     message("Choisissez le diaporama dans la fenêtre qui s'ouvre (elle peut être derrière le navigateur).");
@@ -403,13 +424,20 @@ function formulaireNouvelle() {
     el("label", { class: "case" }, reprendreC, "reprendre aussi le diaporama tout de suite (images, sons, apparitions)"),
     el("p", { class: "sous" }, "Une partie par section PowerPoint s'il y en a ; le titre d'une section est celui de sa première diapositive. Le découpage pourra être revu."));
   decoupe.onchange = () => minutes.disabled = decoupe.value !== "auto";
-  src.onchange = () => blocPptx.hidden = src.value !== "pptx";
+  src.onchange = () => { blocPptx.hidden = src.value !== "pptx"; blocAp.hidden = src.value !== "approj"; blocManip.hidden = src.value !== "manip"; };
   dlg.append(el("h3", {}, "Nouvelle capsule"), el("label", {}, "Titre ", titre), el("label", {}, "Dossier (dans data/capsuleforge) ", nom), el("label", {}, "Langue du cours ", langue),
-    el("label", {}, "À partir de ", src), blocPptx,
+    el("label", {}, "À partir de ", src), blocPptx, blocAp, blocManip,
     el("div", { class: "actions" }, el("button", { class: "btn second", type: "button", onclick: () => dlg.close() }, "Annuler"),
       el("button", { class: "btn", type: "button", onclick: async () => {
         if (!titre.value.trim()) return message("Donnez un titre à la capsule.", true);
         if (src.value === "pptx" && !chemin) return message("Choisissez d'abord le diaporama.", true);
+        if (src.value === "approj" && !projet) return message("Choisissez d'abord le projet ActivePresenter.", true);
+        if (src.value === "approj" || src.value === "manip") {
+          const q = { titre: titre.value.trim(), nom: nom.value.trim() || slug(titre.value) };
+          const id = await lancerTache(src.value === "approj" ? "capsule.approj" : "capsule.enregistrer", src.value === "approj" ? { ...q, chemin: projet } : { ...q, ecran: ecranM.value });
+          if (!id) return;
+          dlg.close(); SUITES[id] = () => lancerTache("capsule.convertir", { capsule: q.nom }); return;
+        }
         const p = { titre: titre.value.trim(), nom: nom.value.trim() || slug(titre.value), langue: langue.value };
         if (src.value === "pptx") Object.assign(p, { chemin, decoupe: decoupe.value, minutes: minutes.value });
         const id = await lancerTache("capsule.nouvelle", p);
@@ -648,6 +676,79 @@ async function reglages() {
       el("button", { class: "btn second", type: "button", onclick: e => montrer("data/_atelier", e.currentTarget) }, "Dossier de l'atelier")));
 }
 
+/* caméo (webcam en médaillon dans le lecteur) : réglage écrit dans le chapitre par « capsuleforge cameo » */
+function reglageCameo(c, lancer) {
+  const sel = (valeurs, v) => { const s = el("select", {}, valeurs.map(([x, l]) => el("option", { value: x }, l))); s.value = String(v); if (s.selectedIndex < 0) s.selectedIndex = 0; return s; };
+  const pos = sel([["bas-droite", "en bas à droite"], ["bas-gauche", "en bas à gauche"], ["haut-droite", "en haut à droite"], ["haut-gauche", "en haut à gauche"]], c.position);
+  const tailles = [["0.15", "petit"], ["0.22", "moyen"], ["0.3", "grand"]];
+  if (!tailles.some(([x]) => +x === +c.taille)) tailles.push([String(c.taille), `${Math.round(c.taille * 100)} % de la largeur`]);
+  const taille = sel(tailles, tailles.find(([x]) => +x === +c.taille)[0]), forme = sel([["rond", "rond"], ["rectangle", "rectangle"]], c.forme);
+  const appliquer = () => lancer("capsule.cameo", { position: pos.value, taille: taille.value, forme: forme.value });
+  [pos, taille, forme].forEach(s => s.onchange = appliquer);
+  return el("div", { class: "bloc" }, el("div", { class: "sous" }, `Caméo (webcam en médaillon, ${c.pas} pas) :`),
+    el("label", {}, "Place ", pos), el("label", {}, "Taille ", taille), el("label", {}, "Forme ", forme),
+    el("div", { class: "sous" }, "Pris en compte au prochain « Construire » ; l'élève peut le masquer (bouton « Caméo »)."));
+}
+
+/* ---------- filmer l'écran (et enregistrer une manipulation) : panneau d'enregistrement ---------- */
+async function formulaireFilmer(nom, d) {
+  const dlg = dialogue("Filmer l'écran", [el("p", { class: "sous" }, "Recherche des écrans, caméras et micros…")], "Démarrer", async () => false);
+  const a = await api("/api/appareils");
+  const corps = [];
+  const ecran = el("select", {}, (a.ecrans || ["n° 1"]).map((e, k) => el("option", { value: String(k + 1) }, e)));
+  ecran.value = opt("f_ecran", "1"); if (ecran.selectedIndex < 0) ecran.selectedIndex = 0;
+  const micro = el("select", {}, (a.micros || []).map(m => el("option", { value: m }, m)), el("option", { value: "-" }, "sans micro"));
+  micro.value = opt("f_micro", (a.micros || [])[0] || "-"); if (micro.selectedIndex < 0) micro.selectedIndex = 0;
+  const camera = el("select", {}, el("option", { value: "" }, "sans caméra"), (a.cameras || []).map(c => el("option", { value: c }, c)));
+  camera.value = opt("f_camera", ""); if (camera.selectedIndex < 0) camera.selectedIndex = 0;
+  const partie = el("select", {}, d.parties.filter(p => p.type !== "exercice").map(p => el("option", { value: p.id }, `${p.nom}  ${p.titre}`)));
+  const section = el("select", {}), titre = el("input", { type: "text", placeholder: "titre de la nouvelle section" }), titreL = champ("Titre", titre);
+  const majS = () => { const p = d.parties.find(x => x.id === partie.value); section.replaceChildren(el("option", { value: "" }, "nouvelle section"), ...p.sections.map(s => el("option", { value: s.id }, `${s.nom}  ${s.titre}`))); titreL.hidden = false; };
+  partie.onchange = majS; section.onchange = () => titreL.hidden = !!section.value; majS();
+  const mesure = el("div", { class: "mesure", hidden: true }, el("div", { class: "jauge" }, el("div", { class: "niveau" })), el("span", { class: "sous" }));
+  const tester = el("button", { class: "btn second petit", type: "button", title: "Écouter le micro 4 s et donner le niveau de la voix", onclick: async () => {
+    if (micro.value === "-") return;
+    tester.disabled = true; mesure.hidden = false; mesure.className = "mesure"; mesure.lastChild.textContent = "Parlez normalement pendant 4 s…"; mesure.querySelector(".niveau").style.width = "0";
+    const r = await api("/api/tester_micro", { micro: micro.value, essai: !!window.FORGE_ESSAI }); tester.disabled = false;
+    if (!r.ok) { mesure.lastChild.textContent = r.message || "Test impossible."; mesure.classList.add("ko"); return; }
+    mesure.querySelector(".niveau").style.width = Math.max(2, Math.min(100, (r.voix + 60) / 60 * 100)) + "%";
+    mesure.classList.add(r.avis === "bon" ? "ok" : r.avis === "faible" ? "moyen" : "ko");
+    mesure.lastChild.textContent = `Voix ${String(r.voix).replace("-", "−")} dBFS : ${r.avis}` + (r.conseil ? ` — ${r.conseil}.` : ".");
+  } }, "Tester");
+  micro.addEventListener("change", () => { mesure.hidden = true; tester.disabled = micro.value === "-"; });
+  if (!a.ok) corps.push(el("p", { class: "erreur" }, a.message || "Appareils introuvables."));
+  corps.push(champ("Écran filmé", ecran), champ("Micro", el("span", { class: "avec-bouton" }, micro, tester)), mesure, champ("Caméra (médaillon)", camera), champ("Partie", partie), champ("Section", section), titreL,
+    el("p", { class: "sous" }, "Départ 3 s après « Démarrer ». Ensuite, dans n'importe quelle fenêtre : Ctrl+Maj+P pause ou reprise, Ctrl+Maj+F fin ; ou les boutons du panneau. Si cette page est sur l'écran filmé, réduisez-la : les raccourcis suffisent."));
+  const dlg2 = dialogue("Filmer l'écran", corps, "Démarrer", async () => {
+    garder("f_ecran", ecran.value); garder("f_micro", micro.value); garder("f_camera", camera.value);
+    const id = await lancerTache("capsule.filmer", { capsule: nom, partie: partie.value, section: section.value, titre: titre.value, ecran: ecran.value,
+      micro: micro.value === "-" ? "" : micro.value, sans_micro: micro.value === "-", webcam: camera.value, essai: !!window.FORGE_ESSAI });
+    if (!id) return false;
+  });
+  dlg.close();
+}
+let PANNEAU = null;
+function panneauEnregistrement(t) {
+  if (!t || t.etat !== "en_cours" || !["filmer", "enregistrer"].includes(t.genre)) { if (PANNEAU && (!t || PANNEAU.dataset.tache === t.id)) { PANNEAU.remove(); PANNEAU = null; } return; }
+  if (!PANNEAU || PANNEAU.dataset.tache !== t.id) {
+    if (PANNEAU) PANNEAU.remove();
+    PANNEAU = el("div", { class: "panneau-rec", role: "region", "aria-label": "Enregistrement" });
+    PANNEAU.dataset.tache = t.id; document.body.append(PANNEAU);
+  }
+  const parti = t.rec !== "pret", pause = t.rec === "pause";
+  const etat = !parti ? "Préparation…" : pause ? "⏸ En pause" : "● Enregistrement";
+  if (t.genre === "enregistrer") {
+    PANNEAU.replaceChildren(el("div", { class: "rec-etat" + (parti ? " actif" : "") }, parti ? "● Enregistrement de la manipulation" : "Préparation…"),
+      el("p", {}, "Faites la manipulation dans le logiciel. Ctrl+Maj+E : nouvelle étape ; Ctrl+Maj+P : pause ; Ctrl+Maj+F : fin."));
+    return;
+  }
+  PANNEAU.replaceChildren(el("div", { class: "rec-etat" + (parti && !pause ? " actif" : "") }, etat, el("span", { class: "sous" }, " · " + duree(t.duree))),
+    el("div", { class: "actions" },
+      el("button", { class: "btn second", type: "button", disabled: !parti, onclick: () => api("/api/envoyer", { id: t.id, ligne: "pause" }) }, pause ? "Reprendre" : "Pause"),
+      el("button", { class: "btn", type: "button", disabled: !parti, onclick: () => api("/api/envoyer", { id: t.id, ligne: "fin" }) }, "Fin")),
+    el("p", { class: "sous" }, "Ou Ctrl+Maj+P et Ctrl+Maj+F dans n'importe quelle fenêtre."));
+}
+
 /* ---------- tâches ---------- */
 let TACHES = [], CHOISIE = null, LUES = {}, SUIVI = null;
 const ICONES = { en_cours: "⟳", reussie: "✓", echec: "✗", arretee: "■" };
@@ -670,6 +771,8 @@ async function rafraichir() {
     el("span", { class: "icone" + (t.etat === "en_cours" ? " tourne" : ""), style: `color:${t.etat === "reussie" ? "var(--ok)" : t.etat === "echec" ? "var(--ko)" : "var(--texte2)"}` }, ICONES[t.etat]),
     el("span", {}, t.titre, el("span", { class: "duree" }, LIBELLES[t.etat] + " · " + duree(t.duree))))));
   await journal();
+  const rec = TACHES.filter(x => ["filmer", "enregistrer"].includes(x.genre)).at(-1);
+  panneauEnregistrement(rec);
 }
 async function journal() {
   const t = TACHES.find(x => x.id === CHOISIE); const pre = $("journal");

@@ -19,6 +19,8 @@ Routes :
   GET  /api/tache/<id>?depuis=n   lignes du journal d'une tâche à partir de la n-ième
   GET  /dist/<chemin>         fichiers construits (essayer un exercice, ouvrir un lecteur)
   POST /api/lancer            {action, params} : lance une tâche
+  POST /api/envoyer           {id, ligne: pause|fin} : commande envoyée à une tâche qui l'accepte (filmer)
+  GET  /api/appareils         écrans, caméras et micros (filmer)
   POST /api/arreter           {id} : arrête une tâche
   POST /api/parcourir         {dossier?, types?} : dialogue de fichiers de Windows, renvoie le chemin choisi
   POST /api/montrer           {chemin} : ouvre l'explorateur sur un fichier ou un dossier du dépôt
@@ -51,7 +53,7 @@ import questions_bilans as QB      # noqa: E402
 import chemins                    # noqa: E402
 import serveur_local as S         # noqa: E402
 
-VERSION = "0.3"
+VERSION = "0.4"
 RACINE = chemins.RACINE
 PY = sys.executable
 PORT = 8770
@@ -89,9 +91,12 @@ class Tache:
     """Une commande Forge lancée par l'atelier : sous-processus, journal, état."""
 
     def __init__(self, ident: str, titre: str, outil: str, argv: list[str], verrou: str | None = None,
-                 apres=None):
+                 apres=None, entree: bool = False, genre: str = ""):
         self.id, self.titre, self.outil, self.argv, self.verrou = ident, titre, outil, argv, verrou
         self.apres = apres                     # fonction (tache) -> dict de liens, appelée à la fin si la tâche réussit
+        self.entree = entree                   # entrée de la commande ouverte (filmer : « pause », « fin »)
+        self.genre = genre                     # « filmer », « enregistrer » : la page montre un panneau d'enregistrement
+        self.rec = "pret"                      # pret, actif, pause
         self.lignes: list[str] = []
         self.retirees = 0                      # lignes retirées en tête (MAX_LIGNES)
         self.debut = time.time()
@@ -107,7 +112,7 @@ class Tache:
         self.ajouter("$ " + " ".join(["python"] + [rel(Path(a)) if Path(a).is_absolute() else a for a in self.argv[1:]]))
         try:
             self.proc = subprocess.Popen(self.argv, cwd=RACINE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                         stdin=subprocess.DEVNULL, env=env, text=True, encoding="utf-8",
+                                         stdin=subprocess.PIPE if self.entree else subprocess.DEVNULL, env=env, text=True, encoding="utf-8",
                                          errors="replace", bufsize=1, **options)
         except OSError as e:
             self.ajouter(f"Lancement impossible : {e}")
@@ -129,6 +134,11 @@ class Tache:
         threading.Thread(target=lire, daemon=True).start()
 
     def ajouter(self, ligne: str):
+        if self.genre:                                   # état d'un enregistrement, lu dans son journal
+            if "● enregistrement" in ligne or "-- reprise --" in ligne or "▶ reprise" in ligne:
+                self.rec = "actif"
+            elif "⏸ pause" in ligne or "-- pause --" in ligne:
+                self.rec = "pause"
         if "ouvrir" not in self.liens:
             m = ADRESSE.search(ligne)
             if m and self.outil == "capsuleforge":
@@ -137,6 +147,17 @@ class Tache:
         if len(self.lignes) > MAX_LIGNES:
             del self.lignes[:500]
             self.retirees += 500
+
+    def envoyer(self, ligne: str) -> bool:
+        """Envoie une ligne à la commande (entrée ouverte seulement)."""
+        if not (self.entree and self.proc and self.proc.poll() is None and self.proc.stdin):
+            return False
+        try:
+            self.proc.stdin.write(ligne + "\n")
+            self.proc.stdin.flush()
+            return True
+        except OSError:
+            return False
 
     def arreter(self):
         if self.proc and self.proc.poll() is None:
@@ -156,7 +177,7 @@ class Tache:
         return "reussie" if self.code == 0 else "echec"
 
     def resume(self) -> dict:
-        return {"id": self.id, "titre": self.titre, "outil": self.outil, "etat": self.etat, "code": self.code,
+        return {"id": self.id, "titre": self.titre, "outil": self.outil, "genre": self.genre, "rec": self.rec, "etat": self.etat, "code": self.code,
                 "debut": self.debut, "duree": (self.fin or time.time()) - self.debut,
                 "lignes": self.retirees + len(self.lignes), "liens": self.liens}
 
@@ -176,7 +197,8 @@ class Atelier:
         self.verrou = threading.Lock()
         self.dialogue = threading.Lock()
         self.minuterie: threading.Timer | None = None
-        self.montres: dict[str, float] = {}         # dernière ouverture de l'explorateur par chemin
+        self.montres: dict[str, float] = {}
+        self._appareils = None         # dernière ouverture de l'explorateur par chemin
         self.page_partie_le: float | None = None
         self.arreter = lambda: None            # remplacé par srv.shutdown
         self.journal = chemins.DATA / "_atelier" / "journal.jsonl"
@@ -189,7 +211,9 @@ class Atelier:
                         "capsule.nouvelle": self.a_cap_nouvelle,
                         "quiz.valider": self.a_quiz_valider, "quiz.convertir": self.a_quiz_convertir,
                         "quiz.modele": self.a_quiz_modele, "quiz.fusionner": self.a_quiz_fusionner,
-                        "diag.bilan": self.a_diag_bilan}
+                        "diag.bilan": self.a_diag_bilan, "capsule.filmer": self.a_cap_filmer,
+                        "capsule.editer": self.a_cap_editer, "capsule.enregistrer": self.a_cap_enregistrer,
+                        "capsule.approj": self.a_cap_approj, "capsule.cameo": self.a_cap_cameo}
 
     # ------------------------------------------------------------------ tâches
     def lancer(self, action: str, params: dict) -> dict:
@@ -279,6 +303,43 @@ class Atelier:
             d, t = self._cap(p)
             return self._tache_cap(d, f"{libelle} « {t} »", C.argv_base(PY, cmd) + [str(d)])
         return action
+
+    def a_cap_cameo(self, p: dict) -> Tache:
+        d, t = self._cap(p)
+        argv = C.argv_base(PY, "cameo") + [str(d)]
+        if p.get("position"):
+            if p["position"] not in ("bas-droite", "bas-gauche", "haut-droite", "haut-gauche"):
+                raise ValueError("position du caméo inconnue")
+            argv += ["--position", p["position"]]
+        if p.get("forme"):
+            if p["forme"] not in ("rond", "rectangle"):
+                raise ValueError("forme du caméo inconnue")
+            argv += ["--forme", p["forme"]]
+        if p.get("taille"):
+            taille = float(p["taille"])
+            if not 0.08 <= taille <= 0.5:
+                raise ValueError("taille du caméo : entre 0,08 et 0,5")
+            argv += ["--taille", f"{taille:g}"]
+        return self._tache_cap(d, f"Caméo de « {t} »", argv)
+
+    def tester_micro(self, p: dict) -> dict:
+        """Écoute le micro 4 s (``capsuleforge filmer --tester-micro``) ; renvoie voix, crête (dBFS), avis, conseil."""
+        nom = (p.get("micro") or "").strip()
+        if len(nom) > 120 or any(c in nom for c in "\r\n\0\""):
+            return {"ok": False, "message": "nom de micro invalide"}
+        argv = C.argv_base(PY, "filmer") + ["--tester-micro"] + ([nom] if nom else []) + ["--duree", "4"]
+        if p.get("essai"):
+            argv.append("--essai")
+        try:
+            r = subprocess.run(argv, cwd=RACINE, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30,
+                               env=dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUTF8="1"),
+                               **({"creationflags": subprocess.CREATE_NO_WINDOW} if WINDOWS else {}))
+        except (OSError, subprocess.TimeoutExpired) as e:
+            return {"ok": False, "message": f"test du micro impossible : {e}"}
+        m = re.search(r"voix (-?\d+) dBFS, crête (-?\d+) dBFS — ([^(\n]+?)(?: \((.*)\))?\s*$", r.stdout, re.M)
+        if not m:
+            return {"ok": False, "message": ((r.stderr or r.stdout).strip().splitlines() or ["test du micro impossible"])[-1]}
+        return {"ok": True, "voix": int(m[1]), "crete": int(m[2]), "avis": m[3].strip(), "conseil": m[4] or ""}
 
     def a_cap_pptx(self, p: dict) -> Tache:
         d, t = self._cap(p)
@@ -404,6 +465,104 @@ class Atelier:
         t = Tache(self.nouvel_id(), f"Créer la capsule « {titre} »", "capsuleforge", argv, verrou=str(d.resolve()),
                   apres=lambda tache: {"capsule": nom})
         return t
+
+    def a_cap_filmer(self, p: dict) -> Tache:
+        d, t = self._cap(p)
+        chap = C.F().lire(d / "chapitre.yaml")
+        parties = {x.get("id"): x for x in chap.get("parties") or []}
+        partie = p.get("partie") or ""
+        if partie not in parties:
+            raise ValueError("partie inconnue")
+        argv = C.argv_base(PY, "filmer") + [str(d)]
+        if p.get("section"):
+            if p["section"] not in {s.get("id") for s in parties[partie].get("sections") or []}:
+                raise ValueError("section inconnue")
+            argv += ["--section", f"{partie}/{p['section']}"]
+        else:
+            titre = (p.get("titre") or "").strip() or time.strftime("Film du %d/%m à %H:%M")
+            ids = {s.get("id") for x in parties.values() for s in x.get("sections") or []}
+            argv += ["--section", f"{partie}/{C.ident_section(titre, ids)}", "--titre", titre]
+        ecran = int(p.get("ecran") or 1)
+        if not 1 <= ecran <= 8:
+            raise ValueError("écran inconnu")
+        argv += ["--ecran", str(ecran)]
+        for cle, option in (("webcam", "--webcam"), ("micro", "--micro")):
+            v = (p.get(cle) or "").strip()
+            if v:
+                if len(v) > 120 or any(c in v for c in "\r\n\0\""):
+                    raise ValueError("nom d'appareil invalide")
+                argv += [option, v]
+        if p.get("sans_micro"):
+            argv.append("--sans-micro")
+        if p.get("essai"):
+            argv.append("--essai")
+        return Tache(self.nouvel_id(), f"Filmer pour « {t} »", "capsuleforge", argv, verrou=str(d.resolve()),
+                     entree=True, genre="filmer")
+
+    def a_cap_editer(self, p: dict) -> Tache:
+        d, t = self._cap(p)
+        if not (d / "capsule.yaml").is_file():
+            raise ValueError("cette capsule n'a pas de fichier pour l'ancien éditeur")
+        return self._tache_cap(d, f"Éditer « {t} » (ancien éditeur)", C.argv_base(PY, "editer") + [str(d), "--sans-navigateur"])
+
+    def _nouveau_dossier(self, p: dict) -> tuple[str, str, Path]:
+        titre = (p.get("titre") or "").strip()
+        if not titre:
+            raise ValueError("donnez un titre à la capsule")
+        nom = (p.get("nom") or "").strip()
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,47}", nom):
+            raise ValueError("nom de dossier : lettres sans accent, chiffres, - et _")
+        d = C.DOSSIER / nom
+        if (d / "chapitre.yaml").exists() or (d / "capsule.yaml").exists():
+            raise ValueError(f"une capsule « {nom} » existe déjà")
+        return titre, nom, d
+
+    def a_cap_enregistrer(self, p: dict) -> Tache:
+        titre, nom, d = self._nouveau_dossier(p)
+        ecran = int(p.get("ecran") or 1)
+        if not 1 <= ecran <= 8:
+            raise ValueError("écran inconnu")
+        argv = C.argv_base(PY, "enregistrer") + [nom, "--titre", titre, "--ecran", str(ecran)]
+        return Tache(self.nouvel_id(), f"Enregistrer une manipulation : « {titre} »", "capsuleforge", argv,
+                     verrou=str(d.resolve()), apres=lambda tache: {"capsule": nom}, genre="enregistrer")
+
+    def a_cap_approj(self, p: dict) -> Tache:
+        titre, nom, d = self._nouveau_dossier(p)
+        f = Path(p.get("chemin") or "")
+        if f.suffix.lower() != ".approj" or not f.is_file():
+            raise ValueError("projet ActivePresenter introuvable (.approj)")
+        argv = C.argv_base(PY, "approj") + [str(f), "--nom", nom, "--titre", titre]
+        return Tache(self.nouvel_id(), f"Reprendre « {f.name} »", "capsuleforge", argv, verrou=str(d.resolve()),
+                     apres=lambda tache: {"capsule": nom})
+
+    def appareils(self) -> dict:
+        """Écrans, caméras et micros (``capsuleforge filmer --appareils``), gardés une minute."""
+        if self._appareils and time.time() - self._appareils[0] < 60:
+            return self._appareils[1]
+        try:
+            r = subprocess.run(C.argv_base(PY, "filmer") + ["--appareils"], cwd=RACINE, capture_output=True, text=True,
+                               encoding="utf-8", errors="replace", timeout=40,
+                               env=dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUTF8="1"),
+                               **({"creationflags": subprocess.CREATE_NO_WINDOW} if WINDOWS else {}))
+            sortie = r.stdout
+        except (OSError, subprocess.TimeoutExpired) as e:
+            return {"ok": False, "message": f"liste des appareils impossible : {e}"}
+        import ast
+        out = {"ok": True, "ecrans": [], "cameras": [], "micros": []}
+        for ligne in sortie.splitlines():
+            cle, _, reste = ligne.partition(":")
+            reste = reste.strip()
+            if cle.strip() == "Écrans":
+                out["ecrans"] = [x.strip() for x in reste.split(";") if x.strip() and x.strip() != "?"]
+            elif cle.strip() in ("Caméras", "Micros") and reste.startswith("["):
+                try:
+                    out["cameras" if cle.strip() == "Caméras" else "micros"] = list(ast.literal_eval(reste))
+                except (ValueError, SyntaxError):
+                    pass
+        if not out["ecrans"]:
+            out["ecrans"] = ["n° 1"]
+        self._appareils = (time.time(), out)
+        return out
 
     def a_cap_video(self, p: dict) -> Tache:
         d, t = self._cap(p)
@@ -783,6 +942,8 @@ def gestionnaire(at: Atelier):
                 return self._json({"ok": True, "dossiers": QB.dossiers_exports()})
             if chemin == "/api/reglages":
                 return self._json({"ok": True, "reglages": C.reglages()})
+            if chemin == "/api/appareils":
+                return self._json(at.appareils())
             if chemin == "/api/capsules":
                 return self._json({"ok": True, "capsules": C.liste()})
             if chemin.startswith("/api/capsule/"):
@@ -811,6 +972,10 @@ def gestionnaire(at: Atelier):
             try:
                 if chemin == "/api/lancer":
                     return self._json(at.lancer(p.get("action", ""), p.get("params") or {}))
+                if chemin == "/api/envoyer":
+                    t = at.taches.get(p.get("id", ""))
+                    ligne = p.get("ligne") if p.get("ligne") in ("pause", "fin") else None
+                    return self._json({"ok": bool(t and ligne and t.envoyer(ligne))})
                 if chemin == "/api/arreter":
                     t = at.taches.get(p.get("id", ""))
                     if t:
@@ -820,6 +985,8 @@ def gestionnaire(at: Atelier):
                     return self._json(at.parcourir(p))
                 if chemin == "/api/montrer":
                     return self._json(at.montrer(p))
+                if chemin == "/api/tester_micro":
+                    return self._json(at.tester_micro(p))
                 if chemin == "/api/ouvrir":
                     return self._json(at.ouvrir(p))
                 if chemin == "/api/reglages":

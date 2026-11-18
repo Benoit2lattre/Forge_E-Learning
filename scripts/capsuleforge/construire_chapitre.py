@@ -331,7 +331,7 @@ def _medias(parties: list[dict], sortie: Path) -> list[str]:
     for p in parties:
         for s in p["sections"]:
             for q in s["pas"]:
-                rels += [q.get("fond"), q.get("audio"), (q.get("video") or {}).get("src")] + [a[1] for a in q.get("apparitions") or []]
+                rels += [q.get("fond"), q.get("audio"), (q.get("video") or {}).get("src"), (q.get("camera") or {}).get("src")] + [a[1] for a in q.get("apparitions") or []]
                 rels += [v.get("audio") for v in (q.get("voix") or {}).values()]
             if s.get("exercice"):
                 d = sortie / s["exercice"]["base"]
@@ -657,6 +657,13 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                 d = didacticiel(q, chap)
                 if d:
                     x["didac"] = d
+                c = q.get("camera")
+                if c and c.get("fichier") and (dossier / c["fichier"]).is_file():
+                    x["camera"] = {"src": video(c["fichier"]), "debut": float(c.get("debut_s") or 0),
+                                   "fin": float(c.get("fin_s") or (c.get("debut_s") or 0) + (q.get("duree_s") or 0))}
+                    for k in ("position", "taille", "forme"):
+                        if c.get(k) is not None:
+                            x["camera"][k] = c[k]
                 v = q.get("video")
                 if v and v.get("fichier") and (dossier / v["fichier"]).is_file():
                     x["video"] = {"src": video(v["fichier"]), "debut": float(v.get("debut_s") or 0),
@@ -715,6 +722,9 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                "langues": {"source": src, "autres": autres, "noms": {l: noms_l.get(l, l) for l in [src] + autres}}, "ecran": {"largeur": W, "hauteur": ecran.get("hauteur") or 1080},
                "parcours": [{"id": c.get("id"), "titre": F.texte(c.get("titre"), src), "tr": tr(c, ("titre",)), "annexes": c.get("annexes", "a_la_demande"), "questions": c.get("questions", "proposees"), "exercices": bool(c.get("exercices"))}
                             for c in chap.get("parcours") or []],
+               "cameo": {"position": (chap.get("cameo") or {}).get("position", "bas-droite"),
+                         "taille": float((chap.get("cameo") or {}).get("taille", 0.22)),
+                         "forme": (chap.get("cameo") or {}).get("forme", "rond")},
                "parties": parties}
     gabarit = (ICI / "lecteur_chapitre.html").read_text(encoding="utf-8")
     langue = html.escape((chap.get("langues") or {}).get("source", "fr"))
