@@ -679,14 +679,16 @@ async function reglages() {
 /* caméo (webcam en médaillon dans le lecteur) : réglage écrit dans le chapitre par « capsuleforge cameo » */
 function reglageCameo(c, lancer) {
   const sel = (valeurs, v) => { const s = el("select", {}, valeurs.map(([x, l]) => el("option", { value: x }, l))); s.value = String(v); if (s.selectedIndex < 0) s.selectedIndex = 0; return s; };
-  const pos = sel([["bas-droite", "en bas à droite"], ["bas-gauche", "en bas à gauche"], ["haut-droite", "en haut à droite"], ["haut-gauche", "en haut à gauche"]], c.position);
+  const pos = sel([["bas-droite", "en bas à droite"], ["bas-gauche", "en bas à gauche"], ["haut-droite", "en haut à droite"], ["haut-gauche", "en haut à gauche"], ["aucune", "pas de caméo"]], c.position);
   const tailles = [["0.15", "petit"], ["0.22", "moyen"], ["0.3", "grand"]];
   if (!tailles.some(([x]) => +x === +c.taille)) tailles.push([String(c.taille), `${Math.round(c.taille * 100)} % de la largeur`]);
   const taille = sel(tailles, tailles.find(([x]) => +x === +c.taille)[0]), forme = sel([["rond", "rond"], ["rectangle", "rectangle"]], c.forme);
-  const appliquer = () => lancer("capsule.cameo", { position: pos.value, taille: taille.value, forme: forme.value });
+  const lTaille = el("label", {}, "Taille ", taille), lForme = el("label", {}, "Forme ", forme);
+  const masquer = () => { lTaille.style.display = lForme.style.display = pos.value === "aucune" ? "none" : ""; }; masquer();
+  const appliquer = () => { masquer(); lancer("capsule.cameo", pos.value === "aucune" ? { position: "aucune" } : { position: pos.value, taille: taille.value, forme: forme.value }); };
   [pos, taille, forme].forEach(s => s.onchange = appliquer);
   return el("div", { class: "bloc" }, el("div", { class: "sous" }, `Caméo (webcam en médaillon, ${c.pas} pas) :`),
-    el("label", {}, "Place ", pos), el("label", {}, "Taille ", taille), el("label", {}, "Forme ", forme),
+    el("label", {}, "Place ", pos), lTaille, lForme,
     el("div", { class: "sous" }, "Pris en compte au prochain « Construire » ; l'élève peut le masquer (bouton « Caméo »)."));
 }
 
@@ -737,16 +739,14 @@ function panneauEnregistrement(t) {
   }
   const parti = t.rec !== "pret", pause = t.rec === "pause";
   const etat = !parti ? "Préparation…" : pause ? "⏸ En pause" : "● Enregistrement";
-  if (t.genre === "enregistrer") {
-    PANNEAU.replaceChildren(el("div", { class: "rec-etat" + (parti ? " actif" : "") }, parti ? "● Enregistrement de la manipulation" : "Préparation…"),
-      el("p", {}, "Faites la manipulation dans le logiciel. Ctrl+Maj+E : nouvelle étape ; Ctrl+Maj+P : pause ; Ctrl+Maj+F : fin."));
-    return;
-  }
-  PANNEAU.replaceChildren(el("div", { class: "rec-etat" + (parti && !pause ? " actif" : "") }, etat, el("span", { class: "sous" }, " · " + duree(t.duree))),
+  const manip = t.genre === "enregistrer", envoyer = ligne => api("/api/envoyer", { id: t.id, ligne });
+  PANNEAU.replaceChildren(el("div", { class: "rec-etat" + (parti && !pause ? " actif" : "") }, manip && parti && !pause ? "● Manipulation" : etat, el("span", { class: "sous" }, " · " + duree(t.duree))),
     el("div", { class: "actions" },
-      el("button", { class: "btn second", type: "button", disabled: !parti, onclick: () => api("/api/envoyer", { id: t.id, ligne: "pause" }) }, pause ? "Reprendre" : "Pause"),
-      el("button", { class: "btn", type: "button", disabled: !parti, onclick: () => api("/api/envoyer", { id: t.id, ligne: "fin" }) }, "Fin")),
-    el("p", { class: "sous" }, "Ou Ctrl+Maj+P et Ctrl+Maj+F dans n'importe quelle fenêtre."));
+      manip ? el("button", { class: "btn second", type: "button", disabled: !parti || pause, title: "Ctrl+Maj+E", onclick: () => envoyer("etape") }, "Nouvelle étape") : null,
+      el("button", { class: "btn second", type: "button", disabled: !parti, title: "Ctrl+Maj+P", onclick: () => envoyer("pause") }, pause ? "Reprendre" : "Pause"),
+      el("button", { class: "btn", type: "button", disabled: !parti, title: "Ctrl+Maj+F", onclick: () => envoyer("fin") }, "Fin")),
+    el("p", { class: "sous" }, (manip ? "Chaque clic et chaque saisie deviennent un pas. " : "") + "Dans n'importe quelle fenêtre : "
+      + (manip ? "Ctrl+Maj+E nouvelle étape, " : "") + "Ctrl+Maj+P pause ou reprise, Ctrl+Maj+F fin (Ctrl et Maj ensemble)."));
 }
 
 /* ---------- tâches ---------- */

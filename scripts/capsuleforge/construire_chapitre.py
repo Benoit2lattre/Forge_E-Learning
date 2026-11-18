@@ -658,7 +658,8 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                 if d:
                     x["didac"] = d
                 c = q.get("camera")
-                if c and c.get("fichier") and (dossier / c["fichier"]).is_file():
+                sans_cameo = (c or {}).get("position", (chap.get("cameo") or {}).get("position")) == "aucune"
+                if c and not sans_cameo and c.get("fichier") and (dossier / c["fichier"]).is_file():
                     x["camera"] = {"src": video(c["fichier"]), "debut": float(c.get("debut_s") or 0),
                                    "fin": float(c.get("fin_s") or (c.get("debut_s") or 0) + (q.get("duree_s") or 0))}
                     for k in ("position", "taille", "forme"):

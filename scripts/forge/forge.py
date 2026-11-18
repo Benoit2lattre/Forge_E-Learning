@@ -160,6 +160,11 @@ class Tache:
             return False
 
     def arreter(self):
+        if (self.genre and self.rec in ("actif", "pause") and not getattr(self, "fin_demandee", False)
+                and self.envoyer("fin")):                # enregistrement en cours : on le termine et on le garde
+            self.fin_demandee = True
+            self.ajouter("(Arrêter : enregistrement terminé et gardé ; cliquer encore sur Arrêter pour tout abandonner)")
+            return
         if self.proc and self.proc.poll() is None:
             self.arretee = True
             self.proc.terminate()
@@ -308,7 +313,7 @@ class Atelier:
         d, t = self._cap(p)
         argv = C.argv_base(PY, "cameo") + [str(d)]
         if p.get("position"):
-            if p["position"] not in ("bas-droite", "bas-gauche", "haut-droite", "haut-gauche"):
+            if p["position"] not in ("bas-droite", "bas-gauche", "haut-droite", "haut-gauche", "aucune"):
                 raise ValueError("position du caméo inconnue")
             argv += ["--position", p["position"]]
         if p.get("forme"):
@@ -515,6 +520,8 @@ class Atelier:
         d = C.DOSSIER / nom
         if (d / "chapitre.yaml").exists() or (d / "capsule.yaml").exists():
             raise ValueError(f"une capsule « {nom} » existe déjà")
+        if d.exists() and not (d / "journal.jsonl").exists() and any(d.iterdir()):   # enregistrement interrompu : repris
+            raise ValueError(f"le dossier « {nom} » existe déjà dans data/capsuleforge : choisissez un autre nom")
         return titre, nom, d
 
     def a_cap_enregistrer(self, p: dict) -> Tache:
@@ -524,7 +531,7 @@ class Atelier:
             raise ValueError("écran inconnu")
         argv = C.argv_base(PY, "enregistrer") + [nom, "--titre", titre, "--ecran", str(ecran)]
         return Tache(self.nouvel_id(), f"Enregistrer une manipulation : « {titre} »", "capsuleforge", argv,
-                     verrou=str(d.resolve()), apres=lambda tache: {"capsule": nom}, genre="enregistrer")
+                     verrou=str(d.resolve()), apres=lambda tache: {"capsule": nom}, entree=True, genre="enregistrer")
 
     def a_cap_approj(self, p: dict) -> Tache:
         titre, nom, d = self._nouveau_dossier(p)
@@ -974,7 +981,7 @@ def gestionnaire(at: Atelier):
                     return self._json(at.lancer(p.get("action", ""), p.get("params") or {}))
                 if chemin == "/api/envoyer":
                     t = at.taches.get(p.get("id", ""))
-                    ligne = p.get("ligne") if p.get("ligne") in ("pause", "fin") else None
+                    ligne = p.get("ligne") if p.get("ligne") in ("pause", "fin", "etape") else None
                     return self._json({"ok": bool(t and ligne and t.envoyer(ligne))})
                 if chemin == "/api/arreter":
                     t = at.taches.get(p.get("id", ""))

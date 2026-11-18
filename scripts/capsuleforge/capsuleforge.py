@@ -382,7 +382,7 @@ def cmd_filmer(a):
                   importer=not a.sans_import, essai=a.essai)
 
 
-POSITIONS_CAMEO = ("bas-droite", "bas-gauche", "haut-droite", "haut-gauche")
+POSITIONS_CAMEO = ("bas-droite", "bas-gauche", "haut-droite", "haut-gauche", "aucune")   # aucune : pas de caméo
 
 
 def cmd_cameo(a):
@@ -408,6 +408,9 @@ def cmd_cameo(a):
         shutil.copy2(y, y.parent / "sauvegardes" / f"chapitre_{time.strftime('%Y%m%d_%H%M%S')}.yaml")
         F.ecrire(chap, y)
     n = sum(1 for p in chap.get("parties") or [] for s in p.get("sections") or [] for q in s.get("pas") or [] if q.get("camera"))
+    if c.get("position") == "aucune":
+        print(f"Caméo : aucun (webcam filmée gardée, non montrée ; {n} pas)" + ("  — refaire « construire »" if neuf else ""))
+        return
     print(f"Caméo : {c.get('position', 'bas-droite')}, taille {c.get('taille', 0.22)}, {c.get('forme', 'rond')} "
           f"({n} pas avec webcam)" + ("  — refaire « construire » pour le voir dans le lecteur" if neuf else ""))
 

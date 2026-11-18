@@ -277,6 +277,7 @@ class Enregistreur:
                "cible": self.cible_rel(cible) or {"origine": "aucune"}, "t": t_evt}
         evt.update(extra)
         self.ecrire(evt)
+        self.recents = [x for x in getattr(self, "recents", []) if time.monotonic() - x[2] < 5] + [(pid, action, time.monotonic())]
         if cible is None and self.avec_acc and action not in ("saisie", "touche"):
             self.demandes.put((pid, x, y))
         self.trajet = [[x, y, t_evt]]
@@ -396,6 +397,26 @@ class Enregistreur:
             bip(1)
             print("  ---- nouvelle étape ----")
 
+    def _commandes(self):
+        """Lit l'entrée : une ligne « etape » ou « pause » fait l'action, toute autre ligne (ou la fin de l'entrée)
+        termine — l'Atelier Forge envoie « fin », y compris par son bouton Arrêter."""
+        try:
+            for ligne in sys.stdin:
+                if not self.actif:
+                    return
+                cmd = ligne.strip().lower()
+                for pid, action, quand in getattr(self, "recents", []):   # clics pour revenir à l'atelier et sur son bouton :
+                    if action == "clic" and time.monotonic() - quand < 3:     # écartés de la capsule
+                        self.ecrire({"e": "modif", "id": pid, "ignorer": True, "raison": "clic dans l'Atelier Forge (bouton de l'enregistrement)"})
+                self.recents = []
+                if cmd in ("etape", "pause"):
+                    self._faire(cmd)
+                else:
+                    self._faire("fin")
+                    return
+        except (OSError, ValueError):
+            pass
+
     def _action_vk(self, vk: int):
         """Renvoie l'action à exécuter si la touche ``vk``, avec les modificateurs enfoncés, est un raccourci de
         l'enregistreur (voir :class:`raccourcis.Intercepteur`), sinon ``None``."""
@@ -497,6 +518,8 @@ class Enregistreur:
             time.sleep(1)
         print("  ● enregistrement")
         self.trajet = []
+        if not sys.stdin.isatty():                    # lancé par l'Atelier Forge : boutons Étape, Pause, Fin
+            threading.Thread(target=self._commandes, daemon=True).start()
         kl = self.intercepteur.ecouteur_clavier(on_press=self.on_press, on_release=self.on_release)
         self.kl = kl
         with mouse.Listener(on_move=self.on_move, on_click=self.on_click, on_scroll=self.on_scroll):
@@ -581,8 +604,15 @@ def enregistrer(dossier: Path, **options) -> Path:
     if sys.platform != "win32":
         raise SystemExit("L'enregistreur fonctionne sous Windows (souris, clavier et accessibilité de Windows).")
     dossier = Path(dossier)
-    if (dossier / "journal.jsonl").exists():
-        raise SystemExit(f"{dossier} contient déjà un enregistrement : choisir un autre nom.")
+    if (dossier / "capsule.yaml").exists() or (dossier / "chapitre.yaml").exists():
+        raise SystemExit(f"{dossier} contient déjà une capsule : choisir un autre nom.")
+    if (dossier / "journal.jsonl").exists():          # enregistrement interrompu (fenêtre fermée, tâche arrêtée) :
+        rebut = dossier / f"_interrompu_{time.strftime('%Y%m%d_%H%M%S')}"   # mis de côté, on recommence
+        rebut.mkdir()
+        for f in list(dossier.iterdir()):
+            if f != rebut and not f.name.startswith("_interrompu_"):
+                f.rename(rebut / f.name)
+        print(f"Enregistrement interrompu précédent mis de côté dans {rebut.name}/")
     rec = Enregistreur(dossier, **options)
     rec.lancer()
     cap = A.assembler(A.lire_journal(dossier / "journal.jsonl"), titre=options.get("titre"))

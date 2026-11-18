@@ -14,7 +14,7 @@ Chaque outil a son propre numéro de version (voir la page « État des outils �
 - Écrans Questions (QuizForge : ouvrir dans Excel, valider, convertir pour Moodle avec plan de séance, nouveau classeur, réunir un classeur et sa traduction), Bilans (DiagForge : bilan d'un dossier d'exports Moodle, fiche du professeur ouverte à la fin) et Réglages (profil proposé d'office, chemins des diaporamas retrouvés) : toute la suite Forge se lance désormais depuis l'atelier.
 - Filmer l'écran depuis l'atelier : écran, micro et caméra en listes, panneau d'enregistrement Pause / Reprendre / Fin, import dans la section à la fin. Nouvelle capsule aussi à partir d'une manipulation enregistrée dans un logiciel ou d'un projet ActivePresenter ; ancien éditeur accessible pour les capsules de l'ancien lecteur.
 - Mode d'emploi de l'atelier avec captures (page « Atelier Forge » du site, en tête des outils).
-- Filmer : bouton « Tester » du micro (niveau de la voix et conseil) ; réglage du caméo (place, taille, forme) dans la carte « Construire » ; « Nouvelle capsule » d'après une manipulation : la liste des écrans est celle de l'ordinateur (elle en proposait toujours trois).
+- Filmer : bouton « Tester » du micro (niveau de la voix et conseil) ; réglage du caméo (place ou « pas de caméo », taille, forme) dans la carte « Construire » ; manipulation enregistrée avec les mêmes boutons que le film (Nouvelle étape, Pause, Fin), les clics faits dans l'atelier n'étant pas gardés comme pas ; « Arrêter » pendant un enregistrement le termine et le garde (un second clic abandonne) ; « Nouvelle capsule » d'après une manipulation : la liste des écrans est celle de l'ordinateur (elle en proposait toujours trois).
 - « Nouvelle capsule… » : à partir d'un diaporama (plan proposé, reprise du diaporama enchaînée) ou vide (pour une vidéo).
 - Mode d'emploi de CapsuleForge et page du fichier `chapitre.yaml` sans « format 1 / format 2 » : on parle de capsules (cours ou didacticiels) et de l'ancien lecteur.
 
@@ -24,7 +24,8 @@ Chaque outil a son propre numéro de version (voir la page « État des outils �
 
 ### CapsuleForge 0.9
 
-- Caméo : la webcam filmée avec `filmer --webcam` est montrée en médaillon dans le lecteur, calée sur la vidéo (bouton « Caméo », touche V pour la masquer) ; nouvelle commande `cameo` pour sa place, sa taille et sa forme (champ `cameo` du chapitre).
+- Caméo : la webcam filmée avec `filmer --webcam` est montrée en médaillon dans le lecteur, calée sur la vidéo (bouton « Caméo », touche V pour la masquer) ; nouvelle commande `cameo` pour sa place (ou `aucune`), sa taille et sa forme (champ `cameo` du chapitre).
+- `enregistrer` : un enregistrement interrompu (fenêtre fermée, tâche arrêtée) n'empêche plus de recommencer sous le même nom ; il est mis de côté dans `_interrompu_<date>/`. Commandes « etape », « pause », « fin » lues sur l'entrée (boutons de l'Atelier Forge).
 - `filmer --tester-micro` : écoute le micro 4 s et donne le niveau de la voix avec un conseil ; à l'import, une voix trop faible est relevée vers −20 dBFS (au plus +30 dB, sans saturer).
 - Correction : les vidéos d'écran (`filmer`, `video`) n'avaient que des images clés, d'où des fichiers dix à quarante fois trop lourds (une minute filmée : 100 Mo au lieu de 3 à 8 Mo) ; les vidéos déjà importées gardent leur taille (`video --remplacer` les allège, mais refait leurs pas : transcription et relecture à refaire).
 - `filmer` : une ligne « pause » reçue sur l'entrée met en pause ou reprend, toute autre ligne termine (boutons de l'Atelier Forge ; Entrée termine toujours).
