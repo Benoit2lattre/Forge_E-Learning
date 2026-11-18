@@ -9,6 +9,7 @@ Chaque outil a son propre numéro de version (voir la page « État des outils �
 - Une page dans le navigateur qui lance les outils Forge sans ligne de commande : double-clic sur `Forge.bat` à la racine du dépôt. Premier lot : état de l'ordinateur (modules, PowerPoint, voix) et écran Exercices (ExoForge : construire, essayer avec des valeurs fixes ou tirées, montrer le paquet SCORM, choisir une autre fiche par le dialogue de fichiers de Windows) ; journal des tâches en direct, arrêt d'une tâche, fermeture avec l'onglet. Les écrans suivent l'ordre des outils, du plus simple au plus complet (Questions, Exercices, Capsules, Bilans) ; Questions, Bilans et Réglages arrivent ensuite.
 - Écran Capsules (CapsuleForge) : état de chaque capsule section par section (diapositives reprises, images, texte dit, relu, traduction et voix par langue, questions, remarques de `verifier`) et toute la préparation par boutons : reprendre un diaporama (retrouvé seul dans e_learning ou par « Parcourir… »), importer une vidéo, transcrire, relire, traduire et relire la traduction, voix de synthèse, vérifier, construire avec paquets SCORM 1.2 ou 2004. Les écrans de relecture s'ouvrent dans un onglet. Une capsule écrite pour l'ancien lecteur se met à jour d'un bouton.
 - « Montrer » met l'explorateur au premier plan (il restait derrière le navigateur, l'icône clignotant dans la barre des tâches) ; un deuxième clic pendant l'ouverture n'en ouvre plus un autre. Paquets SCORM listés par contenu (capsule entière, partie B…) et format, au lieu du nom de fichier.
+- « Nouvelle capsule… » : à partir d'un diaporama (plan proposé, reprise du diaporama enchaînée) ou vide (pour une vidéo).
 - Mode d'emploi de CapsuleForge et page du fichier `chapitre.yaml` sans « format 1 / format 2 » : on parle de capsules (cours ou didacticiels) et de l'ancien lecteur.
 
 ### Site et dépôt
@@ -17,6 +18,8 @@ Chaque outil a son propre numéro de version (voir la page « État des outils �
 
 ### CapsuleForge 0.9
 
+- Nouvelle commande `nouvelle` : crée une capsule (`data/capsuleforge/<nom>/chapitre.yaml`) vide, ou à partir d'un diaporama avec un plan proposé — une partie par section PowerPoint, des sections de quelques minutes d'après le minutage enregistré (`--decoupe auto --minutes 6`), une par diapositive ou une seule ; diapositives masquées laissées de côté ; rien n'est écrasé.
+- Titres et notes des diapositives : un retour à la ligne dans un paragraphe (Maj+Entrée) donne une espace (« Tenue en Servicedes structures » devenait « Tenue en Service des structures »).
 - Paquets SCORM 1.2 en plus de SCORM 2004 (`construire --scorm … --scorm-version 1.2`) ; le lecteur reconnaît seul la version de la plateforme.
 - Traduction des questions QuizForge et des exercices ExoForge d'un chapitre (`traduire`, même fichier et même écran de relecture que les sous-titres) ; exercice traduit avec les boutons du moteur en anglais.
 - Remarques de `verifier` affichées dans l'écran de relecture (encadré « À vérifier sur ce pas », « ⚠ » dans la liste des pas).

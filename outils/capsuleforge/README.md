@@ -15,7 +15,8 @@ Dans cette page, `capsuleforge …` abrège `python scripts/capsuleforge/capsule
 ### Chaîne
 
 ```
-chapitre.yaml                                       plan : parties, sections, renvois aux diapositives (écrit à la main ou avec un assistant d'IA)
+capsuleforge nouvelle cours --titre … --diaporama cours.pptx   crée la capsule : plan proposé (parties = sections PowerPoint, sections de quelques minutes)
+chapitre.yaml                                       plan : parties, sections, renvois aux diapositives (proposé par nouvelle, corrigé à la main ou avec un assistant d'IA)
 capsuleforge plan fiabilite                         plan par parcours, durées
 capsuleforge pptx cours.pptx --chapitre fiabilite   diapositives → pas : images, sons, apparitions, annotations « cf … » (Windows, PowerPoint)
 capsuleforge transcrire fiabilite                   premier jet du texte dit (Whisper, sur cet ordinateur)

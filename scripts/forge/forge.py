@@ -175,7 +175,8 @@ class Atelier:
                         "capsule.traduire": self.a_cap_traduire, "capsule.voix": self.a_cap_voix,
                         "capsule.verifier": self.a_cap_simple("verifier", "Vérifier"),
                         "capsule.convertir": self.a_cap_simple("convertir", "Mettre à jour pour le lecteur actuel"),
-                        "capsule.construire": self.a_cap_construire, "capsule.video": self.a_cap_video}
+                        "capsule.construire": self.a_cap_construire, "capsule.video": self.a_cap_video,
+                        "capsule.nouvelle": self.a_cap_nouvelle}
 
     # ------------------------------------------------------------------ tâches
     def lancer(self, action: str, params: dict) -> dict:
@@ -362,6 +363,35 @@ class Atelier:
             return out
         return self._tache_cap(d, f"Construire « {t} »", argv, apres=liens)
 
+    def a_cap_nouvelle(self, p: dict) -> Tache:
+        titre = (p.get("titre") or "").strip()
+        if not titre:
+            raise ValueError("donnez un titre à la capsule")
+        nom = (p.get("nom") or "").strip()
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,47}", nom):
+            raise ValueError("nom de dossier : lettres sans accent, chiffres, - et _")
+        d = C.DOSSIER / nom
+        if (d / "chapitre.yaml").exists() or (d / "capsule.yaml").exists():
+            raise ValueError(f"une capsule « {nom} » existe déjà")
+        argv = C.argv_base(PY, "nouvelle") + [nom, "--titre", titre, "--langue", C.langue_valide(p.get("langue") or "fr")]
+        if p.get("chemin"):
+            f = Path(p["chemin"])
+            if f.suffix.lower() != ".pptx" or not f.is_file():
+                raise ValueError("diaporama introuvable : choisissez un fichier .pptx")
+            decoupe = p.get("decoupe") or "auto"
+            if decoupe not in ("auto", "diapositive", "une"):
+                raise ValueError("découpage inconnu")
+            minutes = float(p.get("minutes") or 6)
+            if not 1 <= minutes <= 30:
+                raise ValueError("durée des sections entre 1 et 30 min")
+            argv += ["--diaporama", str(f), "--decoupe", decoupe, "--minutes", f"{minutes:g}"]
+            connus = C.reglages().get("diaporamas") or {}
+            connus[f.name] = str(f)
+            C.garder_reglage("diaporamas", connus)
+        t = Tache(self.nouvel_id(), f"Créer la capsule « {titre} »", "capsuleforge", argv, verrou=str(d.resolve()),
+                  apres=lambda tache: {"capsule": nom})
+        return t
+
     def a_cap_video(self, p: dict) -> Tache:
         d, t = self._cap(p)
         f = Path(p.get("chemin") or "")
@@ -546,10 +576,26 @@ def premier_plan(avant: set, titre: str, delai: float = 6.0):
             return
         if u.IsIconic(cible):
             u.ShowWindow(cible, 9)                       # SW_RESTORE
+        k = ctypes.windll.kernel32
+        devant = u.GetForegroundWindow()
+        fil_devant = u.GetWindowThreadProcessId(devant, None)
+        fil_cible = u.GetWindowThreadProcessId(cible, None)
+        ici = k.GetCurrentThreadId()
         VK_MENU, KEYUP = 0x12, 0x0002
-        u.keybd_event(VK_MENU, 0, 0, 0)
-        u.keybd_event(VK_MENU, 0, KEYUP, 0)
-        u.SetForegroundWindow(wintypes.HWND(cible))
+        attaches = []
+        for fil in {fil_devant, fil_cible} - {ici, 0}:      # partager la file d'entrée de la fenêtre qui a la main
+            if u.AttachThreadInput(ici, fil, True):
+                attaches.append(fil)
+        try:
+            u.keybd_event(VK_MENU, 0, 0, 0)
+            u.keybd_event(VK_MENU, 0, KEYUP, 0)
+            u.BringWindowToTop(wintypes.HWND(cible))
+            u.SetForegroundWindow(wintypes.HWND(cible))
+            if u.GetForegroundWindow() != cible:
+                u.SwitchToThisWindow(wintypes.HWND(cible), True)
+        finally:
+            for fil in attaches:
+                u.AttachThreadInput(ici, fil, False)
     except Exception:                                    # premier plan impossible : la fenêtre reste ouverte
         pass
 

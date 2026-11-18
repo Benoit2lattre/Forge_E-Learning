@@ -82,11 +82,13 @@ table.sections td,table.sections th{padding:6px 8px;font-size:13px}
 table.sections tr.partie td{background:#F0EEEA;font-weight:600}
 table.sections tr.partie .pastille{margin-left:8px;font-weight:400}
 table.sections tr.partie .sous{margin-left:10px;font-weight:400}
-dialog.formulaire{border:1px solid var(--bord);border-radius:10px;padding:18px 22px;min-width:460px;display:flex;flex-direction:column;gap:10px}
+dialog.formulaire{border:1px solid var(--bord);border-radius:10px;padding:18px 22px;min-width:460px;max-width:620px;display:flex;flex-direction:column;gap:10px}
 dialog.formulaire[open]{display:flex}
 dialog.formulaire label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--texte2)}
 dialog.formulaire select,dialog.formulaire input[type=text]{padding:6px;border:1px solid var(--bord);border-radius:6px;font-size:14px}
 dialog.formulaire h3{margin:0 0 4px}
+dialog.formulaire .bloc{display:flex;flex-direction:column;gap:10px;border-left:3px solid var(--slate-l);padding-left:12px}
+dialog.formulaire .bloc[hidden]{display:none}
 #taches{grid-area:taches;overflow:hidden;border-top:2px solid var(--navy);background:#fff;display:grid;grid-template-columns:300px 1fr;height:260px;min-height:0}
 #taches.replie{height:38px}
 #taches .liste{border-right:1px solid var(--bord);overflow:auto;min-height:0}
@@ -257,12 +259,13 @@ async function capsules() {
   vider(entete("capsuleforge", "Capsules"), el("p", { class: "chapeau" }, "Les capsules de data/capsuleforge. Choisissez une capsule : son état s'affiche section par section, et chaque étape de la préparation se lance ici, de la reprise du diaporama au paquet SCORM."));
   const l = await api("/api/capsules");
   if (!l.ok) return $("main").append(el("div", { class: "vide" }, l.message || "Lecture impossible."));
-  if (!l.capsules.length) return $("main").append(el("div", { class: "vide" }, "Aucune capsule dans data/capsuleforge."));
+  const nouvelleB = el("button", { class: "btn", type: "button", onclick: () => formulaireNouvelle() }, "Nouvelle capsule…");
+  if (!l.capsules.length) return $("main").append(el("div", { class: "barre" }, nouvelleB), el("div", { class: "vide" }, "Aucune capsule pour l'instant."));
   const sel = el("select", { "aria-label": "Capsule", class: "large" }, l.capsules.map(c => el("option", { value: c.nom }, `${c.titre} (${c.nom})`)));
   sel.value = opt("capsule", l.capsules[0].nom); if (sel.selectedIndex < 0) sel.selectedIndex = 0;
   const zone = el("div", {}, el("div", { class: "vide" }, "Lecture de la capsule…"));
   sel.onchange = () => { garder("capsule", sel.value); COCHEES.clear(); detailCapsule(zone, sel.value); };
-  $("main").append(el("div", { class: "barre" }, el("label", {}, "Capsule", sel)), zone);
+  $("main").append(el("div", { class: "barre" }, el("label", {}, "Capsule", sel), nouvelleB), zone);
   detailCapsule(zone, sel.value);
 }
 async function detailCapsule(zone, nom) {
@@ -351,6 +354,47 @@ async function detailCapsule(zone, nom) {
   zone.replaceChildren(haut, resume, el("div", { class: "etapes" }, sources, texteDit, traduction, voix, construire), libPortee,
     el("h3", {}, "Sections"), el("table", { class: "sections" }, el("thead", {}, el("tr", {}, entetes.map(h => el("th", {}, h)))), corps));
 }
+const SUITES = {};                                   // tâche à lancer quand une autre réussit
+const slug = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 40);
+function formulaireNouvelle() {
+  const dlg = el("dialog", { class: "formulaire" });
+  let chemin = null, nomTouche = false;
+  const titre = el("input", { type: "text", placeholder: "ex. Dimensionnement fiabiliste" });
+  const nom = el("input", { type: "text", placeholder: "rempli d'après le titre" });
+  titre.oninput = () => { if (!nomTouche) nom.value = slug(titre.value); };
+  nom.oninput = () => nomTouche = true;
+  const langue = el("select", {}, [["fr", "français"], ["en", "anglais"], ["es", "espagnol"], ["de", "allemand"], ["it", "italien"]].map(([v, l]) => el("option", { value: v }, l)));
+  const src = el("select", {}, el("option", { value: "pptx" }, "un diaporama PowerPoint"), el("option", { value: "vide" }, "rien pour l'instant (vidéo ou film d'écran ensuite)"));
+  const nomF = el("span", { class: "sous" }, "aucun");
+  const parcourir = el("button", { class: "btn second", type: "button", onclick: async () => {
+    message("Choisissez le diaporama dans la fenêtre qui s'ouvre (elle peut être derrière le navigateur).");
+    const r = await api("/api/parcourir", { titre: "Choisir le diaporama", types: [["Diaporama PowerPoint", "*.pptx"]] });
+    if (!r.ok) return message(r.message || "Dialogue impossible.", true);
+    if (r.chemin) { chemin = r.chemin; nomF.textContent = r.chemin; if (!titre.value) { titre.value = r.chemin.split(/[\\/]/).pop().replace(/\.pptx$/i, "").replace(/_/g, " "); titre.oninput(); } } } }, "Diaporama…");
+  const decoupe = el("select", {}, el("option", { value: "auto" }, "sections de quelques minutes"), el("option", { value: "diapositive" }, "une section par diapositive"), el("option", { value: "une" }, "une seule section"));
+  const minutes = el("select", {}, ["3", "4", "5", "6", "8", "10"].map(m => el("option", { value: m }, m + " min au plus"))); minutes.value = "6";
+  const reprendreC = el("input", { type: "checkbox" }); reprendreC.checked = true;
+  const blocPptx = el("div", { class: "bloc" }, el("div", { class: "ligne" }, parcourir, nomF), el("label", {}, "Découpage ", decoupe), el("label", {}, "Durée des sections ", minutes),
+    el("label", { class: "case" }, reprendreC, "reprendre aussi le diaporama tout de suite (images, sons, apparitions)"),
+    el("p", { class: "sous" }, "Une partie par section PowerPoint s'il y en a ; le titre d'une section est celui de sa première diapositive. Le découpage pourra être revu."));
+  decoupe.onchange = () => minutes.disabled = decoupe.value !== "auto";
+  src.onchange = () => blocPptx.hidden = src.value !== "pptx";
+  dlg.append(el("h3", {}, "Nouvelle capsule"), el("label", {}, "Titre ", titre), el("label", {}, "Dossier (dans data/capsuleforge) ", nom), el("label", {}, "Langue du cours ", langue),
+    el("label", {}, "À partir de ", src), blocPptx,
+    el("div", { class: "actions" }, el("button", { class: "btn second", type: "button", onclick: () => dlg.close() }, "Annuler"),
+      el("button", { class: "btn", type: "button", onclick: async () => {
+        if (!titre.value.trim()) return message("Donnez un titre à la capsule.", true);
+        if (src.value === "pptx" && !chemin) return message("Choisissez d'abord le diaporama.", true);
+        const p = { titre: titre.value.trim(), nom: nom.value.trim() || slug(titre.value), langue: langue.value };
+        if (src.value === "pptx") Object.assign(p, { chemin, decoupe: decoupe.value, minutes: minutes.value });
+        const id = await lancerTache("capsule.nouvelle", p);
+        if (!id) return;
+        dlg.close();
+        if (src.value === "pptx" && reprendreC.checked) SUITES[id] = () => lancerTache("capsule.pptx", { capsule: p.nom, chemin, sans_images: opt("sans_images", false) });
+      } }, "Créer")));
+  dlg.addEventListener("close", () => dlg.remove());
+  document.body.append(dlg); dlg.showModal(); titre.focus();
+}
 async function lancerTache(action, params) {
   const r = await api("/api/lancer", { action, params });
   if (!r.ok) { message(r.message || "Lancement impossible.", true); return null; }
@@ -414,6 +458,8 @@ async function rafraichir() {
   for (const t of TACHES) if (avant[t.id] === "en_cours" && t.etat !== "en_cours") {
     message(`${t.etat === "reussie" ? "Terminé" : t.etat === "echec" ? "Échec" : "Arrêté"} : ${t.titre}`, t.etat === "echec");
     if (ECRAN === "exercices" && t.outil === "exoforge") exercices();
+    if (t.etat === "reussie" && t.liens && t.liens.capsule) garder("capsule", t.liens.capsule);
+    if (t.etat === "reussie" && SUITES[t.id]) { const f = SUITES[t.id]; delete SUITES[t.id]; setTimeout(f, 300); }
     if (ECRAN === "capsules" && t.outil === "capsuleforge") capsules();
   }
   if (!CHOISIE && TACHES.length) CHOISIE = TACHES.at(-1).id;

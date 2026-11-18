@@ -395,6 +395,17 @@ def cmd_relire(a):
     relecture.relire(y, port=a.port, navigateur=not a.sans_navigateur)
 
 
+def cmd_nouvelle(a):
+    """Crée une capsule neuve dans data/capsuleforge/<nom> (vide, ou plan proposé à partir d'un diaporama)."""
+    import nouvelle
+    nom = nouvelle.nom_valide(a.nom)
+    diaporama = Path(a.diaporama) if a.diaporama else None
+    if diaporama and not diaporama.is_file():
+        raise SystemExit(f"Diaporama introuvable : {diaporama}")
+    nouvelle.creer(DOSSIER / nom, a.titre, langue=a.langue, diaporama=diaporama, decoupe=a.decoupe,
+                   minutes=a.minutes, diapos=a.diapos)
+
+
 def cmd_plan(a):
     """Affiche le plan d'un chapitre au format 2, parcours par parcours (commande ``plan``)."""
     import format_chapitre as F
@@ -554,12 +565,20 @@ def main(argv=None):
     s = sp.add_parser("assembler", help="refaire le YAML depuis le journal"); s.add_argument("capsule"); s.add_argument("--titre")
     ap = sp.add_parser("approj", help="reprendre un projet ActivePresenter"); ap.add_argument("projet")
     ap.add_argument("--nom"); ap.add_argument("--titre")
+    nv = sp.add_parser("nouvelle", help="créer une capsule neuve (vide, ou plan proposé à partir d'un diaporama)")
+    nv.add_argument("nom", help="nom du dossier dans data/capsuleforge (lettres sans accent, chiffres, - et _)")
+    nv.add_argument("--titre", required=True); nv.add_argument("--langue", default="fr")
+    nv.add_argument("--diaporama", help="fichier .pptx dont les diapositives feront les sections")
+    nv.add_argument("--decoupe", choices=["auto", "diapositive", "une"], default="auto",
+                    help="auto : sections d'au plus --minutes min ; diapositive : une section par diapositive ; une : une section par partie")
+    nv.add_argument("--minutes", type=float, default=6.0, help="durée visée d'une section (découpe auto)")
+    nv.add_argument("--diapos", help="diapositives à retenir (ex. 6-12 ; toutes par défaut)")
     sp.add_parser("assistant", help="menu pas à pas")
     a = p.parse_args(argv)
     if not a.cmd:
         p.print_help(); return 0
     return {"enregistrer": cmd_enregistrer, "editer": cmd_editer, "construire": cmd_construire, "traduire": cmd_traduire, "voix": cmd_voix, "video": cmd_video, "filmer": cmd_filmer, "convertir": cmd_convertir, "plan": cmd_plan, "pptx": cmd_pptx, "transcrire": cmd_transcrire, "relire": cmd_relire, "verifier": cmd_verifier,
-            "assembler": cmd_assembler, "approj": cmd_approj, "assistant": cmd_assistant}[a.cmd](a) or 0
+            "assembler": cmd_assembler, "approj": cmd_approj, "nouvelle": cmd_nouvelle, "assistant": cmd_assistant}[a.cmd](a) or 0
 
 
 if __name__ == "__main__":

@@ -285,5 +285,16 @@ def langue_valide(l: str) -> str:
     return l
 
 
+def nom_propose(titre: str) -> str:
+    """Nom de dossier libre tiré d'un titre (« Traction simple » → traction_simple)."""
+    s = unicodedata.normalize("NFD", (titre or "").lower())
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    base = re.sub(r"[^a-z0-9]+", "_", s).strip("_")[:40] or "capsule"
+    nom, k = base, 2
+    while (DOSSIER / nom).exists():
+        nom, k = f"{base}_{k}", k + 1
+    return nom
+
+
 def argv_base(py: str, cmd: str) -> list[str]:
     return [py, str(SCRIPT), cmd]

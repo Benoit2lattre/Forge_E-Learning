@@ -49,7 +49,13 @@ def _texte(noeud) -> str:
     """Renvoie le texte d'un nœud, un paragraphe non vide par ligne."""
     lignes = []
     for par in noeud.iter("{%s}p" % NS["a"]):
-        lignes.append("".join(t.text or "" for t in par.iter("{%s}t" % NS["a"])))
+        morceaux = []
+        for e in par.iter():
+            if e.tag == "{%s}t" % NS["a"]:
+                morceaux.append(e.text or "")
+            elif e.tag == "{%s}br" % NS["a"]:              # retour à la ligne dans un paragraphe (Maj+Entrée)
+                morceaux.append("\n")
+        lignes.extend("".join(morceaux).split("\n"))
     return "\n".join(l for l in lignes if l.strip()).strip()
 
 
