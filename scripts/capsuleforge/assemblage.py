@@ -303,8 +303,8 @@ def construire_pas(e: dict, ecran: dict, t_prec) -> dict:
         p["point"] = [c[0] + c[2] // 2, c[1] + c[3] // 2]
     if brute.get("processus"):
         p["processus"] = brute["processus"]
-    raison = hors_application(action, point, brute, ecran, p.get("touches"))
-    if raison:
+    raison = (e.get("raison") if e.get("ignorer") else None) or hors_application(action, point, brute, ecran, p.get("touches"))
+    if raison:                                       # écarté par l'enregistreur (clic dans l'atelier) ou hors application
         p = {"ignorer": True, "raison": raison, **p}
 
     p["bulle"] = bulle_auto(action, p["cible"], p.get("texte"), p.get("touches"))
