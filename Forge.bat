@@ -1,5 +1,5 @@
 @echo off
-rem Atelier Forge : double-clic pour ouvrir la page qui lance les outils Forge (rien à taper).
+rem AtelierForge : double-clic pour ouvrir la page qui lance les outils Forge (rien à taper).
 rem La fenêtre reste ouverte tant que l'atelier tourne ; elle se ferme quand on quitte la page.
 chcp 65001 >nul
 setlocal

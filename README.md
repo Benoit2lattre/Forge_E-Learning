@@ -92,7 +92,7 @@ python scripts/exoforge/build.py outils/exoforge/exemples/premier_exercice
 
 La seconde commande produit `dist/exoforge/premier_exercice/index.html`, à ouvrir dans le navigateur.
 
-Sous Windows, un double-clic sur `Forge.bat`, à la racine du dépôt, ouvre l'**Atelier Forge** : une page dans le navigateur qui lance les outils par boutons et listes (premier écran : ExoForge ; les autres suivent dans la 0.3). Un double-clic sur `scripts/quizforge/QuizForge.bat` ouvre l'assistant de QuizForge, sans ligne de commande ; `scripts/capsuleforge/CapsuleForge.bat` fait de même pour CapsuleForge.
+Sous Windows, un double-clic sur `Forge.bat`, à la racine du dépôt, ouvre **AtelierForge** : une page dans le navigateur qui lance les outils par boutons et listes (questions, exercices, capsules, bilans et cours ; voir son [mode d'emploi](outils/atelier/README.md)). Un double-clic sur `scripts/quizforge/QuizForge.bat` ouvre l'assistant de QuizForge, sans ligne de commande ; `scripts/capsuleforge/CapsuleForge.bat` fait de même pour CapsuleForge.
 
 ### Tester sans Moodle d'établissement
 

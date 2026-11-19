@@ -34,13 +34,13 @@ La première étape, **concevoir le cours**, reste celle de l'enseignant : Forge
 
 ## Les outils
 
-```{image} ../_static/identite/bandeaux/famille_forge_bandeau_jour.png
-:alt: La famille Forge — Forge E-Learning, QuizForge, ExoForge, CapsuleForge, DiagForge
+```{image} ../_static/identite/bandeaux/famille_forge_v03_sans_parent_bandeau_jour.png
+:alt: La famille Forge — AtelierForge, QuizForge, ExoForge, CapsuleForge, DiagForge
 :class: only-light
 ```
 
-```{image} ../_static/identite/bandeaux/famille_forge_bandeau_nuit.png
-:alt: La famille Forge — Forge E-Learning, QuizForge, ExoForge, CapsuleForge, DiagForge
+```{image} ../_static/identite/bandeaux/famille_forge_v03_sans_parent_bandeau_nuit.png
+:alt: La famille Forge — AtelierForge, QuizForge, ExoForge, CapsuleForge, DiagForge
 :class: only-dark
 ```
 
@@ -50,6 +50,7 @@ La première étape, **concevoir le cours**, reste celle de l'enseignant : Forge
 | **ExoForge** | fiche YAML → exercice guidé autonome (page HTML5 et paquet SCORM 1.2) : données tirées au hasard, formules LaTeX, diagnostic des erreurs, graphiques, audio | {doc}`../outils/exoforge/README` |
 | **CapsuleForge** | diaporama narré, vidéo ou capture → chapitre de cours interactif (lecteur HTML, paquets SCORM 2004 et 1.2) : parcours, sous-titres, questions, exercices, traduction, voix de synthèse | {doc}`../outils/capsuleforge/README` |
 | **DiagForge** | exports Moodle → bilan : classeur, fiche du professeur, images pour les étudiants, qualité des questions, erreurs types, tirage et rétention | {doc}`../outils/diagforge/README` |
+| **AtelierForge** | une page du navigateur qui lance les quatre outils par boutons et listes, sans ligne de commande ; range classeurs, fiches et capsules par cours, déclinaison (école, campus, parcours) et édition (année), et garde le registre des versions déposées dans Moodle | {doc}`../outils/atelier/README` |
 
 Les outils partagent un style générique et des profils d'établissement (couleurs par rôle, polices, barème Moodle) : voir {doc}`communs`.
 
@@ -96,7 +97,7 @@ python scripts/quizforge/quizforge.py profils
 python scripts/exoforge/build.py outils/exoforge/exemples/premier_exercice
 ```
 
-La seconde commande produit `dist/exoforge/premier_exercice/index.html`, à ouvrir dans le navigateur. Le bac à sable public de Moodle ([sandbox.moodledemo.net](https://sandbox.moodledemo.net), remis à zéro toutes les heures) suffit pour importer les questions et déposer les paquets SCORM.
+La seconde commande produit `dist/exoforge/premier_exercice/index.html`, à ouvrir dans le navigateur. Sous Windows, un double-clic sur `Forge.bat`, à la racine du dépôt, ouvre AtelierForge, qui fait la même chose par boutons ; `python scripts/forge/forge.py` l'ouvre sur les autres systèmes. Le bac à sable public de Moodle ([sandbox.moodledemo.net](https://sandbox.moodledemo.net), remis à zéro toutes les heures) suffit pour importer les questions et déposer les paquets SCORM.
 
 ## À propos
 

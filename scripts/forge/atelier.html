@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Atelier Forge</title>
-<link rel="icon" href="/static/identite/icones/exoforge_icone_jour_32.png">
+<title>AtelierForge</title>
+<link rel="icon" href="/static/identite/icones/atelierforge_icone_jour_32.png">
 <style>
 :root{--navy:#14213D;--navy2:#28406B;--slate:#748CAB;--slate-l:#D3DDEC;--sand:#E0B989;--sand-l:#F4E6D2;--fond:#F7F6F4;--carte:#fff;--bord:#CDC9C0;
   --texte:#1A1815;--texte2:#615C52;--ok:#5C8A66;--ok-l:#E4F0E6;--ko:#B85C50;--ko-l:#F6E3E0;--focus:#FFCD00;
@@ -22,6 +22,7 @@ button,select,input{font:inherit}
 main:focus,main:focus-visible{outline:none}
 header{grid-area:tete;background:var(--navy);color:#fff;display:flex;align-items:center;gap:14px;padding:0 18px}
 header h1{font-size:18px;margin:0;font-weight:600}
+header h1.cache{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 header .version{color:#B7C4DA;font-size:13px}
 header .espace{flex:1}
 header button{margin-left:8px;background:transparent;color:#fff;border:1px solid var(--slate);border-radius:6px;padding:6px 12px;cursor:pointer}
@@ -138,15 +139,15 @@ dialog.formulaire .bloc[hidden]{display:none}
 </head>
 <body>
 <header>
-  <img src="/static/identite/logos/forge_e-learning_logo_nuit.png" alt="" height="30" data-fixe onerror="this.remove()">
-  <h1>Atelier Forge</h1><span class="version" id="version"></span>
+  <img src="/static/identite/logos/atelierforge_logo_nuit.png" srcset="/static/identite/logos/atelierforge_logo_nuit@2x.png 2x" alt="AtelierForge" height="38" data-fixe onerror="this.remove(); document.querySelector('header h1').classList.remove('cache')">
+  <h1 class="cache">AtelierForge</h1><span class="version" id="version"></span>
   <label class="cours-actif">Cours <select id="cours-actif" aria-label="Cours choisi : limite les listes"><option value="">Tous les cours</option></select></label>
   <span class="espace"></span>
   <button type="button" id="theme" title="Apparence : jour ou nuit">☾ Nuit</button>
   <button type="button" id="quitter" title="Arrêter l'atelier (la fenêtre de commande se ferme)">Quitter</button>
 </header>
 <nav aria-label="Écrans">
-  <button type="button" data-ecran="accueil" aria-current="page"><img src="/static/identite/icones/exoforge_icone_jour_32.png" alt="" style="visibility:hidden">Accueil</button>
+  <button type="button" data-ecran="accueil" aria-current="page"><img src="/static/identite/icones/atelierforge_icone_jour_32.png" alt="">Accueil</button>
   <button type="button" data-ecran="cours"><img src="/static/identite/icones/exoforge_icone_jour_32.png" alt="" style="visibility:hidden">Cours</button>
   <button type="button" data-ecran="questions"><img src="/static/identite/icones/quizforge_icone_jour_32.png" alt="">Questions</button>
   <button type="button" data-ecran="exercices"><img src="/static/identite/icones/exoforge_icone_jour_32.png" alt="">Exercices</button>
@@ -1101,7 +1102,7 @@ $("quitter").onclick = async () => {
 window.addEventListener("pagehide", () => { if (!FINI) navigator.sendBeacon("/api/depart", ""); });
 
 /* ---------- départ ---------- */
-if (!JETON) vider(el("h2", {}, "Atelier Forge"), el("p", { class: "chapeau" }, "Cette page doit être ouverte par Forge.bat (double-clic à la racine du dépôt)."));
+if (!JETON) vider(el("h2", {}, "AtelierForge"), el("p", { class: "chapeau" }, "Cette page doit être ouverte par Forge.bat (double-clic à la racine du dépôt)."));
 else { let e = "accueil"; try { e = sessionStorage.getItem("forge-ecran") || "accueil"; } catch (x) {} chargerCours().then(() => aller(ecrans[e] ? e : "accueil")); rafraichir(); }
 </script>
 </body>

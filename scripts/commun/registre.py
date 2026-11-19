@@ -220,7 +220,18 @@ def reconnaitre(noms: set, bases) -> dict | None:
     return meilleure
 
 
+def public(b: Path) -> bool:
+    """Registre d'un cours de démonstration publié (donnees/cours) : lu, mais jamais réécrit par un bilan."""
+    try:
+        Path(b).resolve().relative_to((chemins.DONNEES / "cours").resolve())
+        return True
+    except ValueError:
+        return False
+
+
 def noter_bilan(b: Path, ident: str, bilan: Path | None, fiche: Path | None):
+    if public(b):
+        return
     reg = lire(b)
     v = next((x for x in reg["versions"] if x.get("id") == ident), None)
     if not v:

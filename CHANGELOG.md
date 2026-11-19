@@ -28,6 +28,9 @@ Chaque outil a son propre numéro de version (voir la page « État des outils �
 
 ### Site et dépôt
 
+- Identité visuelle : l'atelier s'appelle AtelierForge et a son logo et ses icônes (en-tête, onglet du navigateur, accueil) ; chaque mode d'emploi d'outil s'ouvre sur le bandeau de l'outil, jour et nuit (à la place de l'icône, dont les coins restaient blancs en mode nuit) ; bandeau de la famille Forge v0.3 (avec AtelierForge) sur l'accueil, où AtelierForge rejoint le tableau des outils.
+- Captures du mode d'emploi d'AtelierForge refaites sur la version 0.5 (sélecteur « Cours », écran Cours) ; pages « État des outils » (section AtelierForge 0.5, caméo, versions et `--cours`) et « État de rédaction » mises à jour pour la 0.3.
+- AtelierForge : un bilan fait sur le cours de démonstration (`donnees/cours/`) ne réécrit plus son registre publié ; les fiches d'exercices affichent leur cours et leur chapitre.
 - Outils présentés partout dans l'ordre QuizForge, ExoForge, CapsuleForge (qui utilise les deux premiers), DiagForge (qui analyse les trois autres) : sommaire du site, accueil, état des outils, prochaines étapes, README.
 
 ### CapsuleForge 0.9

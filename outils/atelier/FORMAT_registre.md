@@ -1,4 +1,4 @@
-# Atelier Forge — versions et registre (`registre.yaml`, `version.yaml`)
+# AtelierForge — versions et registre (`registre.yaml`, `version.yaml`)
 
 Une conversion de quiz faite pour un cours, ou la construction d'un exercice, devient une **version** : elle est rangée dans l'édition (ou dans le cours pour un extrait commun à plusieurs déclinaisons), sous un nom explicite, et **n'est jamais écrasée**. Le **registre** de l'édition suit chaque version jusqu'au bilan. Ainsi, on sait toujours quel fichier a été déposé dans Moodle et à quel test se rapporte un bilan.
 

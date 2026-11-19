@@ -1,6 +1,6 @@
 # ExoForge
 
-<p><img src="../../_static/identite/icones/exoforge_icone_jour_64.png#gh-light-mode-only" alt="ExoForge" align="right"><img src="../../_static/identite/icones/exoforge_icone_nuit_64.png#gh-dark-mode-only" alt="ExoForge" align="right"></p>
+<p><img src="../../_static/identite/bandeaux/exoforge_bandeau_jour.png#gh-light-mode-only" alt="ExoForge" class="only-light" width="100%"><img src="../../_static/identite/bandeaux/exoforge_bandeau_nuit.png#gh-dark-mode-only" alt="ExoForge" class="only-dark" width="100%"></p>
 
 ExoForge construit un exercice interactif à partir d'une fiche texte (YAML) : une page HTML autonome, qui s'ouvre dans n'importe quel navigateur, et un paquet SCORM 1.2 à déposer dans Moodle. L'exercice enchaîne des étapes (explication, question à choix, réponse numérique) à côté d'un encadré permanent (énoncé, tableau, graphique, formules) ; il peut tirer ses données au hasard, diagnostiquer les erreurs prévisibles et être commenté à l'oral.
 
@@ -38,7 +38,7 @@ Options de `build.py` (l'extension `.yaml` peut être omise) :
 | Option | Rôle |
 | --- | --- |
 | `-p Ecole1` | profil : couleurs, polices, jeu de couleurs LaTeX (nom, alias ou première lettre) ; sinon le `profil:` de la fiche, sinon le profil par défaut |
-| `--cours stat:epf-mae` | profil de l'école de l'édition (cours de l'Atelier Forge), si `-p` n'est pas donné ; le paquet SCORM est aussi rangé comme version de l'édition, jamais écrasée (`…/<édition>/exercices/<id>/v2/<id>_v2_scorm12.zip`, avec `version.yaml`), et inscrit à son registre ; une construction identique (même fiche, mêmes médias, même profil) n'en crée pas |
+| `--cours stat:epf-mae` | profil de l'école de l'édition (cours d'AtelierForge), si `-p` n'est pas donné ; le paquet SCORM est aussi rangé comme version de l'édition, jamais écrasée (`…/<édition>/exercices/<id>/v2/<id>_v2_scorm12.zip`, avec `version.yaml`), et inscrit à son registre ; une construction identique (même fiche, mêmes médias, même profil) n'en crée pas |
 | `-a` | mode auteur intégré à la page (emplacements audio, relevé des temps, données tirées, avertissements) |
 
 Pour tester la page sans reconstruire : `index.html?auteur` (mode auteur), `?mode=fixe` (données d'origine de la fiche), `?seed=12` (un tirage précis, pour reproduire ce qu'a vu un étudiant).

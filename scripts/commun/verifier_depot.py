@@ -26,6 +26,7 @@ TAILLE_MAX = 5 * 1024 * 1024
 DOMAINES_FICTIFS = ("exemple.fr", "exemple.com", "example.com", "example.org", "moodle.a",
                     "users.noreply.github.com", "noreply.github.com")
 COURRIEL = re.compile(rb"[A-Za-z0-9._%+-]+@([A-Za-z0-9.-]+\.[A-Za-z]{1,})")
+IMAGE_DENSITE = re.compile(r"^\d+x\.(png|jpe?g|webp|gif|svg|avif)$")  # logo@2x.png : nom d'image, pas une adresse
 TEXTE = (".py", ".md", ".txt", ".csv", ".yaml", ".yml", ".json", ".xml", ".html", ".tex", ".bib", ".css", ".js", ".gift", ".bat")
 
 
@@ -67,6 +68,8 @@ def controler(chemins):
             contenu = p.read_bytes()
             for m in COURRIEL.finditer(contenu):
                 dom = m.group(1).decode("ascii", "ignore").lower()
+                if IMAGE_DENSITE.match(dom):
+                    continue
                 if not any(dom == d or dom.endswith("." + d) for d in DOMAINES_FICTIFS):
                     ligne = contenu[:m.start()].count(b"\n") + 1
                     problemes.append(f"{c}:{ligne} : adresse de courriel réelle ? ({m.group(0).decode('utf-8', 'ignore')})")

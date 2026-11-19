@@ -264,17 +264,17 @@ class Index:
 
 
 def filtrer(objets: list[dict], cle: str, choix: dict | None, index: Index | None = None, chemin=None) -> list[dict]:
-    """Ajoute à chaque objet la liste ``cours`` de ses cours, puis garde ceux du choix (cours, « sans » ou tous)."""
+    """Ajoute à chaque objet la liste ``dans_cours`` de ses cours, puis garde ceux du choix (cours, « sans » ou tous)."""
     index = index or Index()
     choix = choix or {}
     out = []
     for o in objets:
-        o["cours"] = index.de(chemin(o) if chemin else o.get(cle) or "")
+        o["dans_cours"] = index.de(chemin(o) if chemin else o.get(cle) or "")
         if choix.get("cours") == "_sans":
-            if not o["cours"]:
+            if not o["dans_cours"]:
                 out.append(o)
         elif choix.get("cours"):
-            if choix["cours"] in o["cours"]:
+            if choix["cours"] in o["dans_cours"]:
                 out.append(o)
         else:
             out.append(o)

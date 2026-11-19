@@ -1337,7 +1337,7 @@ def gestionnaire(at: Atelier):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="Atelier Forge : lancer les outils Forge depuis le navigateur.")
+    ap = argparse.ArgumentParser(description="AtelierForge : lancer les outils Forge depuis le navigateur.")
     ap.add_argument("--port", type=int, default=PORT)
     ap.add_argument("--sans-navigateur", action="store_true", help="ne pas ouvrir la page (essais)")
     a = ap.parse_args(argv)
@@ -1345,7 +1345,7 @@ def main(argv=None):
     srv, adresse = S.demarrer(gestionnaire(at), a.port)
     at.arreter = srv.shutdown
     page = f"{adresse}?j={at.jeton}"
-    print(f"Atelier Forge {VERSION} : {page}")
+    print(f"AtelierForge {VERSION} : {page}")
     print("Laisser cette fenêtre ouverte. Elle se ferme quand la page est fermée (ou par « Quitter » dans la page).")
     S.servir(srv, page, not a.sans_navigateur)
     for t in at.taches.values():

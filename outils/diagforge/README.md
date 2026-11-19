@@ -1,6 +1,6 @@
 # DiagForge
 
-<p><img src="../../_static/identite/icones/diagforge_icone_jour_64.png#gh-light-mode-only" alt="DiagForge" align="right"><img src="../../_static/identite/icones/diagforge_icone_nuit_64.png#gh-dark-mode-only" alt="DiagForge" align="right"></p>
+<p><img src="../../_static/identite/bandeaux/diagforge_bandeau_jour.png#gh-light-mode-only" alt="DiagForge" class="only-light" width="100%"><img src="../../_static/identite/bandeaux/diagforge_bandeau_nuit.png#gh-dark-mode-only" alt="DiagForge" class="only-dark" width="100%"></p>
 
 DiagForge regroupe l'analyse de ce qui a été produit avec les outils Forge : résultats des étudiants, qualité des questions, et à terme des exercices et des quiz eux-mêmes. Cette page décrit la partie disponible aujourd'hui, l'analyse des résultats d'un test Moodle.
 
@@ -55,7 +55,7 @@ python scripts/diagforge/diagforge.py data/diagforge/Quizz1 -r roster.csv -t pre
 | `-p` | profil : couleurs des images et de la fiche |
 | `-s` | nom du classeur produit |
 | `--sans-images` | pas d'images PNG |
-| `--cours stat:epf-mae` | profil de l'école de l'édition (cours de l'Atelier Forge), si `-p` n'est pas donné |
+| `--cours stat:epf-mae` | profil de l'école de l'édition (cours d'AtelierForge), si `-p` n'est pas donné |
 
 **Version du quiz.** Le bilan cherche, d'après les noms des questions de l'export XML, la version QuizForge du test dans les registres des cours (ceux de l'édition avec `--cours`, sinon tous) : il l'écrit dans un onglet « Version » du classeur (avec les questions absentes ou en plus) et inscrit le bilan au registre (état « bilan fait », liens vers le classeur et la fiche).
 

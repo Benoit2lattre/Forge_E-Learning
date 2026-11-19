@@ -1,4 +1,4 @@
-# Atelier Forge — format d'un cours (`forge-cours/1`)
+# AtelierForge — format d'un cours (`forge-cours/1`)
 
 Un cours est décrit par un seul fichier, `cours.yaml`, rangé dans `data/cours/<nom>/` (cours privés) ou `donnees/cours/<nom>/` (cours de démonstration publiés). L'écran **Cours** de l'atelier l'écrit par formulaire ; le fichier reste lisible et modifiable à la main. Les outils le lisent par l'option `--cours` (QuizForge, ExoForge, DiagForge) ; `python scripts/forge/cours.py verifier` le contrôle.
 

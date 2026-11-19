@@ -1,6 +1,8 @@
-# Atelier Forge
+# AtelierForge
 
-L'Atelier Forge lance toute la suite Forge depuis une page du navigateur, par boutons et listes : rien à taper, ni commande ni chemin. Il ne refait aucun calcul : chaque bouton lance la commande de l'outil (QuizForge, ExoForge, CapsuleForge, DiagForge), et son journal s'affiche en bas de la page.
+<p><img src="../../_static/identite/bandeaux/atelierforge_bandeau_jour.png#gh-light-mode-only" alt="AtelierForge" class="only-light" width="100%"><img src="../../_static/identite/bandeaux/atelierforge_bandeau_nuit.png#gh-dark-mode-only" alt="AtelierForge" class="only-dark" width="100%"></p>
+
+AtelierForge lance toute la suite Forge depuis une page du navigateur, par boutons et listes : rien à taper, ni commande ni chemin. Il ne refait aucun calcul : chaque bouton lance la commande de l'outil (QuizForge, ExoForge, CapsuleForge, DiagForge), et son journal s'affiche en bas de la page.
 
 Statut : version 0.5, essayée sous Windows sur les cours de l'auteur. Les commandes restent utilisables seules (voir le mode d'emploi de chaque outil).
 
