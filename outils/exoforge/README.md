@@ -38,7 +38,7 @@ Options de `build.py` (l'extension `.yaml` peut être omise) :
 | Option | Rôle |
 | --- | --- |
 | `-p Ecole1` | profil : couleurs, polices, jeu de couleurs LaTeX (nom, alias ou première lettre) ; sinon le `profil:` de la fiche, sinon le profil par défaut |
-| `--cours stat:epf-mae` | profil de l'école de l'édition (cours de l'Atelier Forge), si `-p` n'est pas donné |
+| `--cours stat:epf-mae` | profil de l'école de l'édition (cours de l'Atelier Forge), si `-p` n'est pas donné ; le paquet SCORM est aussi rangé comme version de l'édition, jamais écrasée (`…/<édition>/exercices/<id>/v2/<id>_v2_scorm12.zip`, avec `version.yaml`), et inscrit à son registre ; une construction identique (même fiche, mêmes médias, même profil) n'en crée pas |
 | `-a` | mode auteur intégré à la page (emplacements audio, relevé des temps, données tirées, avertissements) |
 
 Pour tester la page sans reconstruire : `index.html?auteur` (mode auteur), `?mode=fixe` (données d'origine de la fiche), `?seed=12` (un tirage précis, pour reproduire ce qu'a vu un étudiant).

@@ -73,6 +73,35 @@ def construire(fiche: Path, profil: str | None = None, auteur: bool = False) -> 
     return generique.construire_generique(fiche, cfg, profil, auteur, style_profil)
 
 
+def ranger_version(fiche: Path, paquet: Path, profil, cours: dict):
+    """Avec --cours : copie le paquet SCORM dans l'édition comme une version (``exercices/<id>/v2/<id>_v2_scorm12.zip``),
+    inscrite au registre ; une construction identique (même fiche, mêmes médias, même profil) n'en crée pas."""
+    import hashlib
+    import shutil
+    import registre
+    cfg = yaml.safe_load(fiche.read_text(encoding="utf-8")) or {}
+    ident = str(cfg.get("id") or fiche.stem)
+    h = hashlib.md5(fiche.read_bytes())
+    media = chemins.media_exoforge(fiche.parent, ident)
+    for f in sorted(media.rglob("*")) if media.is_dir() else []:
+        if f.is_file():
+            h.update(f.relative_to(media).as_posix().encode() + f.read_bytes())
+    reglages = {"profil": profil or cfg.get("profil")}
+    emp = registre.empreinte(fiche, {**reglages, "contenu": h.hexdigest()})
+    b = registre.base(cours)
+    v = registre.preparer(b, fiche, None, emp, "exercice", ident)
+    if v["identique"]:
+        print(f"Identique à la version {v['identique']['id']} (même fiche, mêmes médias, même profil) : rien de rangé")
+        print(f"Version : {v['identique']['dossier']}")
+        return
+    d = Path(v["dossier"])
+    d.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(paquet, d / f"{ident}_{v['label']}_scorm12.zip")
+    registre.enregistrer_exercice(b, v, fiche, reglages, emp, cours["cours"])
+    print(f"Version {v['id']} inscrite au registre de {registre.rel(b)}")
+    print(f"Version : {registre.rel(d)}")
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     if any(o in args for o in ("-h", "--help")):
@@ -84,6 +113,7 @@ if __name__ == "__main__":
         i = args.index(opt)
         profil = args[i + 1] if i + 1 < len(args) else sys.exit(__doc__)
         del args[i:i + 2]
+    cours = None
     if "--cours" in args:                       # profil de l'école de l'édition, si --profil n'est pas donné
         i = args.index("--cours")
         spec = args[i + 1] if i + 1 < len(args) else sys.exit(__doc__)
@@ -91,9 +121,9 @@ if __name__ == "__main__":
         try:
             sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "commun"))
             import cours_options
-            r = cours_options.resoudre(spec)
-            print(f"Cours : {r['libelle']}" + (f" (profil {r['profil']})" if r["profil"] else ""))
-            profil = profil or r["profil"]
+            cours = cours_options.resoudre(spec)
+            print(f"Cours : {cours['libelle']}" + (f" (profil {cours['profil']})" if cours["profil"] else ""))
+            profil = profil or cours["profil"]
         except Exception as e:
             print(f"Cours « {spec} » non appliqué : {e}")
     auteur = False
@@ -106,4 +136,6 @@ if __name__ == "__main__":
     fiche = Path(args[0])
     if not fiche.exists() and fiche.with_name(fiche.name + ".yaml").exists():     # nom donné sans extension
         fiche = fiche.with_name(fiche.name + ".yaml")
-    construire(fiche, profil, auteur)
+    paquet = construire(fiche, profil, auteur)
+    if cours and paquet and Path(paquet).is_file():
+        ranger_version(fiche, Path(paquet), profil, cours)

@@ -268,12 +268,14 @@ async function exercices() {
       el("tbody", {}, fiches.map(x => el("tr", {},
         el("td", {}, el("b", {}, x.titre), el("span", { class: "sous" }, (x.cours ? x.cours + " · " : "") + x.fiche + (x.origine === "data" ? " (privée)" : ""))),
         el("td", {}, String(x.etapes)),
-        el("td", {}, quand(x.construit), x.a_refaire ? el("span", { class: "sous" }, el("span", { class: "pastille p-sable" }, "fiche modifiée depuis")) : null),
+        el("td", {}, quand(x.construit), x.a_refaire ? el("span", { class: "sous" }, el("span", { class: "pastille p-sable" }, "fiche modifiée depuis")) : null,
+          x.versions ? el("span", { class: "sous" }, el("button", { class: "btn second petit", type: "button", title: "Paquets rangés pour le cours et leur état", onclick: () => registreDialog({ fiche: x.id }, x.titre) },
+            `${x.versions.derniere.split("/").pop()} · ${etatV(x.versions.etat, "exercice")}${x.versions.nombre > 1 ? ` (${x.versions.nombre} versions)` : ""}`)) : null),
         el("td", {}, el("div", { class: "actions" },
           el("button", { class: "btn", type: "button", onclick: () => construire(x.fiche) }, "Construire"),
           el("button", { class: "btn second", type: "button", disabled: !x.essayer, onclick: () => essayer(x.essayer, true), title: "Toujours les mêmes valeurs (mode=fixe)" }, "Essayer"),
           el("button", { class: "btn second", type: "button", disabled: !x.essayer, onclick: () => essayer(x.essayer, false), title: "Nouvelles valeurs à chaque ouverture" }, "Valeurs tirées"),
-          el("button", { class: "btn second", type: "button", disabled: !x.paquet, onclick: e => montrer(x.paquet, e.currentTarget) }, "Paquet SCORM"),
+          el("button", { class: "btn second", type: "button", disabled: !(x.paquet || x.versions && x.versions.paquet), title: x.versions && x.versions.paquet ? "Paquet de la dernière version de l'édition" : "", onclick: e => montrer(x.versions && x.versions.paquet || x.paquet, e.currentTarget) }, "Paquet SCORM"),
           el("button", { class: "btn second", type: "button", onclick: e => montrer(x.fiche, e.currentTarget) }, "Fiche")))))))) ;
   };
   filtre.oninput = () => { FILTRE = filtre.value; dessiner(); };
@@ -779,6 +781,7 @@ async function sansCours() {
 
 /* registre des versions de quiz (conversions d'un cours ou d'une édition) */
 const ETATS_V = { convertie: "convertie", importee: "importée dans Moodle", passee: "passée", bilan: "bilan fait", abandonnee: "abandonnée" };
+const etatV = (e, genre) => e === "convertie" && genre === "exercice" ? "construit" : ETATS_V[e] || e;
 async function registreDialog(q, titre) {
   const d = await api("/api/registre?" + new URLSearchParams(Object.entries(q).filter(([, v]) => v)).toString());
   if (!d.ok) return message(d.message || "Registre illisible.", true);
@@ -786,12 +789,13 @@ async function registreDialog(q, titre) {
   const contenu = blocs.length ? blocs.map(r => el("div", { class: "bloc-registre" }, el("h4", {}, r.titre), el("table", { class: "compact" },
     el("thead", {}, el("tr", {}, el("th", {}, "Version"), el("th", {}, "État"), el("th", {}, "Test Moodle et remarques"), el("th", {}, ""))),
     el("tbody", {}, r.versions.map(v => {
-      const etat = el("select", {}, Object.entries(d.etats).map(([k, l]) => el("option", { value: k }, l))); etat.value = v.etat;
+      const ex = v.genre === "exercice";
+      const etat = el("select", {}, Object.entries(d.etats).map(([k, l]) => el("option", { value: k }, etatV(k, v.genre) === "construit" ? "construit" : l))); etat.value = v.etat;
       const test = el("input", { type: "text", value: v.test_moodle || "", placeholder: "nom du test dans Moodle" });
       const rem = el("input", { type: "text", value: v.remarques || "", placeholder: "remarques" });
       const util = r.commun ? d.editions.map(e => { const b = el("input", { type: "checkbox", value: e }); b.checked = (v.utilisee_par || []).includes(e); return el("label", { class: "case" }, b, e); }) : [];
-      const dates = Object.keys(ETATS_V).filter(k => (v.dates || {})[k]).map(k => `${ETATS_V[k]} ${v.dates[k]}`).join(" · ");
-      return el("tr", {}, el("td", {}, el("b", {}, v.id), el("span", { class: "sous" }, `${v.questions} questions${v.seance ? " · séance " + v.seance : ""}`), el("span", { class: "sous" }, dates)),
+      const dates = Object.keys(ETATS_V).filter(k => (v.dates || {})[k]).map(k => `${etatV(k, v.genre)} ${v.dates[k]}`).join(" · ");
+      return el("tr", {}, el("td", {}, el("b", {}, v.id), el("span", { class: "sous" }, ex ? "exercice (paquet SCORM)" : `quiz · ${v.questions} questions${v.seance ? " · séance " + v.seance : ""}`), el("span", { class: "sous" }, dates)),
         el("td", {}, etat), el("td", {}, test, rem, util.length ? el("div", { class: "actions" }, el("span", { class: "sous" }, "utilisée par :"), util) : null,
           (v.bilans || []).map(b => el("div", {}, el("button", { class: "btn second petit", type: "button", disabled: !b.fiche, onclick: e => ouvrir(b.fiche, e.currentTarget) }, "Fiche du bilan " + b.date)))),
         el("td", {}, el("div", { class: "actions" }, el("button", { class: "btn petit", type: "button", onclick: async () => {
@@ -800,9 +804,9 @@ async function registreDialog(q, titre) {
           if (util.length) champs.utilisee_par = util.map(l => l.firstChild).filter(b => b.checked).map(b => b.value);
           const res = await api("/api/registre", { base: r.base, id: v.id, champs });
           if (!res.ok) return message(res.message || "Enregistrement impossible.", true);
-          v.etat = res.version.etat; message(`Version ${v.id} : ${ETATS_V[v.etat]}.`); } }, "Enregistrer"),
+          v.etat = res.version.etat; message(`Version ${v.id} : ${etatV(v.etat, v.genre)}.`); } }, "Enregistrer"),
           el("button", { class: "btn second petit", type: "button", onclick: e => montrer(v.dossier, e.currentTarget) }, "Dossier"))));
-    }))))) : [el("p", {}, "Aucune version : « Convertir… » avec ce cours choisi en haut de la page en crée une à chaque conversion.")];
+    }))))) : [el("p", {}, "Aucune version : avec ce cours choisi en haut de la page, chaque « Convertir… » (Questions) et chaque « Construire » (Exercices) en crée une.")];
   const dlg = dialogue(`Registre — ${titre}`, contenu, "Fermer", () => true);
   dlg.classList.add("large");
 }
@@ -826,7 +830,7 @@ async function questions() {
       el("td", {}, x.converti ? quand(x.converti) : "jamais", x.a_refaire ? el("span", { class: "sous" }, el("span", { class: "pastille p-sable" }, "classeur modifié depuis")) : null,
         x.plans.length ? el("span", { class: "sous" }, `${x.plans.length} plan(s) de séance`) : null,
         x.versions ? el("span", { class: "sous" }, el("button", { class: "btn second petit", type: "button", title: "Versions converties pour le cours et leur état", onclick: () => registreDialog({ classeur: x.classeur }, x.nom) },
-          `${x.versions.derniere.split("/").pop()} · ${ETATS_V[x.versions.etat] || x.versions.etat}${x.versions.nombre > 1 ? ` (${x.versions.nombre} versions)` : ""}`)) : null),
+          `${x.versions.derniere.split("/").pop()} · ${etatV(x.versions.etat, "quiz")}${x.versions.nombre > 1 ? ` (${x.versions.nombre} versions)` : ""}`)) : null),
       el("td", {}, el("div", { class: "actions" },
         el("button", { class: "btn second", type: "button", onclick: e => ouvrir(x.classeur, e.currentTarget) }, "Ouvrir dans Excel"),
         el("button", { class: "btn second", type: "button", onclick: () => lancerTache("quiz.valider", { classeur: x.classeur }) }, "Valider"),

@@ -94,20 +94,50 @@ def empreinte(f: Path, reglages: dict) -> str:
                                                           default=str)).encode("utf-8")).hexdigest()[:16]
 
 
-def preparer(b: Path, classeur: Path, seance, emp: str) -> dict:
-    """Prochaine version d'un classeur (dossier, numéro, libellé) ; ``identique`` si une version a déjà cette empreinte."""
+DOSSIERS = {"quiz": "quiz", "exercice": "exercices"}
+
+
+def genre(v: dict) -> str:
+    return v.get("genre") or "quiz"
+
+
+def nom_source(v: dict) -> str:
+    """Nom de ce qui est versionné : classeur (quiz) ou identifiant de la fiche (exercice)."""
+    return v.get("nom") or Path(v.get("classeur") or v.get("source") or "").stem
+
+
+def preparer(b: Path, classeur: Path, seance, emp: str, genre_: str = "quiz", nom: str | None = None) -> dict:
+    """Prochaine version d'un classeur ou d'une fiche (dossier, numéro, libellé) ; ``identique`` si une version a déjà
+    cette empreinte."""
     reg = lire(b)
-    stem = Path(classeur).stem
-    miennes = [v for v in reg["versions"] if Path(v.get("classeur", "")).stem == stem]
+    stem = nom or Path(classeur).stem
+    miennes = [v for v in reg["versions"] if nom_source(v) == stem and genre(v) == genre_]
     for v in miennes:
         if v.get("empreinte") == emp and absolu(v["dossier"]).is_dir():
             return {"identique": v}
     n = 1 + max([int(v.get("version") or 0) for v in miennes]
-                + [int(m.group(1)) for d in (Path(b) / "quiz" / stem).glob("*v*") if (m := re.search(r"v(\d+)$", d.name))]
+                + [int(m.group(1)) for d in (Path(b) / DOSSIERS[genre_] / stem).glob("*v*") if (m := re.search(r"v(\d+)$", d.name))]
                 + [0])
     label = (f"S{int(seance):02d}_" if seance else "") + f"v{n}"
-    d = Path(b) / "quiz" / stem / label
-    return {"identique": None, "version": n, "label": label, "dossier": d, "id": f"{stem}/{label}"}
+    d = Path(b) / DOSSIERS[genre_] / stem / label
+    return {"identique": None, "version": n, "label": label, "dossier": d, "id": f"{stem}/{label}", "nom": stem}
+
+
+def enregistrer_exercice(b: Path, v: dict, fiche: Path, reglages: dict, emp: str, cours: str):
+    """Fiche ``version.yaml`` et ligne du registre pour un paquet ExoForge copié dans le dossier de la version."""
+    d = Path(v["dossier"])
+    date = maintenant()
+    infos = {"id": v["id"], "genre": "exercice", "version": v["version"], "date": date, "cours": cours,
+             "source": rel(fiche), "empreinte": emp, "reglages": reglages,
+             "fichiers": sorted(x.name for x in d.iterdir() if x.is_file() and x.name != "version.yaml")}
+    (d / "version.yaml").write_text(_yaml().safe_dump(infos, allow_unicode=True, sort_keys=False, width=110),
+                                    encoding="utf-8", newline="\n")
+    reg = lire(b)
+    reg["versions"].append({"id": v["id"], "genre": "exercice", "nom": v["nom"], "source": rel(fiche),
+                            "version": v["version"], "dossier": rel(d), "date": date, "empreinte": emp,
+                            "etat": "convertie", "dates": {"convertie": date}, "test_moodle": "", "bilans": [],
+                            "utilisee_par": [], "remarques": ""})
+    ecrire(b, reg)
 
 
 def enregistrer(b: Path, v: dict, classeur: Path, reglages: dict, questions: list, seance, emp: str, cours: str):
@@ -121,7 +151,7 @@ def enregistrer(b: Path, v: dict, classeur: Path, reglages: dict, questions: lis
     (d / "version.yaml").write_text(_yaml().safe_dump(fiche, allow_unicode=True, sort_keys=False, width=110),
                                     encoding="utf-8", newline="\n")
     reg = lire(b)
-    reg["versions"].append({"id": v["id"], "classeur": rel(classeur), "version": v["version"], "seance": seance,
+    reg["versions"].append({"id": v["id"], "genre": "quiz", "classeur": rel(classeur), "version": v["version"], "seance": seance,
                             "dossier": rel(d), "date": fiche["date"], "questions": len(questions), "empreinte": emp, "etat": "convertie",
                             "dates": {"convertie": fiche["date"]}, "test_moodle": "", "bilans": [], "utilisee_par": [],
                             "remarques": ""})

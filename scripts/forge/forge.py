@@ -428,7 +428,9 @@ class Atelier:
         for b, titre in bases:
             vs = R.lire(b)["versions"]
             if q.get("classeur"):
-                vs = [v for v in vs if Path(v.get("classeur", "")).stem == Path(q["classeur"]).stem]
+                vs = [v for v in vs if R.genre(v) == "quiz" and R.nom_source(v) == Path(q["classeur"]).stem]
+            if q.get("fiche"):
+                vs = [v for v in vs if R.genre(v) == "exercice" and R.nom_source(v) == q["fiche"]]
             out.append({"base": R.rel(b), "titre": titre, "commun": b == bases[-1][0] and len(bases) == 2,
                         "versions": json.loads(json.dumps(vs[::-1], ensure_ascii=False, default=str))})
         return {"ok": True, "registres": out, "editions": editions, "etats": R.LIBELLES}
@@ -449,11 +451,15 @@ class Atelier:
         except Exception:
             return classeurs
         for c in classeurs:
-            stem = Path(c["classeur"]).stem
-            vs = [v for r in regs for v in r["versions"] if Path(v.get("classeur", "")).stem == stem]
+            nom, genre = (Path(c["classeur"]).stem, "quiz") if "classeur" in c else (c.get("id"), "exercice")
+            vs = [v for r in regs for v in r["versions"] if (v.get("genre") or "quiz") == genre
+                  and (v.get("nom") or Path(v.get("classeur") or v.get("source") or "").stem) == nom]
             if vs:
                 der = max(vs, key=lambda v: str(v.get("date")))
                 c["versions"] = {"nombre": len(vs), "derniere": der["id"], "etat": der.get("etat"), "dossier": der.get("dossier")}
+                if genre == "exercice":
+                    zips = sorted(K.absolu(der.get("dossier", "")).glob("*_scorm12.zip"))
+                    c["versions"]["paquet"] = rel(zips[0]) if zips else None
         return classeurs
 
     def rattacher(self, type_: str, chemin: Path):
@@ -524,6 +530,11 @@ class Atelier:
             z = chemins.SORTIES / "exoforge" / f"{ident}_scorm12.zip"
             if z.is_file():
                 out["paquet"] = rel(z)
+            v = next((ligne[10:].strip() for ligne in reversed(t.lignes) if ligne.startswith("Version : ")), None)
+            if v:                                        # paquet rangé comme version de l'édition
+                zips = sorted(K.absolu(v).glob("*_scorm12.zip"))
+                if zips:
+                    out["paquet"] = rel(zips[0])
             return out
         return Tache(self.nouvel_id(), f"Construire « {d['titre']} »", "exoforge", argv,
                      verrou=str(f.resolve()), apres=liens)
@@ -1201,7 +1212,7 @@ def gestionnaire(at: Atelier):
                 return self._json({"ok": True, "version": VERSION, "racine": str(RACINE), "poste": at.etat_poste(),
                                    "profils": noms_profils(), "windows": WINDOWS})
             if chemin == "/api/exoforge/fiches":
-                return self._json({"ok": True, "fiches": at.filtre(at.fiches_exoforge(), "fiche"), "actif": at.cours_actif()})
+                return self._json({"ok": True, "fiches": at.versions_classeurs(at.filtre(at.fiches_exoforge(), "fiche")), "actif": at.cours_actif()})
             if chemin == "/api/quizforge/classeurs":
                 return self._json({"ok": True, "classeurs": at.versions_classeurs(at.filtre(QB.classeurs(C.reglages().get("classeurs")), "classeur")),
                                    "actif": at.cours_actif()})
