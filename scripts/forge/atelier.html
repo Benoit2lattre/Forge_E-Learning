@@ -642,7 +642,7 @@ async function ficheCours(zone, nom) {
       el("button", { class: "btn second", type: "button", onclick: () => ajouterSrc(false) }, "Ajouter un fichier…"),
       el("button", { class: "btn second", type: "button", onclick: () => propositions(nom, recharger) }, `Chercher « ${nom} » dans data/`)));
   // déclinaisons et éditions
-  const actifE = c.active || "";
+  const enCours = dc => { const eds = (dc.editions || []).map(e => String(e.nom)); return dc.en_cours && eds.includes(String(dc.en_cours)) ? String(dc.en_cours) : eds.slice(-1)[0]; };
   const lignesD = (c.declinaisons || []).map(dc => el("tr", {},
     el("td", {}, el("b", {}, [dc.ecole, dc.parcours].filter(Boolean).join(" ") || dc.nom), el("span", { class: "sous" },
       [dc.nom, (dc.campus || []).join(", "), dc.niveau, Object.entries(dc.codes || {}).map(([k, v]) => `${k} ${v}`).join(", "), (dc.langues || [dc.langue]).filter(Boolean).join(" et ")].filter(Boolean).join(" · "))),
@@ -650,8 +650,8 @@ async function ficheCours(zone, nom) {
       return el("div", { class: "edition" }, el("b", {}, String(e.nom)), " ", e.promo ? el("span", { class: "sous-l" }, "promo " + e.promo) : null, " ",
         el("span", { class: "sous-l" }, (e.groupes || []).map(g => g.nom + (g.campus || g.langue ? ` (${[g.campus, g.langue].filter(Boolean).join(", ")})` : "")).join(", ") || "sans groupe"), " ",
         el("button", { class: "btn second petit", type: "button", onclick: () => formulaireEdition(nom, dc, recharger, e) }, "Modifier"), " ",
-        id === actifE ? el("span", { class: "pastille p-ok" }, "en cours") : el("button", { class: "btn second petit", type: "button", onclick: async () => {
-          if (await actionCours({ action: "active", nom, declinaison: dc.nom, edition: e.nom }, "Édition en cours changée.")) recharger(); } }, "En cours")); })
+        String(e.nom) === enCours(dc) ? el("span", { class: "pastille p-ok", title: "Édition en cours de cette déclinaison (chaque déclinaison a la sienne)" }, "en cours") : el("button", { class: "btn second petit", type: "button", onclick: async () => {
+          if (await actionCours({ action: "active", nom, declinaison: dc.nom, edition: e.nom }, `Édition en cours de « ${dc.nom} » : ${e.nom}.`)) recharger(); } }, "En cours")); })
       : el("span", { class: "sous" }, "aucune édition")),
     el("td", {}, el("div", { class: "actions" }, el("button", { class: "btn second petit", type: "button", onclick: () => formulaireEdition(nom, dc, recharger) }, "Nouvelle édition…"),
       el("button", { class: "btn second petit", type: "button", onclick: () => formulaireDeclinaison(nom, c, d.profils, recharger, dc) }, "Modifier la déclinaison…"),

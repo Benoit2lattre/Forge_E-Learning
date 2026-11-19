@@ -277,7 +277,7 @@ class Atelier:
         for c in K.tous().values():
             resumes.append({"nom": c["nom"], "titre": str(c.get("titre") or c["nom"]), "domaine": c.get("domaine") or "",
                             "fichier": rel(c["_fichier"]), "erreur": c.get("_erreur"),
-                            "declinaisons": len(c.get("declinaisons") or []), "active": c.get("active"),
+                            "declinaisons": len(c.get("declinaisons") or []),
                             "public": K.RACINES[1] in c["_fichier"].parents})
         return {"ok": True, "choix": K.choix_possibles(), "actif": self.cours_actif(), "cours": resumes}
 
@@ -353,12 +353,10 @@ class Atelier:
             K.modifier_edition(c, p.get("declinaison") or "", p.get("edition_nom") or "", p.get("edition") or {})
         elif action == "edition":
             e = K.ajouter_edition(c, p.get("declinaison") or "", p.get("edition") or {})
-            if not c.get("active"):
-                c["active"] = f"{p['declinaison']}/{e['nom']}"
             avert += K.longueur(K.absolu(e["exports"]))
         elif action == "active":
             K.edition(c, p.get("declinaison") or "", p.get("edition") or "")
-            c["active"] = f"{p['declinaison']}/{p['edition']}"
+            K.declinaison(c, p["declinaison"])["en_cours"] = str(p["edition"])
         elif action in ("source_ajouter", "ranger"):
             K.ajouter_source(c, p.get("type") or "", p.get("chemin") or "")
         elif action == "source_retirer":

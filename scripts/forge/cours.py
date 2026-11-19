@@ -78,6 +78,11 @@ def lire(f: Path) -> dict:
         raise ValueError(f"{rel(f)} : ce n'est pas un cours")
     c.setdefault("nom", f.parent.name)
     c["_fichier"] = f
+    if c.get("active"):                              # ancien champ : une seule édition en cours pour tout le cours
+        decl, _, ed = str(c.pop("active")).partition("/")
+        for d in c.get("declinaisons") or []:
+            if d.get("nom") == decl and not d.get("en_cours"):
+                d["en_cours"] = ed
     return c
 
 
@@ -86,7 +91,7 @@ def ecrire(c: dict) -> Path:
     propre = {k: v for k, v in c.items() if not k.startswith("_")}
     propre["format"] = FORMAT
     ordre = ["format", "nom", "titre", "domaine", "langues", "description", "objectifs", "competences", "inclut",
-             "derive_de", "documents", "sources", "erreurs", "etiquettes", "active", "declinaisons", "comparaisons"]
+             "derive_de", "documents", "sources", "erreurs", "etiquettes", "declinaisons", "comparaisons"]
     propre = {k: propre[k] for k in ordre if k in propre} | {k: v for k, v in propre.items() if k not in ordre}
     f.parent.mkdir(parents=True, exist_ok=True)
     texte = _yaml().safe_dump(propre, allow_unicode=True, sort_keys=False, width=110, default_flow_style=False)
@@ -336,7 +341,7 @@ def creer(nom: str, titre: str, domaine: str = "", langues=None, sources: list[d
     d = (base or RACINES[0]) / nom
     c = {"_fichier": d / FICHIER, "format": FORMAT, "nom": nom, "titre": titre, "domaine": texte_valide(domaine),
          "langues": langues or ["fr"], "description": "", "objectifs": [], "competences": [], "inclut": [],
-         "derive_de": None, "documents": {}, "sources": {}, "erreurs": None, "etiquettes": [], "active": None,
+         "derive_de": None, "documents": {}, "sources": {}, "erreurs": None, "etiquettes": [],
          "declinaisons": [], "comparaisons": []}
     for s in sources or []:
         if s.get("type") not in TYPES:
@@ -465,7 +470,14 @@ def ajouter_edition(c: dict, decl: str, e: dict) -> dict:
     (base / "exports").mkdir(parents=True, exist_ok=True)
     (base / "bilans").mkdir(parents=True, exist_ok=True)
     eds.append(neuve)
+    d["en_cours"] = nom                              # la nouvelle édition devient celle en cours de sa déclinaison
     return neuve
+
+
+def en_cours(d: dict) -> str | None:
+    """Édition en cours d'une déclinaison (chacune la sienne : deux parcours peuvent avoir lieu en même temps)."""
+    eds = [str(e.get("nom")) for e in d.get("editions") or []]
+    return str(d["en_cours"]) if d.get("en_cours") and str(d["en_cours"]) in eds else (eds[-1] if eds else None)
 
 
 def _decaler(date, ans: int):
@@ -537,12 +549,9 @@ def verifier(c: dict, cours_par_nom: dict | None = None) -> list[str]:
         eds = [str(e.get("nom")) for e in d.get("editions") or []]
         for n in {x for x in eds if eds.count(x) > 1}:
             r.append(f"édition en double : {d.get('nom')}/{n}")
-    if c.get("active"):
-        decl, _, ed = str(c["active"]).partition("/")
-        try:
-            edition(c, decl, ed)
-        except ValueError:
-            r.append(f"édition active inconnue : {c['active']}")
+    for d in c.get("declinaisons") or []:
+        if d.get("en_cours") and str(d["en_cours"]) not in {str(e.get("nom")) for e in d.get("editions") or []}:
+            r.append(f"édition en cours inconnue : {d.get('nom')}/{d['en_cours']}")
     r += longueur(dossier_cours(c) / FICHIER)
     return r
 
