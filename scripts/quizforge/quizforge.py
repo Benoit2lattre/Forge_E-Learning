@@ -1583,6 +1583,29 @@ def lire_fichiers(fichiers, racine, rapport, reparer=False, nom=""):
     return qs
 
 
+def appliquer_cours(a) -> list:
+    """Option ``--cours`` : complète profil, catégorie, effectif et étiquettes avec ceux du cours, de sa déclinaison
+    et de son édition (les options données l'emportent ; les étiquettes s'ajoutent). Renvoie les lignes du rapport."""
+    a._cours = None
+    if not getattr(a, "cours", None):
+        return []
+    import cours_options
+    try:
+        r = cours_options.resoudre(a.cours)
+    except Exception as e:                           # cours inconnu ou illisible : on le dit, on continue sans lui
+        return [f"Cours « {a.cours} » non appliqué : {e}"]
+    a._cours = r
+    if not getattr(a, "profil", None) and r["profil"]:
+        a.profil = r["profil"]
+    if hasattr(a, "categorie") and a.categorie is None and r["categorie"]:
+        a.categorie = r["categorie"]
+    if hasattr(a, "tags"):
+        a.tags = ";".join(dict.fromkeys(decouper_tags(a.tags) + r["tags"]))
+    if hasattr(a, "etudiants") and a.etudiants is None and r["effectif"]:
+        a.etudiants = int(r["effectif"])
+    return [f"Cours : {r['libelle']}" + (f" (profil {r['profil']})" if r["profil"] else "")]
+
+
 def appliquer_profil(a):
     """Charge le profil puis complète les options laissées vides sur la ligne de commande."""
     ecrire_index_profils()
@@ -1610,20 +1633,40 @@ def cmd_convertir(a):
     Les sorties vont dans ``<fichier>_QuizForge`` (ou ``--sortie``) ; avec ``--seance``, le plan du quiz de séance est écrit aussi.
     """
     a.fichiers = [trouver_fichier(f, quoi="classeur") for f in a.fichiers]
-    rapport = appliquer_profil(a)
+    lignes_cours = appliquer_cours(a)
+    rapport = lignes_cours + appliquer_profil(a)
     for f in a.fichiers:
         f = Path(f)
+        version = None
+        if getattr(a, "_cours", None) and not a.sortie:   # version rangée dans l'édition (ou le cours), jamais écrasée
+            import registre
+            reglages = {k: getattr(a, k, None) for k in ("profil", "categorie", "nom", "tags", "seance", "etudiants",
+                                                          "formats", "reparer", "langues", "langue_base", "rappel", "graine")}
+            b, emp = registre.base(a._cours), registre.empreinte(f, reglages)
+            version = registre.preparer(b, f, getattr(a, "seance", None), emp)
+            if version["identique"]:
+                v = version["identique"]
+                rapport.append(f"{f.name} : identique à la version {v['id']} (même classeur, mêmes réglages) : rien d'écrit")
+                print(f"Version : {v['dossier']}")
+                continue
         qs = filtrer_types(lire_fichiers([f], a.categorie, rapport, a.reparer, a.nom), rapport)
         ajouter_tags(qs, decouper_tags(a.tags), rapport)
         if not qs:
             continue
-        sortie = Path(a.sortie) if a.sortie else f.parent / f"{f.stem}_QuizForge"
+        if version:
+            sortie, prefixe = Path(version["dossier"]), f"{f.stem}_{version['label']}"
+        else:
+            sortie, prefixe = (Path(a.sortie) if a.sortie else f.parent / f"{f.stem}_QuizForge"), f.stem
+            if not a.sortie:
+                rapport.append(f"   (sans cours choisi, {sortie.name} est réécrit à chaque conversion ; avec --cours, "
+                               "chaque conversion devient une version rangée dans l'édition)")
+        a._prefixe = prefixe
         sortie.mkdir(parents=True, exist_ok=True)
         if "yaml" in a.formats:
-            ecrire_banque(qs, sortie / f"{f.stem}_banque.yaml")
+            ecrire_banque(qs, sortie / f"{prefixe}_banque.yaml")
         for suffixe, lot_v in versions(qs, a.langues, a.langue_base):
             if "xml" in a.formats:
-                ecrire_xml(lot_v, sortie / f"{f.stem}_moodle{suffixe}.xml")
+                ecrire_xml(lot_v, sortie / f"{prefixe}_moodle{suffixe}.xml")
             par_cat = {}
             for q in lot_v:
                 par_cat.setdefault(q["categorie"].rstrip("/").split("/")[-1], []).append(q)
@@ -1645,7 +1688,11 @@ def cmd_convertir(a):
         rapport.append(f"→ {len(qs)} question(s) écrites dans {sortie}")
         import qualite
         rapport += qualite.rapport_hasard(qs, P["bareme"]["qcm"]["mauvaise_option"])
-        (sortie / "rapport.txt").write_text("\n".join(rapport) + "\n", encoding="utf-8")
+        (sortie / (f"{prefixe}_rapport.txt" if version else "rapport.txt")).write_text("\n".join(rapport) + "\n", encoding="utf-8")
+        if version:
+            registre.enregistrer(b, version, f, reglages, qs, getattr(a, "seance", None), emp, a._cours["cours"])
+            rapport.append(f"Version {version['id']} inscrite au registre de {registre.rel(b)}")
+            print(f"Version : {registre.rel(version['dossier'])}")
     print("\n".join(rapport))
 
 
@@ -1704,7 +1751,14 @@ def ecrire_quiz_seance(qs: list, a, f: Path, sortie: Path) -> list:
                 commun_ = [c[0] for c in zip(*cats) if len(set(c)) == 1]
                 sections.append({"seance": s, "cat": "/".join(commun_), "N": len(L),
                                  "k": min(alloc[s], len(L)), "L": L, "rappel": True})
-    lignes = [f"# Plan du quiz de la séance {n}", "",
+    infos = None
+    if getattr(a, "_cours", None):
+        import cours_options
+        infos = cours_options.seance(a._cours, n)
+    lignes = [f"# Plan du quiz de la séance {n}", ""]
+    if getattr(a, "_cours", None):
+        lignes += [f"Cours : {a._cours['libelle']}" + (f" ; {cours_options.decrire_seance(infos)}" if infos else ""), ""]
+    lignes += [
               f"Profil : tirage « {mode} » (part tirée {float(Z['part_tiree']):.0%}, au plus {Z['max_tire']} par catégorie), "
               f"rappels : {part:.0%} du quiz.", "",
               "| Section | Catégorie Moodle | Filtre | Disponibles | À tirer | Questions à ajouter |", "| --- | --- | --- | --- | --- | --- |"]
@@ -1740,8 +1794,9 @@ def ecrire_quiz_seance(qs: list, a, f: Path, sortie: Path) -> list:
     if mode != "commun":
         lignes.append("Dans Moodle : une section par ligne, « Ajouter une question aléatoire » avec le filtre indiqué et le "
                       "nombre à tirer ; cocher « Mélanger » dans chaque section.")
-    (sortie / f"{f.stem}_plan_S{n:02d}.md").write_text("\n".join(lignes) + "\n", encoding="utf-8")
-    return [f"Plan du quiz de la séance {n} -> {f.stem}_plan_S{n:02d}.md :"] + ["   " + l for l in lignes[2:] if l]
+    nom_plan = f"{a._prefixe}_plan.md" if getattr(a, "_prefixe", f.stem) != f.stem else f"{f.stem}_plan_S{n:02d}.md"
+    (sortie / nom_plan).write_text("\n".join(lignes) + "\n", encoding="utf-8")
+    return [f"Plan du quiz de la séance {n} -> {nom_plan} :"] + ["   " + l for l in lignes[2:] if l]
 
 
 def cmd_importer(a):
@@ -1950,6 +2005,8 @@ def cmd_bilan(a):
 
     La couleur principale et le mode de tirage sont pris dans le profil s'il y en a un (voir :func:`bilan.bilan`).
     """
+    for ligne in appliquer_cours(a):
+        print(ligne)
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "diagforge"))
     import bilan
     couleur = COULEUR_PRINCIPALE
@@ -1965,6 +2022,56 @@ def cmd_bilan(a):
     bilan.bilan(a.cibles, xml=a.questions, mode=comprendre(a.tentatives, ["toutes", "premiere", "derniere", "meilleure"], "tentatives"),
                 sortie=a.sortie, couleur=couleur, roster=a.roster, images=not a.sans_images,
                 tirage=(P.get("quiz") or {}).get("tirage") if P.get("_fichier") else None)
+    noter_version_bilan(a)
+
+
+def noter_version_bilan(a):
+    """Reconnaît la version QuizForge du test d'après les noms des questions de l'export XML (registres des cours),
+    l'écrit dans le bilan (onglet « Version ») et inscrit le bilan au registre."""
+    try:
+        import registre
+    except ImportError:
+        return
+    xmls = [Path(x) for x in a.questions or []]
+    for c in a.cibles:
+        c = Path(c)
+        xmls += sorted(c.glob("*.xml")) if c.is_dir() else ([c] if c.suffix.lower() == ".xml" else [])
+    noms = registre.noms_xml(xmls)
+    if not noms:
+        print("Version du quiz : non cherchée (pas d'export XML des questions)")
+        return
+    if getattr(a, "_cours", None):
+        bases = [registre.base(a._cours)] + ([registre.base({"cours": a._cours["cours"]})] if a._cours.get("edition") else [])
+    else:
+        bases = registre.tous()
+    m = registre.reconnaitre(noms, bases)
+    if not m or m["score"] < 0.5:
+        print("Version du quiz : non reconnue dans les registres des cours")
+        return
+    v = m["version"]
+    ecarts = (f" ; écarts : {m['manquantes']} question(s) de la version absente(s) de l'export, {m['en_trop']} en plus"
+              if m["manquantes"] or m["en_trop"] else "")
+    texte = f"Version du quiz : {v['id']} (registre de {registre.rel(m['base'])}){ecarts}"
+    print(texte)
+    d = Path(a.cibles[0]) if Path(a.cibles[0]).is_dir() else Path(a.cibles[0]).parent
+    bilans = [Path(a.sortie)] if a.sortie else sorted(d.glob("bilan_*.xlsx"), key=lambda x: x.stat().st_mtime, reverse=True)[:1]
+    b = bilans[0] if bilans and bilans[0].is_file() else None
+    if b:
+        try:
+            import openpyxl
+            wb = openpyxl.load_workbook(b)
+            if "Version" in wb.sheetnames:
+                del wb["Version"]
+            ws = wb.create_sheet("Version")
+            for ligne in (["Version du quiz", v["id"]], ["Registre", registre.rel(m["base"])], ["Dossier", v.get("dossier", "")],
+                          ["Convertie le", v.get("date", "")], ["Questions communes", f"{m['score']:.0%}"],
+                          ["Absentes de l'export", m["manquantes"]], ["En plus dans l'export", m["en_trop"]]):
+                ws.append(ligne)
+            ws.column_dimensions["A"].width, ws.column_dimensions["B"].width = 24, 70
+            wb.save(b)
+        except Exception as e:                       # le bilan reste valable sans cet onglet
+            print(f"(onglet « Version » non écrit : {e})")
+    registre.noter_bilan(m["base"], v["id"], b, b.with_name(b.stem + "_fiche_prof.html") if b else None)
 
 
 def cmd_profils(a):
@@ -2166,6 +2273,7 @@ def main(argv=None):
     c.add_argument("--rappel", type=float, default=None, help="part des rappels dans le quiz de séance (défaut : quiz.rappel du profil)")
     c.add_argument("--etudiants", type=int, default=None, help="effectif, pour le nombre de réponses attendu par question")
     c.add_argument("--graine", type=int, default=None, help="graine du tirage des rappels (défaut : le numéro de séance)")
+    c.add_argument("--cours", default=None, help="cours[:déclinaison[/édition]] : profil, catégorie, étiquettes, effectif et séances de l'édition")
     c.set_defaults(f=cmd_convertir)
     i = sp.add_parser("importer", help="reprendre des fichiers existants dans une banque unique")
     i.add_argument("fichiers", nargs="+")
@@ -2204,6 +2312,7 @@ def main(argv=None):
     b.add_argument("-p", "--profil", help="profil (couleurs des en-têtes et des graphiques)")
     b.add_argument("-r", "--roster", nargs="*", help="liste des étudiants avec une colonne Groupe (sinon : groupe = suffixe du nom du test, ex. Quizz1_SMA)")
     b.add_argument("--sans-images", action="store_true", help="ne pas produire les images PNG")
+    b.add_argument("--cours", default=None, help="cours[:déclinaison[/édition]] : profil de l'école de l'édition")
     b.set_defaults(f=cmd_bilan)
     asst = sp.add_parser("assistant", help="menu pas à pas (lancé par un double-clic sur QuizForge.bat)")
     asst.set_defaults(f=lambda a: assistant())

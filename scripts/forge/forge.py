@@ -380,6 +380,82 @@ class Atelier:
         K.ecrire(c)
         return {"ok": True, "avertissements": avert}
 
+    def cours_spec(self) -> str | None:
+        """Valeur de ``--cours`` pour le choix du sélecteur (rien pour « tous » ou « sans cours »)."""
+        a = self.cours_actif()
+        if not a.get("cours") or a["cours"] == "_sans":
+            return None
+        return a["cours"] + (f":{a['declinaison']}/{a['edition']}" if a.get("declinaison") else "")
+
+    def option_cours(self) -> list[str]:
+        s = self.cours_spec()
+        return ["--cours", s] if s else []
+
+    def cours_reglages(self) -> dict:
+        """Réglages de l'édition choisie (profil, étiquettes, catégorie, séances, effectif, dossiers), pour les formulaires."""
+        s = self.cours_spec()
+        if not s:
+            return {"ok": True, "reglages": None}
+        sys.path.insert(0, str(chemins.SCRIPTS / "commun"))
+        import cours_options as CO
+        try:
+            r = CO.resoudre(s)
+        except Exception as e:
+            return {"ok": False, "message": str(e)}
+        r["prochaine"] = CO.prochaine(r)
+        for k in ("exports", "bilans"):
+            if r.get(k):
+                K.absolu(r[k]).mkdir(parents=True, exist_ok=True)
+        return {"ok": True, "reglages": json.loads(json.dumps(r, ensure_ascii=False, default=str))}
+
+    def registres(self, q: dict) -> dict:
+        """Registres des versions de quiz : de l'édition et du cours demandés (ou choisis en haut), sinon tous."""
+        sys.path.insert(0, str(chemins.SCRIPTS / "commun"))
+        import cours_options as CO
+        import registre as R
+        spec = (q.get("cours") + (f":{q['declinaison']}/{q['edition']}" if q.get("declinaison") else "")) if q.get("cours") else self.cours_spec()
+        bases, editions = [], []
+        if spec:
+            r = CO.resoudre(spec)
+            bases = [(R.base(r), r["libelle"])]
+            if r.get("edition"):
+                bases.append((R.base({"cours": r["cours"]}), f"{r['titre']} (extraits communs aux déclinaisons)"))
+            c = K.trouver(r["cours"])
+            editions = [f"{d['nom']}/{e['nom']}" for d in c.get("declinaisons") or [] for e in d.get("editions") or []]
+        else:
+            bases = [(b, R.rel(b)) for b in R.tous()]
+        out = []
+        for b, titre in bases:
+            vs = R.lire(b)["versions"]
+            if q.get("classeur"):
+                vs = [v for v in vs if Path(v.get("classeur", "")).stem == Path(q["classeur"]).stem]
+            out.append({"base": R.rel(b), "titre": titre, "commun": b == bases[-1][0] and len(bases) == 2,
+                        "versions": json.loads(json.dumps(vs[::-1], ensure_ascii=False, default=str))})
+        return {"ok": True, "registres": out, "editions": editions, "etats": R.LIBELLES}
+
+    def registre_modifier(self, p: dict) -> dict:
+        sys.path.insert(0, str(chemins.SCRIPTS / "commun"))
+        import registre as R
+        b = R.absolu(p.get("base") or "")
+        if not (b / R.FICHIER).is_file() or b.resolve() not in [x.resolve() for x in R.tous()]:
+            raise ValueError("registre inconnu")
+        v = R.modifier(b, p.get("id") or "", p.get("champs") or {})
+        return {"ok": True, "version": json.loads(json.dumps(v, ensure_ascii=False, default=str))}
+
+    def versions_classeurs(self, classeurs: list[dict]) -> list[dict]:
+        """Dernière version de chaque classeur dans les registres du choix (ou tous) : {id, etat, nombre}."""
+        try:
+            regs = self.registres({})["registres"]
+        except Exception:
+            return classeurs
+        for c in classeurs:
+            stem = Path(c["classeur"]).stem
+            vs = [v for r in regs for v in r["versions"] if Path(v.get("classeur", "")).stem == stem]
+            if vs:
+                der = max(vs, key=lambda v: str(v.get("date")))
+                c["versions"] = {"nombre": len(vs), "derniere": der["id"], "etat": der.get("etat"), "dossier": der.get("dossier")}
+        return classeurs
+
     def rattacher(self, type_: str, chemin: Path):
         """Ajoute un objet créé par l'atelier au cours actif s'il n'y est pas déjà (sources du cours)."""
         actif = self.cours_actif().get("cours")
@@ -438,6 +514,7 @@ class Atelier:
             argv += ["--profil", profil]
         if p.get("auteur"):
             argv.append("--auteur")
+        argv += self.option_cours()
 
         def liens(t):
             ident = d["id"]
@@ -776,7 +853,7 @@ class Atelier:
 
     def a_quiz_convertir(self, p: dict) -> Tache:
         f = QB.classeur_valide(p.get("classeur") or "")
-        argv = [PY, str(QB.QUIZFORGE), "convertir", str(f)] + self._profil(p)
+        argv = [PY, str(QB.QUIZFORGE), "convertir", str(f)] + self._profil(p) + self.option_cours()
         for cle, option in (("categorie", "--categorie"), ("nom", "--nom"), ("tags", "--tags")):
             v = QB.texte_court(p.get(cle) or "")
             if v:
@@ -796,6 +873,9 @@ class Atelier:
         sortie = f.parent / f"{f.stem}_QuizForge"
 
         def liens(t):
+            v = next((ligne[10:].strip() for ligne in reversed(t.lignes) if ligne.startswith("Version : ")), None)
+            if v:                                        # conversion versionnée (cours choisi)
+                return {"dossier": v}
             out = {"dossier": rel(sortie)} if sortie.is_dir() else {}
             plans = sorted(f.parent.glob(f"{f.stem}_plan_S*.md"), key=lambda x: x.stat().st_mtime)
             if plans and plans[-1].stat().st_mtime >= t.debut - 1:
@@ -828,7 +908,8 @@ class Atelier:
     # ------------------------------------------------------------------ DiagForge
     def a_diag_bilan(self, p: dict) -> Tache:
         d = QB.dossier_valide(p.get("dossier") or "")
-        argv = [PY, str(QB.DIAGFORGE), str(d)] + [str(QB.dossier_valide(x)) for x in (p.get("autres") or [])][:4] + self._profil(p)
+        argv = ([PY, str(QB.DIAGFORGE), str(d)] + [str(QB.dossier_valide(x)) for x in (p.get("autres") or [])][:4]
+                + self._profil(p) + self.option_cours())
         if p.get("questions"):
             argv += ["--questions", str(QB.fichier_dans(d, p["questions"], (".xml",)))]
         if p.get("roster"):
@@ -1122,7 +1203,7 @@ def gestionnaire(at: Atelier):
             if chemin == "/api/exoforge/fiches":
                 return self._json({"ok": True, "fiches": at.filtre(at.fiches_exoforge(), "fiche"), "actif": at.cours_actif()})
             if chemin == "/api/quizforge/classeurs":
-                return self._json({"ok": True, "classeurs": at.filtre(QB.classeurs(C.reglages().get("classeurs")), "classeur"),
+                return self._json({"ok": True, "classeurs": at.versions_classeurs(at.filtre(QB.classeurs(C.reglages().get("classeurs")), "classeur")),
                                    "actif": at.cours_actif()})
             if chemin == "/api/diagforge/dossiers":
                 return self._json({"ok": True, "dossiers": at.filtre(QB.dossiers_exports(), "dossier"), "actif": at.cours_actif()})
@@ -1134,6 +1215,15 @@ def gestionnaire(at: Atelier):
                 return self._json({"ok": True, "capsules": at.filtre(C.liste(), "dossier"), "actif": at.cours_actif()})
             if chemin == "/api/cours":
                 return self._json(at.cours_liste())
+            if chemin == "/api/registre":
+                q = dict(x.split("=", 1) for x in (url.query or "").split("&") if "=" in x)
+                from urllib.parse import unquote
+                try:
+                    return self._json(at.registres({k: unquote(v) for k, v in q.items()}))
+                except ValueError as e:
+                    return self._json({"ok": False, "message": str(e)})
+            if chemin == "/api/cours_reglages":
+                return self._json(at.cours_reglages())
             if chemin == "/api/cours_sans":
                 return self._json(at.cours_sans())
             if chemin.startswith("/api/cours/"):
@@ -1186,6 +1276,8 @@ def gestionnaire(at: Atelier):
                     return self._json(at.ouvrir(p))
                 if chemin == "/api/cours":
                     return self._json(at.cours_action(p))
+                if chemin == "/api/registre":
+                    return self._json(at.registre_modifier(p))
                 if chemin == "/api/reglages":
                     r = p.get("reglages") or {}
                     if "profil" in r:

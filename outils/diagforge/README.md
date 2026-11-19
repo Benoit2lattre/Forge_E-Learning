@@ -55,6 +55,9 @@ python scripts/diagforge/diagforge.py data/diagforge/Quizz1 -r roster.csv -t pre
 | `-p` | profil : couleurs des images et de la fiche |
 | `-s` | nom du classeur produit |
 | `--sans-images` | pas d'images PNG |
+| `--cours stat:epf-mae` | profil de l'école de l'édition (cours de l'Atelier Forge), si `-p` n'est pas donné |
+
+**Version du quiz.** Le bilan cherche, d'après les noms des questions de l'export XML, la version QuizForge du test dans les registres des cours (ceux de l'édition avec `--cours`, sinon tous) : il l'écrit dans un onglet « Version » du classeur (avec les questions absentes ou en plus) et inscrit le bilan au registre (état « bilan fait », liens vers le classeur et la fiche).
 
 **Groupes.** Le roster est prioritaire ; les étudiants absents du roster sont signalés. Sans roster, un test par groupe dont le nom se termine par le groupe suffit : les exports `<cours>-Quizz1_SMA-…` et `<cours>-Quizz1_SMB-…` sont réunis sous « Quizz1 », groupes SMA et SMB.
 

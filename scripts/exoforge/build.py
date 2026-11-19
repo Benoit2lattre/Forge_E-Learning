@@ -2,9 +2,10 @@
 """ExoForge — construit un exercice interactif à partir d'une fiche YAML.
 
 Usage :
-    python build.py exercices/<fiche>.yaml [--profil Ecole1] [--auteur]
+    python build.py exercices/<fiche>.yaml [--profil Ecole1] [--cours stat:epf-mae] [--auteur]
     (l'extension .yaml peut être omise)
 
+--cours : profil de l'école de l'édition (cours[:déclinaison[/édition]]), si --profil n'est pas donné.
 --profil (-p) : applique la charte (couleurs, police, jeu de couleurs LaTeX) de profils/<nom>/profil.yaml
                 (nom, alias ou première lettre) ; sinon le profil de la fiche, ou le profil par défaut.
 
@@ -83,6 +84,18 @@ if __name__ == "__main__":
         i = args.index(opt)
         profil = args[i + 1] if i + 1 < len(args) else sys.exit(__doc__)
         del args[i:i + 2]
+    if "--cours" in args:                       # profil de l'école de l'édition, si --profil n'est pas donné
+        i = args.index("--cours")
+        spec = args[i + 1] if i + 1 < len(args) else sys.exit(__doc__)
+        del args[i:i + 2]
+        try:
+            sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "commun"))
+            import cours_options
+            r = cours_options.resoudre(spec)
+            print(f"Cours : {r['libelle']}" + (f" (profil {r['profil']})" if r["profil"] else ""))
+            profil = profil or r["profil"]
+        except Exception as e:
+            print(f"Cours « {spec} » non appliqué : {e}")
     auteur = False
     for o in ("--auteur", "-a"):
         if o in args:

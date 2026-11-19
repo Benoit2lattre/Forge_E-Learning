@@ -411,11 +411,53 @@ def supprimer_declinaison(c: dict, nom: str):
 
 def modifier_edition(c: dict, decl: str, ed: str, e: dict) -> dict:
     x = edition(c, decl, ed)
+    _champs_edition(x, e)
+    return x
+
+
+def _champs_edition(x: dict, e: dict):
     if e.get("promo") is not None:
         x["promo"] = texte_valide(e["promo"], 40)
     if e.get("groupes") is not None:
         x["groupes"] = _groupes(e["groupes"])
-    return x
+    if e.get("effectif") is not None:
+        v = str(e["effectif"]).strip()
+        if v and not v.isdigit():
+            raise ValueError("effectif : un nombre d'étudiants")
+        if v:
+            x["effectif"] = int(v)
+        else:
+            x.pop("effectif", None)
+    if e.get("seances") is not None:
+        x["seances"] = _seances(e["seances"])
+
+
+def _seances(v) -> list[dict]:
+    """Séances datées : liste de dicts, ou lignes « n ; date ; titre » (date AAAA-MM-JJ ou JJ/MM/AAAA)."""
+    import datetime as dt
+    if isinstance(v, list):
+        lignes = [f"{s.get('n', '')};{s.get('date', '')};{s.get('titre', '')}" for s in v if isinstance(s, dict)]
+    else:
+        lignes = str(v).splitlines()
+    out = []
+    for i, ligne in enumerate(lignes, 1):
+        if not ligne.strip():
+            continue
+        morceaux = [m.strip() for m in ligne.split(";")]
+        n, date, titre = (morceaux + ["", ""])[:3]
+        if not n.isdigit():
+            raise ValueError(f"séance ligne {i} : « n ; date ; titre » (n, numéro de la séance)")
+        s = {"n": int(n)}
+        if date:
+            try:
+                j = dt.date.fromisoformat(date) if "-" in date else dt.datetime.strptime(date, "%d/%m/%Y").date()
+            except ValueError:
+                raise ValueError(f"séance {n} : date « {date} » (AAAA-MM-JJ ou JJ/MM/AAAA)") from None
+            s["date"] = j.isoformat()
+        if titre:
+            s["titre"] = texte_valide(titre, 120)
+        out.append(s)
+    return sorted(out, key=lambda s: s["n"])
 
 
 def _groupe(nom, campus=None, langue=None) -> dict:
@@ -458,10 +500,7 @@ def ajouter_edition(c: dict, decl: str, e: dict) -> dict:
             if s.get("date"):
                 s["date"] = _decaler(s["date"], ecart)
     neuve["nom"] = nom
-    if e.get("promo") is not None:
-        neuve["promo"] = texte_valide(e["promo"], 40)
-    if e.get("groupes") is not None:
-        neuve["groupes"] = _groupes(e["groupes"])
+    _champs_edition(neuve, e)
     neuve.setdefault("groupes", [])
     neuve.setdefault("seances", [])
     base = dossier_cours(c) / decl / nom

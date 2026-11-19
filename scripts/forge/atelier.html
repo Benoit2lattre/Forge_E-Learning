@@ -92,6 +92,7 @@ dialog.formulaire[open]{display:flex}
 dialog.formulaire label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--texte2)}
 dialog.formulaire select,dialog.formulaire input[type=text]{padding:6px;border:1px solid var(--bord);border-radius:6px;font-size:14px}
 dialog.formulaire h3{margin:0 0 4px}
+dialog.formulaire.large{max-width:1100px;width:92vw}.bloc-registre h4{margin:6px 0}.bloc-registre input[type=text]{width:100%;margin-bottom:4px}
 .panneau-rec{position:fixed;right:20px;bottom:280px;z-index:8;background:var(--carte);border:2px solid var(--ko);border-radius:12px;padding:12px 16px;box-shadow:0 6px 24px #0004;display:flex;flex-direction:column;gap:8px;max-width:340px}
 .panneau-rec p{margin:0;font-size:13px;color:var(--texte2)}
 .rec-etat{font-weight:600}.rec-etat.actif{color:var(--ko)}
@@ -228,6 +229,13 @@ async function accueil() {
   $("main").append(el("div", { class: "cartes" }, outils.map(([ecran, ic, nom, txt, pret]) => el("div", { class: "carte" },
     el("div", { class: "nom" }, el("img", { src: `/static/identite/icones/${ic}_icone_jour_64.png`, alt: "" }), nom),
     el("p", {}, txt), el("button", { class: pret ? "btn" : "btn second", type: "button", onclick: () => aller(ecran) }, pret ? "Ouvrir" : "Bientôt")))));
+  const RC = await reglagesCours();
+  if (RC) { const pro = RC.prochaine;
+    $("main").append(el("div", { class: "carte etroite" }, el("div", { class: "nom" }, "Cours choisi : " + RC.libelle),
+      el("p", {}, [RC.profil ? "Profil " + RC.profil : "", RC.groupes.length ? "groupes " + RC.groupes.map(g => g.nom).join(", ") : "", RC.effectif ? RC.effectif + " étudiants" : ""].filter(Boolean).join(" · ") || "Aucune édition choisie."),
+      el("p", {}, pro ? `Prochaine séance : n° ${pro.n}${pro.date ? " le " + new Date(pro.date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }) : ""}${pro.titre ? " — « " + pro.titre + " »" : ""}.` : "Aucune séance à venir dans l'édition."),
+      el("div", { class: "actions" }, el("button", { class: "btn second", type: "button", onclick: () => aller("cours") }, "Voir le cours"),
+        RC.exports ? el("button", { class: "btn second", type: "button", onclick: e => montrer(RC.exports, e.currentTarget) }, "Dossier des exports") : null))); }
   $("main").append(el("h3", {}, "État de cet ordinateur"));
   const zone = el("div", { class: "vide" }, "Lecture…"); $("main").append(zone);
   ETAT = await api("/api/etat");
@@ -245,7 +253,7 @@ async function exercices() {
   vider(entete("exoforge", "Exercices"), el("p", { class: "chapeau" }, "Les fiches des exemples publiés et de data/exoforge. « Construire » produit l'exercice et son paquet SCORM 1.2 dans dist/exoforge ; « Essayer » l'ouvre dans un nouvel onglet."));
   if (!ETAT) ETAT = await api("/api/etat");
   const profil = el("select", { id: "profil", "aria-label": "Profil" }, el("option", { value: "" }, "profil de la fiche"), (ETAT.profils || []).map(p => el("option", { value: p }, p)));
-  const R = await reglagesAtelier(); PROFIL = opt("profil", R.profil || "");
+  const R = await reglagesAtelier(), RC = await reglagesCours(); PROFIL = opt("profil", (RC && RC.profil) || R.profil || "");
   profil.value = PROFIL; if (profil.selectedIndex < 0) profil.selectedIndex = 0; profil.onchange = () => { PROFIL = profil.value; garder("profil", PROFIL); };
   const filtre = el("input", { type: "search", placeholder: "Filtrer par titre ou fichier", "aria-label": "Filtrer les fiches", value: FILTRE });
   $("main").append(el("div", { class: "barre" }, el("label", {}, "Profil", profil), filtre,
@@ -520,9 +528,9 @@ let REGLAGES = null;
 async function reglagesAtelier() { if (!REGLAGES) { const r = await api("/api/reglages"); REGLAGES = r.ok ? r.reglages : {}; } return REGLAGES; }
 async function choixProfil(defautLibelle) {
   if (!ETAT) ETAT = await api("/api/etat");
-  const R = await reglagesAtelier();
+  const R = await reglagesAtelier(), RC = await reglagesCours();
   const s = el("select", { "aria-label": "Profil" }, el("option", { value: "" }, defautLibelle), (ETAT.profils || []).map(p => el("option", { value: p }, p)));
-  s.value = opt("profil", R.profil || ""); if (s.selectedIndex < 0) s.selectedIndex = 0;
+  s.value = opt("profil", (RC && RC.profil) || R.profil || ""); if (s.selectedIndex < 0) s.selectedIndex = 0;
   s.onchange = () => garder("profil", s.value); return s;
 }
 async function ouvrir(chemin, bouton) {
@@ -552,7 +560,8 @@ async function parcourirDossier(titre, depart) {
 }
 
 /* ---------- Cours : sélecteur en haut de page et écran Cours ---------- */
-let COURS = { choix: [], actif: {}, cours: [] };
+let COURS = { choix: [], actif: {}, cours: [] }, RCOURS;
+async function reglagesCours() { if (RCOURS === undefined) { const r = await api("/api/cours_reglages"); RCOURS = r.ok ? r.reglages : null; } return RCOURS; }
 const cleChoix = a => !a || !a.cours ? "" : a.cours === "_sans" ? "_sans" : [a.cours, a.declinaison || "", a.edition || ""].join("|");
 async function chargerCours() {
   const r = await api("/api/cours"); if (!r.ok) return;
@@ -565,7 +574,7 @@ $("cours-actif").onchange = async e => {
   const v = e.target.value, [cours, declinaison, edition] = v === "_sans" ? ["_sans"] : v.split("|");
   const r = await api("/api/cours", { action: "actif", cours: cours || "", declinaison: declinaison || "", edition: edition || "" });
   if (!r.ok) return message(r.message || "Choix impossible.", true);
-  COURS.actif = r.actif; aller(ECRAN);
+  COURS.actif = r.actif; RCOURS = undefined; delete OPT.profil; garder("q_categorie", ""); aller(ECRAN);
 };
 function libelleActif() {
   const a = COURS.actif || {}; if (!a.cours) return null; if (a.cours === "_sans") return "Sans cours";
@@ -594,7 +603,7 @@ async function actionCours(params, ok) {
   const r = await api("/api/cours", params);
   if (!r.ok) { message(r.message || "Modification impossible.", true); return null; }
   (r.avertissements || []).forEach(a => message(a, true));
-  if (ok) message(ok); return r;
+  RCOURS = undefined; if (ok) message(ok); return r;
 }
 async function ficheCours(zone, nom) {
   zone.replaceChildren(el("div", { class: "vide" }, "Lecture du cours…"));
@@ -649,7 +658,9 @@ async function ficheCours(zone, nom) {
     el("td", {}, (dc.editions || []).length ? (dc.editions || []).map(e => { const id = `${dc.nom}/${e.nom}`;
       return el("div", { class: "edition" }, el("b", {}, String(e.nom)), " ", e.promo ? el("span", { class: "sous-l" }, "promo " + e.promo) : null, " ",
         el("span", { class: "sous-l" }, (e.groupes || []).map(g => g.nom + (g.campus || g.langue ? ` (${[g.campus, g.langue].filter(Boolean).join(", ")})` : "")).join(", ") || "sans groupe"), " ",
+        el("span", { class: "sous-l" }, [e.effectif ? e.effectif + " étudiants" : "", (e.seances || []).length ? (e.seances || []).length + " séances" : ""].filter(Boolean).join(" · ")), " ",
         el("button", { class: "btn second petit", type: "button", onclick: () => formulaireEdition(nom, dc, recharger, e) }, "Modifier"), " ",
+        el("button", { class: "btn second petit", type: "button", title: "Versions de quiz converties pour cette édition", onclick: () => registreDialog({ cours: nom, declinaison: dc.nom, edition: String(e.nom) }, `${[dc.ecole, dc.parcours].filter(Boolean).join(" ")} ${e.nom}`) }, "Registre"), " ",
         String(e.nom) === enCours(dc) ? el("span", { class: "pastille p-ok", title: "Édition en cours de cette déclinaison (chaque déclinaison a la sienne)" }, "en cours") : el("button", { class: "btn second petit", type: "button", onclick: async () => {
           if (await actionCours({ action: "active", nom, declinaison: dc.nom, edition: e.nom }, `Édition en cours de « ${dc.nom} » : ${e.nom}.`)) recharger(); } }, "En cours")); })
       : el("span", { class: "sous" }, "aucune édition")),
@@ -736,12 +747,18 @@ function formulaireEdition(nomCours, dc, apres, ex) {
   const lgs = (dc.langues || [dc.langue]).filter(Boolean);
   const groupes = el("input", { type: "text", value: prec ? texteGroupes(prec.groupes) : "", placeholder: lgs.length > 1 ? "MAE1:Cachan:fr, MAE3:Cachan:en" : "MSD1:Cachan, MSD2:Cachan" });
   const libelle = [dc.ecole, dc.parcours].filter(Boolean).join(" ") || dc.nom;
+  const effectif = el("input", { type: "number", min: "1", value: prec && prec.effectif ? prec.effectif : "", placeholder: "nombre d'étudiants" });
+  const seances = el("textarea", { rows: 6, placeholder: "1 ; 2026-09-15 ; Introduction\n2 ; 22/09/2026 ; Estimation" });
+  seances.value = ex ? (ex.seances || []).map(s => [s.n, s.date || "", s.titre || ""].join(" ; ")).join("\n") : "";
   dialogue(ex ? `Édition ${ex.nom} de « ${libelle} »` : `Nouvelle édition de « ${libelle} »`, [
-    el("p", { class: "sous" }, ex ? "Promo et groupes ; l'année (nom des dossiers) ne change pas." : prec ? `Copie de l'édition ${prec.nom} (séances décalées d'un an) ; les exports et les bilans auront leurs propres dossiers.` : "Première édition : les séances se rempliront avec le plan de séance."),
+    el("p", { class: "sous" }, ex ? "Promo, groupes, effectif et séances ; l'année (nom des dossiers) ne change pas." : prec ? `Copie de l'édition ${prec.nom} (séances décalées d'un an) ; les exports et les bilans auront leurs propres dossiers.` : "Première édition : les séances se rempliront avec le plan de séance."),
     champ("Année ou nom court", nom), champ("Promo", promo),
-    champ(`Groupes, séparés par des virgules : groupe:campus${lgs.length > 1 ? ":langue (" + lgs.join(" ou ") + ")" : ""}`, groupes)],
+    champ(`Groupes, séparés par des virgules : groupe:campus${lgs.length > 1 ? ":langue (" + lgs.join(" ou ") + ")" : ""}`, groupes),
+    champ("Effectif (pour le plan du quiz de séance)", effectif),
+    champ(ex || !prec ? "Séances : une par ligne, « n ; date ; titre »" : `Séances (vide : celles de ${prec.nom}, décalées d'un an) : « n ; date ; titre »`, seances)],
     ex ? "Enregistrer" : "Créer l'édition", async () => {
-      const edition = { nom: nom.value, promo: promo.value, groupes: groupes.value };
+      const edition = { nom: nom.value, promo: promo.value, groupes: groupes.value, effectif: effectif.value };
+      if (ex || seances.value.trim()) edition.seances = seances.value;
       const r = await actionCours(ex ? { action: "edition_modifier", nom: nomCours, declinaison: dc.nom, edition_nom: String(ex.nom), edition } : { action: "edition", nom: nomCours, declinaison: dc.nom, edition },
         ex ? "Édition enregistrée." : "Édition créée.");
       if (!r) return false; apres(); });
@@ -758,6 +775,36 @@ async function sansCours() {
     const b = el("button", { class: "btn second petit", type: "button", onclick: async () => { if (await actionCours({ action: "ranger", nom: s.value, type: t, chemin: o.chemin }, "Rangé.")) { b.closest("tr").remove(); chargerCours(); } } }, "Ranger");
     return el("tr", {}, el("td", {}, el("b", {}, o.libelle), el("span", { class: "sous" }, o.chemin)), el("td", {}, el("div", { class: "actions" }, s, b)));
   }))));
+}
+
+/* registre des versions de quiz (conversions d'un cours ou d'une édition) */
+const ETATS_V = { convertie: "convertie", importee: "importée dans Moodle", passee: "passée", bilan: "bilan fait", abandonnee: "abandonnée" };
+async function registreDialog(q, titre) {
+  const d = await api("/api/registre?" + new URLSearchParams(Object.entries(q).filter(([, v]) => v)).toString());
+  if (!d.ok) return message(d.message || "Registre illisible.", true);
+  const blocs = d.registres.filter(r => r.versions.length);
+  const contenu = blocs.length ? blocs.map(r => el("div", { class: "bloc-registre" }, el("h4", {}, r.titre), el("table", { class: "compact" },
+    el("thead", {}, el("tr", {}, el("th", {}, "Version"), el("th", {}, "État"), el("th", {}, "Test Moodle et remarques"), el("th", {}, ""))),
+    el("tbody", {}, r.versions.map(v => {
+      const etat = el("select", {}, Object.entries(d.etats).map(([k, l]) => el("option", { value: k }, l))); etat.value = v.etat;
+      const test = el("input", { type: "text", value: v.test_moodle || "", placeholder: "nom du test dans Moodle" });
+      const rem = el("input", { type: "text", value: v.remarques || "", placeholder: "remarques" });
+      const util = r.commun ? d.editions.map(e => { const b = el("input", { type: "checkbox", value: e }); b.checked = (v.utilisee_par || []).includes(e); return el("label", { class: "case" }, b, e); }) : [];
+      const dates = Object.keys(ETATS_V).filter(k => (v.dates || {})[k]).map(k => `${ETATS_V[k]} ${v.dates[k]}`).join(" · ");
+      return el("tr", {}, el("td", {}, el("b", {}, v.id), el("span", { class: "sous" }, `${v.questions} questions${v.seance ? " · séance " + v.seance : ""}`), el("span", { class: "sous" }, dates)),
+        el("td", {}, etat), el("td", {}, test, rem, util.length ? el("div", { class: "actions" }, el("span", { class: "sous" }, "utilisée par :"), util) : null,
+          (v.bilans || []).map(b => el("div", {}, el("button", { class: "btn second petit", type: "button", disabled: !b.fiche, onclick: e => ouvrir(b.fiche, e.currentTarget) }, "Fiche du bilan " + b.date)))),
+        el("td", {}, el("div", { class: "actions" }, el("button", { class: "btn petit", type: "button", onclick: async () => {
+          const champs = { test_moodle: test.value, remarques: rem.value };
+          if (etat.value !== v.etat) champs.etat = etat.value;
+          if (util.length) champs.utilisee_par = util.map(l => l.firstChild).filter(b => b.checked).map(b => b.value);
+          const res = await api("/api/registre", { base: r.base, id: v.id, champs });
+          if (!res.ok) return message(res.message || "Enregistrement impossible.", true);
+          v.etat = res.version.etat; message(`Version ${v.id} : ${ETATS_V[v.etat]}.`); } }, "Enregistrer"),
+          el("button", { class: "btn second petit", type: "button", onclick: e => montrer(v.dossier, e.currentTarget) }, "Dossier"))));
+    }))))) : [el("p", {}, "Aucune version : « Convertir… » avec ce cours choisi en haut de la page en crée une à chaque conversion.")];
+  const dlg = dialogue(`Registre — ${titre}`, contenu, "Fermer", () => true);
+  dlg.classList.add("large");
 }
 
 /* ---------- Questions (QuizForge) ---------- */
@@ -777,22 +824,28 @@ async function questions() {
       el("td", {}, el("b", {}, x.nom), el("span", { class: "sous" }, x.dossier + ({ data: " (privé)", exemple: " (exemple)", ajoute: " (ajouté)" }[x.origine] || ""))),
       el("td", {}, quand(x.modifie)),
       el("td", {}, x.converti ? quand(x.converti) : "jamais", x.a_refaire ? el("span", { class: "sous" }, el("span", { class: "pastille p-sable" }, "classeur modifié depuis")) : null,
-        x.plans.length ? el("span", { class: "sous" }, `${x.plans.length} plan(s) de séance`) : null),
+        x.plans.length ? el("span", { class: "sous" }, `${x.plans.length} plan(s) de séance`) : null,
+        x.versions ? el("span", { class: "sous" }, el("button", { class: "btn second petit", type: "button", title: "Versions converties pour le cours et leur état", onclick: () => registreDialog({ classeur: x.classeur }, x.nom) },
+          `${x.versions.derniere.split("/").pop()} · ${ETATS_V[x.versions.etat] || x.versions.etat}${x.versions.nombre > 1 ? ` (${x.versions.nombre} versions)` : ""}`)) : null),
       el("td", {}, el("div", { class: "actions" },
         el("button", { class: "btn second", type: "button", onclick: e => ouvrir(x.classeur, e.currentTarget) }, "Ouvrir dans Excel"),
         el("button", { class: "btn second", type: "button", onclick: () => lancerTache("quiz.valider", { classeur: x.classeur }) }, "Valider"),
         el("button", { class: "btn", type: "button", onclick: () => convertir(x.classeur, x.nom) }, "Convertir…"),
-        el("button", { class: "btn second", type: "button", disabled: !x.sortie, onclick: e => montrer(x.sortie, e.currentTarget) }, "Sorties"),
+        el("button", { class: "btn second", type: "button", disabled: !(x.versions || x.sortie), onclick: e => montrer(x.versions ? x.versions.dossier : x.sortie, e.currentTarget) }, "Sorties"),
         x.origine === "ajoute" ? el("button", { class: "btn second", type: "button", title: "Retirer de la liste (le fichier n'est pas touché)", onclick: async () => { const r = await api("/api/reglages", { reglages: { retirer_classeur: x.classeur } }); if (r.ok) { REGLAGES = r.reglages; questions(); } } }, "Retirer") : null)))))));
 }
-function convertir(classeur, nom) {
-  const categorie = el("input", { type: "text", placeholder: "ex. MEF/TP3 (facultatif)", value: opt("q_categorie", "") });
+async function convertir(classeur, nom) {
+  const RC = await reglagesCours(), pro = RC && RC.prochaine;
+  const categorie = el("input", { type: "text", placeholder: RC && RC.categorie ? RC.categorie + " (catégorie de l'édition)" : "ex. MEF/TP3 (facultatif)", value: opt("q_categorie", "") });
   const nomCat = el("input", { type: "text", placeholder: "nom du classeur par défaut", value: "" });
   const tags = el("input", { type: "text", placeholder: "ex. MEF;S1 (facultatif)", value: "" });
   const xml = el("input", { type: "checkbox" }); xml.checked = true; const gift = el("input", { type: "checkbox" }); gift.checked = opt("q_gift", false);
   const reparer = el("input", { type: "checkbox" });
-  const seance = el("input", { type: "number", min: "1", max: "99", placeholder: "aucune" }), etudiants = el("input", { type: "number", min: "1", placeholder: "facultatif" });
-  dialogue(`Convertir « ${nom} » pour Moodle`, [
+  const seance = el("input", { type: "number", min: "1", max: "99", placeholder: "aucune", value: pro ? pro.n : "" });
+  const etudiants = el("input", { type: "number", min: "1", placeholder: RC && RC.effectif ? String(RC.effectif) : "facultatif", title: RC && RC.effectif ? "Vide : l'effectif de l'édition" : "" });
+  const noteC = RC ? el("p", { class: "note-cours" }, el("span", { class: "pastille p-sable" }, RC.libelle), " " + [RC.profil ? "profil " + RC.profil : "", RC.tags.length ? "étiquettes " + RC.tags.join(";") + " ajoutées" : "",
+    RC.categorie ? "catégorie " + RC.categorie : "", pro ? `prochaine séance : n° ${pro.n}${pro.date ? " du " + new Date(pro.date).toLocaleDateString("fr-FR") : ""}${pro.titre ? " « " + pro.titre + " »" : ""}` : ""].filter(Boolean).join(" · ")) : null;
+  dialogue(`Convertir « ${nom} » pour Moodle`, [noteC,
     champ("Catégorie Moodle (racine)", categorie), champ("Nom de la catégorie", nomCat), champ("Tags ajoutés à toutes les questions", tags),
     el("div", { class: "ligne gauche" }, el("label", { class: "case" }, xml, "Moodle XML"), el("label", { class: "case" }, gift, "GIFT")),
     el("label", { class: "case" }, reparer, "réparer les textes abîmés (plusFin → plus fin)"),
@@ -840,10 +893,13 @@ async function bilans() {
     champ("Tentatives", choix("tentatives", [["toutes", "toutes (comme Moodle)"], ["premiere", "la première de chaque étudiant"], ["derniere", "la dernière"], ["meilleure", "la meilleure"]], "toutes")),
     caseA("sans_images", "sans images"),
     el("button", { class: "btn second", type: "button", onclick: autreDossier }, "Autre dossier…")));
+  const RC = await reglagesCours();
+  if (RC && RC.exports) $("main").append(el("div", { class: "barre" }, el("span", {}, "Exports de l'édition : ", el("b", {}, RC.exports)),
+    el("button", { class: "btn second", type: "button", title: "Déposez-y les exports Moodle d'un test (un dossier par test), puis rouvrez cet écran", onclick: e => montrer(RC.exports, e.currentTarget) }, "Ouvrir le dossier")));
   const zone = el("div", {}, el("div", { class: "vide" }, "Recherche des exports…")); $("main").append(zone);
   const d = await api("/api/diagforge/dossiers");
   if (!d.ok) return zone.replaceChildren(el("div", { class: "vide" }, d.message || "Lecture impossible."));
-  if (!d.dossiers.length) return zone.replaceChildren(el("div", { class: "vide" }, "Aucun export : déposez les exports Moodle d'un test dans un dossier de data/diagforge."));
+  if (!d.dossiers.length) return zone.replaceChildren(el("div", { class: "vide" }, RC && RC.exports ? "Aucun export pour ce cours : déposez les exports Moodle d'un test dans un dossier à lui, sous le dossier des exports de l'édition (« Ouvrir le dossier »), puis rouvrez cet écran." : "Aucun export : déposez les exports Moodle d'un test dans un dossier de data/diagforge."));
   zone.replaceChildren(el("table", {}, el("thead", {}, el("tr", {}, el("th", {}, "Exports"), el("th", {}, "Fichiers"), el("th", {}, "Bilan"), el("th", {}, "Actions"))),
     el("tbody", {}, d.dossiers.map(x => el("tr", {},
       el("td", {}, el("b", {}, x.nom), el("span", { class: "sous" }, x.parent + (x.origine === "data" ? " (privé)" : " (exemple)"))),
