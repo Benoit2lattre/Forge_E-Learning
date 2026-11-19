@@ -611,6 +611,7 @@ async function actionCours(params, ok) {
 async function ficheCours(zone, nom) {
   zone.replaceChildren(el("div", { class: "vide" }, "Lecture du cours…"));
   const d = await api("/api/cours/" + encodeURIComponent(nom));
+  if (d.ok) INFOS_COURS = d;
   if (!d.ok) return zone.replaceChildren(el("div", { class: "vide" }, d.message || "Lecture impossible."));
   const c = d.cours, recharger = () => { chargerCours(); ficheCours(zone, nom); };
   const entree = (v, attrs = {}) => el("input", { type: "text", value: v || "", ...attrs });
@@ -657,7 +658,7 @@ async function ficheCours(zone, nom) {
   const enCours = dc => { const eds = (dc.editions || []).map(e => String(e.nom)); return dc.en_cours && eds.includes(String(dc.en_cours)) ? String(dc.en_cours) : eds.slice(-1)[0]; };
   const lignesD = (c.declinaisons || []).map(dc => el("tr", {},
     el("td", {}, el("b", {}, [dc.ecole, dc.parcours].filter(Boolean).join(" ") || dc.nom), el("span", { class: "sous" },
-      [dc.nom, (dc.campus || []).join(", "), dc.niveau, Object.entries(dc.codes || {}).map(([k, v]) => `${k} ${v}`).join(", "), (dc.langues || [dc.langue]).filter(Boolean).join(" et ")].filter(Boolean).join(" · "))),
+      [dc.nom, (dc.campus || []).join(", "), [dc.niveau, dc.modalite].filter(Boolean).join(" "), Object.entries(dc.codes || {}).map(([k, v]) => `${vocabulaire(d, dc.ecole)[k] || k} ${v}`).join(", "), (dc.langues || [dc.langue]).filter(Boolean).join(" et ")].filter(Boolean).join(" · "))),
     el("td", {}, (dc.editions || []).length ? (dc.editions || []).map(e => { const id = `${dc.nom}/${e.nom}`;
       return el("div", { class: "edition" }, el("b", {}, String(e.nom)), " ", e.promo ? el("span", { class: "sous-l" }, "promo " + e.promo + " · ") : null, " ",
         el("span", { class: "sous-l" }, (e.groupes || []).map(g => g.nom + (g.campus || g.langue ? ` (${[g.campus, g.langue].filter(Boolean).join(", ")})` : "")).join(", ") || "sans groupe"), " ",
@@ -668,13 +669,13 @@ async function ficheCours(zone, nom) {
           if (await actionCours({ action: "active", nom, declinaison: dc.nom, edition: e.nom }, `Édition en cours de « ${dc.nom} » : ${e.nom}.`)) recharger(); } }, "En cours")); })
       : el("span", { class: "sous" }, "aucune édition")),
     el("td", {}, el("div", { class: "actions" }, el("button", { class: "btn second petit", type: "button", onclick: () => formulaireEdition(nom, dc, recharger) }, "Nouvelle édition…"),
-      el("button", { class: "btn second petit", type: "button", onclick: () => formulaireDeclinaison(nom, c, d.profils, recharger, dc) }, "Modifier la déclinaison…"),
+      el("button", { class: "btn second petit", type: "button", onclick: () => formulaireDeclinaison(nom, c, d, recharger, dc) }, "Modifier la déclinaison…"),
       (dc.editions || []).length ? null : el("button", { class: "btn second petit", type: "button", onclick: async () => {
         if (confirm(`Supprimer la déclinaison « ${dc.nom} » ?`) && await actionCours({ action: "declinaison_supprimer", nom, declinaison_nom: dc.nom }, "Déclinaison supprimée.")) recharger(); } }, "Supprimer")))));
   const carteDecl = el("div", { class: "carte large" }, el("div", { class: "nom" }, "Déclinaisons et éditions"),
     lignesD.length ? el("table", { class: "compact" }, el("thead", {}, el("tr", {}, el("th", {}, "Déclinaison"), el("th", {}, "Éditions"), el("th", {}, ""))), el("tbody", {}, lignesD))
-      : el("p", {}, "Aucune déclinaison : une déclinaison est ce cours dans une école (campus, parcours, niveau, codes)."),
-    el("div", { class: "actions" }, el("button", { class: "btn second", type: "button", onclick: () => formulaireDeclinaison(nom, c, d.profils, recharger) }, "Nouvelle déclinaison…")));
+      : el("p", {}, "Aucune déclinaison : une déclinaison est ce cours dans une école (campus, parcours, niveau, codes de l'enseignement et du bloc)."),
+    el("div", { class: "actions" }, el("button", { class: "btn second", type: "button", onclick: () => formulaireDeclinaison(nom, c, d, recharger) }, "Nouvelle déclinaison…")));
   const remarques = d.remarques.length ? el("div", { class: "carte large" }, el("div", { class: "nom" }, "À vérifier"), el("ul", {}, d.remarques.map(r => el("li", {}, r)))) : null;
   zone.replaceChildren(el("p", { class: "sous" }, "Fichier : " + d.fichier),
     el("div", { class: "cartes-cours" }, carteFiche, el("div", { class: "pile" }, carteDocs, carteSrc), carteDecl, remarques));
@@ -711,36 +712,84 @@ function formulaireCours() {
       const r = await actionCours({ action: "nouveau", nom: nom.value, titre: titre.value, domaine: domaine.value, langues: langue.value.split(","), sources, standard: standard.checked }, "Cours créé ; il est maintenant le cours choisi.");
       if (!r) return false; garder("cours_vu", r.nom); cours(); });
 }
-function formulaireDeclinaison(nomCours, c, profils, apres, ex) {
+// Ce que le profil de l'école dit des cours (profil_cours.py) : vocabulaire, campus, parcours, formations,
+// gabarits des codes et de la promo ; sinon les réglages génériques.
+let INFOS_COURS = {};
+const reglagesEcole = (d, ecole) => ((d.profils || {})[ecole]) || d.generique || { vocabulaire: { enseignement: "Enseignement", bloc: "Bloc", parcours: "Parcours" }, formations: [], campus: [], parcours: [], codes: {} };
+const vocabulaire = (d, ecole) => reglagesEcole(d, ecole).vocabulaire;
+const appliquerGabarit = (g, ch) => g.replace(/\{(\w+)(?::(aa))?\}/g, (m, k, aa) => { const v = String(ch[k] || ""); return (aa && v ? v.slice(-2) : v) || "?"; });
+const formationDuNiveau = (reg, niveau, code) => (reg.formations || []).find(f => f.code === code && f.niveaux.includes(niveau)) || (reg.formations || []).find(f => f.niveaux.includes(niveau));
+function anneesPromo(reg, niveau, annee, code) {
+  const f = formationDuNiveau(reg, niveau, code); if (!f || !/^\d{4}$/.test(String(annee))) return null;
+  const i = f.niveaux.indexOf(niveau); let reste = f.niveaux.length - i, suite = f.suite; const vues = new Set([f.code]);
+  while (suite && !vues.has(suite)) { vues.add(suite); const g = (reg.formations || []).find(x => x.code === suite); if (!g) break; reste += g.niveaux.length; suite = g.suite; }
+  return { entree: +annee - i, diplomation: +annee + reste };
+}
+function formulaireDeclinaison(nomCours, c, infos, apres, ex) {
+  const profils = infos.profils || {}, reg = () => reglagesEcole(infos, ecole.value);
   const connue = ex && ex.ecole && profils[ex.ecole] !== undefined;
   const ecole = el("select", {}, el("option", { value: "" }, "—"), Object.keys(profils).map(p => el("option", { value: p }, p)), el("option", { value: "_autre" }, "autre école…"));
   const autre = el("input", { type: "text", placeholder: "nom de l'école", hidden: true, value: ex && !connue ? ex.ecole || "" : "" });
   const campusZone = el("div", { class: "actions" }), campusTexte = el("input", { type: "text", placeholder: "campus, séparés par des virgules" });
-  const parcours = el("input", { type: "text", placeholder: "ex. MSD, majeure mécanique, master VE", value: ex ? ex.parcours || "" : "" });
-  const niveau = el("input", { type: "text", placeholder: "L3, 3A, 4A, 5A, M2…", value: ex ? ex.niveau || "" : "" });
-  const module = el("input", { type: "text", placeholder: "code du module", value: ex ? (ex.codes || {}).module || "" : "" }), ue = el("input", { type: "text", placeholder: "code de l'UE", value: ex ? (ex.codes || {}).ue || "" : "" });
+  const listeP = el("datalist", { id: "liste-parcours" });
+  const parcours = el("input", { type: "text", list: "liste-parcours", placeholder: "ex. Aero, Auto, Meca", value: ex ? ex.parcours || "" : "" });
+  const formation = el("select", {}), niveau = el("select", {}), modalite = el("select", {}), modaliteL = el("label", {}, "Modalité ", modalite);
+  const rncp = el("input", { type: "text", placeholder: "numéro au RNCP (facultatif)", value: ex ? ex.rncp || "" : "" });
+  const codeE = el("input", { type: "text", value: ex ? (ex.codes || {}).enseignement || "" : "" }), codeB = el("input", { type: "text", value: ex ? (ex.codes || {}).bloc || "" : "" });
+  const abB = el("input", { type: "text", value: ex ? (ex.abreges || {}).bloc || "" : "" }), abC = el("input", { type: "text", value: ex ? (ex.abreges || {}).cours || "" : "" });
+  const libP = el("span", {}), libE = el("span", {}), libB = el("span", {}), libAB = el("span", {}), libAC = el("span", {});
+  const zoneAbreges = el("div", { class: "grille2" }, el("label", {}, libAB, " ", abB), el("label", {}, libAC, " ", abC));
+  let codesTouches = !!(ex && (ex.codes || {}).enseignement && !(ex.abreges || {}).cours);
+  codeE.oninput = codeB.oninput = () => codesTouches = true;
+  const options = (sel, valeurs, actuelle, vide) => { const vs = [...valeurs]; if (actuelle && !vs.some(v => v[0] === actuelle)) vs.push([actuelle, actuelle]);
+    sel.replaceChildren(...(vide ? [el("option", { value: "" }, vide)] : []), ...vs.map(([v, l]) => el("option", { value: v }, l))); if (actuelle) sel.value = actuelle; };
+  const champsCode = () => { const r = reg(), nv = niveau.value, m = nv.match(/^(\D*)(\d+)$/), cs = campusCoches();
+    const court = (liste, nom) => ((r[liste] || []).find(x => x.nom === nom) || {}).code || nom;
+    return { niveau: nv, formation: formation.value || (m ? m[1] : ""), annee: m ? m[2] : "", modalite: modalite.value,
+      campus: cs.length === 1 ? court("campus", cs[0]) : "", parcours: parcours.value ? court("parcours", parcours.value) : "", bloc: abB.value.trim(), cours: abC.value.trim() }; };
+  const majCodes = () => { const g = reg().codes || {}; if (codesTouches || !(g.bloc || g.enseignement)) return; const ch = champsCode();
+    if (g.bloc && ch.bloc) codeB.value = appliquerGabarit(g.bloc, ch); if (g.enseignement && ch.cours) codeE.value = appliquerGabarit(g.enseignement, ch); };
+  const majNiveaux = () => { const f = (reg().formations || []).find(x => x.code === formation.value);
+    options(niveau, (f ? f.niveaux : (reg().formations || []).flatMap(x => x.niveaux)).map(n => [n, n]), niveau.value || (ex ? ex.niveau || "" : ""), "—");
+    options(modalite, ((f || {}).modalites || []).map(m => [m, m]), modalite.value || (ex ? ex.modalite || "" : ""), "—"); modaliteL.style.visibility = ((f || {}).modalites || []).length ? "" : "hidden";
+    if (f && f.rncp && !rncp.value) rncp.value = f.rncp; rncp.placeholder = f && f.rncp ? "RNCP de la formation : " + f.rncp : "numéro au RNCP (facultatif)"; majCodes(); };
+  const majVocabulaire = () => { const r = reg(), v = r.vocabulaire, g = r.codes || {}, lg = g.longueurs || {};
+    libP.textContent = v.parcours; libE.textContent = `Code (${v.enseignement})`; libB.textContent = `Code (${v.bloc})`;
+    libAB.textContent = `Abrégé (${v.bloc})` + (lg.bloc ? `, ${lg.bloc} caractères` : ""); libAC.textContent = `Abrégé (${v.enseignement})` + (lg.cours ? `, ${lg.cours} caractères` : "");
+    abB.maxLength = lg.bloc || 12; abC.maxLength = lg.cours || 12; zoneAbreges.style.display = g.bloc || g.enseignement ? "" : "none";
+    codeB.placeholder = g.bloc ? "gabarit " + g.bloc : "code"; codeE.placeholder = g.enseignement ? "gabarit " + g.enseignement : "code";
+    listeP.replaceChildren(...(r.parcours || []).map(x => el("option", { value: x.nom }, x.code !== x.nom ? x.code : null)));
+    const fa = formation.value || (ex ? ex.formation || "" : "") || ((formationDuNiveau(r, niveau.value || (ex ? ex.niveau || "" : "")) || {}).code || "");
+    options(formation, (r.formations || []).map(f => [f.code, `${f.nom} (${f.code})`]), fa, "—"); majNiveaux(); };
+  formation.onchange = () => { niveau.value = ""; modalite.value = ""; majNiveaux(); };
+  niveau.onchange = modalite.onchange = abB.oninput = abC.oninput = majCodes; parcours.addEventListener("input", majCodes);
   const mCours = el("input", { type: "text", placeholder: "nom ou adresse du cours Moodle", value: ex ? (ex.moodle || {}).cours || "" : "" });
-  const mCat = el("input", { type: "text", placeholder: "ex. MEC3/Traction", value: ex ? (ex.moodle || {}).categorie || "" : "" });
+  const mCat = el("input", { type: "text", placeholder: "ex. MEC/Traction", value: ex ? (ex.moodle || {}).categorie || "" : "" });
   const lgsEx = ex ? (ex.langues || [ex.langue]).filter(Boolean) : [], lgs = [...new Set([...(c.langues && c.langues.length ? c.langues : ["fr"]), ...lgsEx])];
   const langues = lgs.map((l, i) => { const b = el("input", { type: "checkbox", value: l }); b.checked = ex ? lgsEx.includes(l) : i === 0; return el("label", { class: "case" }, b, LANGUE_NOM[l] || l); });
   const nom = el("input", { type: "text", placeholder: "rempli d'après l'école et le parcours", value: ex ? ex.nom : "", disabled: !!ex }); let nomTouche = !!ex; nom.oninput = () => nomTouche = true;
   const proposerNom = () => { if (!nomTouche) nom.value = slug([ecole.value === "_autre" ? autre.value : ecole.value, parcours.value].filter(Boolean).join("-")).replace(/_/g, "-").slice(0, 24); };
-  const majCampus = coches => { const cs = profils[ecole.value] || [];
-    campusZone.replaceChildren(...cs.map(x => { const b = el("input", { type: "checkbox", value: x }); b.checked = (coches || []).includes(x); return el("label", { class: "case" }, b, x); }));
+  const campusCoches = () => { const b = [...campusZone.querySelectorAll("input:checked")].map(x => x.value); return b.length ? b : campusTexte.value.split(",").map(x => x.trim()).filter(Boolean); };
+  const majCampus = coches => { const cs = ((profils[ecole.value] || {}).campus || []).map(x => x.nom);
+    campusZone.replaceChildren(...cs.map(x => { const b = el("input", { type: "checkbox", value: x }); b.checked = (coches || []).includes(x); b.onchange = majCodes; return el("label", { class: "case" }, b, x); }));
     campusTexte.hidden = cs.length > 0; if (!cs.length && coches) campusTexte.value = coches.join(", "); };
-  ecole.onchange = () => { autre.hidden = ecole.value !== "_autre"; majCampus(); proposerNom(); };
+  ecole.onchange = () => { autre.hidden = ecole.value !== "_autre"; majCampus(); majVocabulaire(); proposerNom(); };
   autre.oninput = parcours.oninput = proposerNom;
   if (ex) { ecole.value = connue ? ex.ecole : ex.ecole ? "_autre" : ""; autre.hidden = ecole.value !== "_autre"; majCampus(ex.campus || []); }
+  majVocabulaire();
   dialogue(ex ? `Déclinaison « ${ex.nom} »` : "Nouvelle déclinaison", [el("p", { class: "sous" }, "Le cours dans une école : campus, parcours, niveau, codes et langues, stables d'une année à l'autre. Une déclinaison bilingue garde ses groupes français et anglais ensemble ; la langue de chaque groupe se donne dans l'édition."),
-    champ("École (profil d'établissement)", ecole), autre, el("label", {}, "Campus", campusZone, campusTexte), champ("Parcours", parcours), champ("Niveau", niveau),
-    el("div", { class: "grille2" }, champ("Code du module", module), champ("Code de l'UE", ue)),
+    champ("École (profil d'établissement)", ecole), autre, el("label", {}, "Campus", campusZone, campusTexte), el("label", {}, libP, " ", parcours), listeP,
+    el("div", { class: "grille2" }, champ("Formation", formation), champ("Niveau", niveau)),
+    el("div", { class: "grille2" }, modaliteL, champ("RNCP", rncp)),
+    zoneAbreges, el("div", { class: "grille2" }, el("label", {}, libB, " ", codeB), el("label", {}, libE, " ", codeE)),
     el("div", { class: "grille2" }, champ("Cours Moodle", mCours), champ("Catégorie Moodle des questions (racine)", mCat)),
     el("label", {}, "Langues d'enseignement", el("div", { class: "actions" }, langues)),
     champ(ex ? "Nom court (nom des dossiers, ne change pas)" : "Nom court de la déclinaison", nom)],
     ex ? "Enregistrer" : "Créer la déclinaison", async () => {
-      const coches = [...campusZone.querySelectorAll("input:checked")].map(b => b.value);
+      const coches = [...campusZone.querySelectorAll("input:checked")].map(b => b.value), rf = (reg().formations || []).find(f => f.code === formation.value);
       const decl = { nom: nom.value, ecole: ecole.value === "_autre" ? autre.value : ecole.value, campus: coches.length ? coches : campusTexte.value,
-        parcours: parcours.value, niveau: niveau.value, codes: { module: module.value, ue: ue.value }, moodle: { cours: mCours.value, categorie: mCat.value }, langues: langues.map(l => l.firstChild).filter(b => b.checked).map(b => b.value) };
+        parcours: parcours.value, niveau: niveau.value, formation: formation.value, modalite: modalite.value, rncp: rf && rf.rncp === rncp.value.trim() ? "" : rncp.value,
+        codes: { enseignement: codeE.value, bloc: codeB.value }, abreges: { bloc: abB.value, cours: abC.value }, moodle: { cours: mCours.value, categorie: mCat.value }, langues: langues.map(l => l.firstChild).filter(b => b.checked).map(b => b.value) };
       const r = await actionCours(ex ? { action: "declinaison_modifier", nom: nomCours, declinaison_nom: ex.nom, declinaison: decl } : { action: "declinaison", nom: nomCours, declinaison: decl },
         ex ? "Déclinaison enregistrée." : "Déclinaison créée.");
       if (!r) return false; apres(); });
@@ -750,9 +799,11 @@ const texteGroupes = gs => (gs || []).map(g => g.nom + (g.campus || g.langue ? "
 function formulaireEdition(nomCours, dc, apres, ex) {
   const prec = ex || (dc.editions || []).slice(-1)[0], an = new Date().getFullYear();
   const nom = el("input", { type: "text", disabled: !!ex, value: ex ? String(ex.nom) : prec && /^\d{4}$/.test(prec.nom) ? String(+prec.nom + 1) : String(new Date().getMonth() >= 6 ? an : an - 1) });
-  const promo = el("input", { type: "text", value: prec ? prec.promo || "" : "", placeholder: "ex. P2028" });
+  const regP = reglagesEcole(INFOS_COURS, dc.ecole), promoAuto = () => { const a = anneesPromo(regP, dc.niveau || "", nom.value, dc.formation); return regP.promo && a ? appliquerGabarit(regP.promo, a) : null; };
+  const promo = el("input", { type: "text", value: ex ? ex.promo || "" : promoAuto() || (prec ? prec.promo || "" : ""), placeholder: regP.promo ? "gabarit " + regP.promo : "ex. P2028" });
+  let promoTouchee = !!ex; promo.oninput = () => promoTouchee = true; nom.oninput = () => { const p = promoAuto(); if (!promoTouchee && p) promo.value = p; };
   const lgs = (dc.langues || [dc.langue]).filter(Boolean);
-  const groupes = el("input", { type: "text", value: prec ? texteGroupes(prec.groupes) : "", placeholder: lgs.length > 1 ? "MAE1:Cachan:fr, MAE3:Cachan:en" : "MSD1:Cachan, MSD2:Cachan" });
+  const groupes = el("input", { type: "text", value: prec ? texteGroupes(prec.groupes) : "", placeholder: lgs.length > 1 ? "Aero1:Nord:fr, Aero3:Sud:en" : "Auto1:Nord, Auto2:Sud" });
   const libelle = [dc.ecole, dc.parcours].filter(Boolean).join(" ") || dc.nom;
   const effectif = el("input", { type: "number", min: "1", value: prec && prec.effectif ? prec.effectif : "", placeholder: "nombre d'étudiants" });
   const seances = el("textarea", { rows: 6, placeholder: "1 ; 2026-09-15 ; Introduction\n2 ; 22/09/2026 ; Estimation" });

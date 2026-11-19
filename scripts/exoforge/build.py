@@ -2,7 +2,7 @@
 """ExoForge — construit un exercice interactif à partir d'une fiche YAML.
 
 Usage :
-    python build.py exercices/<fiche>.yaml [--profil Ecole1] [--cours stat:epf-mae] [--auteur]
+    python build.py exercices/<fiche>.yaml [--profil Ecole1] [--cours traction:ecole1-meca] [--auteur]
     (l'extension .yaml peut être omise)
 
 --cours : profil de l'école de l'édition (cours[:déclinaison[/édition]]), si --profil n'est pas donné.

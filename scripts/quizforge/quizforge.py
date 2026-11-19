@@ -1904,7 +1904,9 @@ def cmd_modele(a):
     print(f"{'Classeur vide' if a.vide else 'Modèle'} créé : {sortie}")
 
 
-CLES_PROFIL = set(PROFIL_DEFAUT) | {"nom", "description", "alias", "defaut", "charte", "categorie", "campus"}
+CLES_PROFIL = set(PROFIL_DEFAUT) | {"nom", "description", "alias", "defaut", "charte", "categorie", "campus",
+                                    "vocabulaire", "parcours", "structure", "formations",
+                                    "codes", "promo"}
 
 
 def valider_profil(f: Path) -> list:

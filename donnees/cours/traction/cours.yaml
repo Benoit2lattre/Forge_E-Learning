@@ -36,16 +36,20 @@ declinaisons:
   campus:
   - Nord
   - Sud
-  parcours: Mécanique
-  niveau: 3A
+  parcours: Meca
+  niveau: L3
   codes:
-    module: MEC3-TR
-    ue: MEC3
+    enseignement: MEC-L3-TR
+    bloc: MEC-L3
+  formation: L
+  abreges:
+    bloc: MEC
+    cours: TR
   langues:
   - fr
   - en
   moodle:
-    cours: Résistance des matériaux 3A
+    cours: Résistance des matériaux L3
     categorie: MEC3/Traction
   sources: {}
   editions:

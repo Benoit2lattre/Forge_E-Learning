@@ -52,6 +52,7 @@ import capsules as C              # noqa: E402
 import questions_bilans as QB      # noqa: E402
 import cours as K                  # noqa: E402
 import chemins                    # noqa: E402
+import profil_cours as PC          # noqa: E402
 import serveur_local as S         # noqa: E402
 
 VERSION = "0.5"
@@ -285,7 +286,7 @@ class Atelier:
         c = K.trouver(nom)
         propre = json.loads(json.dumps({k: v for k, v in c.items() if not k.startswith("_")}, ensure_ascii=False, default=str))
         return {"ok": True, "cours": propre, "fichier": rel(c["_fichier"]), "remarques": K.verifier(c),
-                "types": K.TYPES, "documents": K.DOCUMENTS, "profils": profils_campus(),
+                "types": K.TYPES, "documents": K.DOCUMENTS, "profils": profils_campus(), "generique": PC.generique(),
                 "autres": [n for n in K.tous() if n != nom]}
 
     def cours_sans(self) -> dict:
@@ -1162,7 +1163,8 @@ def lire_fiche(f: Path, yaml) -> dict | None:
 
 
 def profils_campus() -> dict:
-    """Profils d'établissement et leurs campus (clé ``campus`` du profil, facultative)."""
+    """Profils d'établissement et ce qu'ils disent des cours (``profil_cours`` : structure, vocabulaire, campus,
+    parcours, formations, gabarits des codes et de la promo), complétés par les valeurs génériques."""
     import yaml
     out = {}
     for f in chemins.fichiers_profils():
@@ -1173,7 +1175,7 @@ def profils_campus() -> dict:
             d = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
         except Exception:
             d = {}
-        out[n] = [str(x) for x in d.get("campus") or []] if isinstance(d, dict) else []
+        out[n] = PC.lire(d)
     return out
 
 

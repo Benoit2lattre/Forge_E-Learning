@@ -24,6 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "commun"))
 import chemins                    # noqa: E402
+import profil_cours               # noqa: E402
 
 FORMAT = "forge-cours/1"
 FICHIER = "cours.yaml"
@@ -72,12 +73,22 @@ def fichiers() -> list[Path]:
     return out
 
 
+# Codes d'une déclinaison : noms génériques (le profil d'établissement donne les mots de l'école, clé
+# ``vocabulaire``) ; les anciens noms sont lus et réécrits sous les nouveaux.
+CODES = ("enseignement", "bloc")
+ANCIENS_CODES = {"module": "enseignement", "ue": "bloc"}
+
+
 def lire(f: Path) -> dict:
     c = _yaml().safe_load(f.read_text(encoding="utf-8")) or {}
     if not isinstance(c, dict):
         raise ValueError(f"{rel(f)} : ce n'est pas un cours")
     c.setdefault("nom", f.parent.name)
     c["_fichier"] = f
+    for d in c.get("declinaisons") or []:            # anciens noms des codes : module → enseignement, ue → bloc
+        cs = d.get("codes")
+        if isinstance(cs, dict):
+            d["codes"] = {ANCIENS_CODES.get(k, k): v for k, v in cs.items()}
     if c.get("active"):                              # ancien champ : une seule édition en cours pour tout le cours
         decl, _, ed = str(c.pop("active")).partition("/")
         for d in c.get("declinaisons") or []:
@@ -381,7 +392,11 @@ def _champs_declinaison(c: dict, d: dict) -> dict:
     langues = _liste(d.get("langues") if d.get("langues") is not None else d.get("langue"), 5)
     return {"ecole": texte_valide(d.get("ecole"), 80), "campus": _liste(d.get("campus"), 60),
             "parcours": texte_valide(d.get("parcours"), 80), "niveau": texte_valide(d.get("niveau"), 20),
-            "codes": {k: texte_valide(v, 40) for k, v in (d.get("codes") or {}).items() if str(v or "").strip()},
+            "codes": {ANCIENS_CODES.get(k, k): texte_valide(v, 40) for k, v in (d.get("codes") or {}).items()
+                      if str(v or "").strip()},
+            **{k: texte_valide(d.get(k), 40) for k in ("formation", "modalite", "rncp") if str(d.get(k) or "").strip()},
+            **({"abreges": ab} if (ab := {k: texte_valide(v, 12) for k, v in (d.get("abreges") or {}).items()
+                                          if k in ("bloc", "cours") and str(v or "").strip()}) else {}),
             "langues": langues or (c.get("langues") or ["fr"])[:1],
             "moodle": {k: texte_valide(v, 120) for k, v in (d.get("moodle") or {}).items()
                        if k in ("cours", "categorie") and str(v or "").strip()}}
@@ -400,6 +415,8 @@ def modifier_declinaison(c: dict, nom: str, d: dict) -> dict:
     """Change école, campus, parcours, niveau, codes et langues ; le nom court (nom des dossiers) reste."""
     x = declinaison(c, nom)
     x.pop("langue", None)
+    for k in ("formation", "modalite", "rncp", "abreges"):
+        x.pop(k, None)
     x.update(_champs_declinaison(c, d))
     return x
 
@@ -472,7 +489,7 @@ def _groupe(nom, campus=None, langue=None) -> dict:
 
 
 def _groupes(g) -> list[dict]:
-    """« MAE1:Cachan:fr, MAE3:Cachan:en » (campus et langue facultatifs) ou une liste de dicts → [{nom, campus, langue}]."""
+    """« Aero1:Nord:fr, Aero3:Sud:en » (campus et langue facultatifs) ou une liste de dicts → [{nom, campus, langue}]."""
     if isinstance(g, list):
         return [_groupe(x.get("nom"), x.get("campus"), x.get("langue")) for x in g
                 if isinstance(x, dict) and str(x.get("nom") or "").strip()]
@@ -587,6 +604,7 @@ def verifier(c: dict, cours_par_nom: dict | None = None) -> list[str]:
             for g in e.get("groupes") or []:
                 if g.get("langue") and lgs and g["langue"] not in lgs:
                     r.append(f"groupe {g.get('nom')} ({d.get('nom')}/{e.get('nom')}) en {g['langue']}, langue absente de la déclinaison")
+        r += profil_cours.remarques_codes(d)
         eds = [str(e.get("nom")) for e in d.get("editions") or []]
         for n in {x for x in eds if eds.count(x) > 1}:
             r.append(f"édition en double : {d.get('nom')}/{n}")

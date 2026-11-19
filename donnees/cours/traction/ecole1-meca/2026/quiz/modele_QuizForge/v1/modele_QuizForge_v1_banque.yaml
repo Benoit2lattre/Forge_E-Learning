@@ -8,8 +8,8 @@ questions:
   feedback: La convergence dépend aussi du type d'élément et des singularités.
   tags:
   - TRACTION
-  - MEC3-TR
-  - MEC3
+  - MEC-L3-TR
+  - MEC-L3
   - VF
   - MEF
   - maillage
@@ -39,8 +39,8 @@ questions:
   plusieurs: false
   tags:
   - TRACTION
-  - MEC3-TR
-  - MEC3
+  - MEC-L3-TR
+  - MEC-L3
   - QCM
 - type: qcm
   titre: Conditions de Dirichlet
@@ -63,8 +63,8 @@ questions:
   plusieurs: true
   tags:
   - TRACTION
-  - MEC3-TR
-  - MEC3
+  - MEC-L3-TR
+  - MEC-L3
   - QCM
 - type: appariement
   titre: Éléments SDOF
@@ -83,8 +83,8 @@ questions:
   - Rigidité infinie
   tags:
   - TRACTION
-  - MEC3-TR
-  - MEC3
+  - MEC-L3-TR
+  - MEC-L3
   - Appariement
 - type: numerique
   titre: Dommage Miner
@@ -105,8 +105,8 @@ questions:
   feedback_faux: Reprenez la définition du dommage partiel d'un bloc.
   tags:
   - TRACTION
-  - MEC3-TR
-  - MEC3
+  - MEC-L3-TR
+  - MEC-L3
   - Numerique
 - type: courte
   titre: Condition naturelle
@@ -120,8 +120,8 @@ questions:
   casse: false
   tags:
   - TRACTION
-  - MEC3-TR
-  - MEC3
+  - MEC-L3-TR
+  - MEC-L3
   - ReponseCourte
 - type: essai
   titre: Corps rigide
@@ -131,8 +131,8 @@ questions:
   reponse_attendue: 'Éléments attendus : mouvements rigidifiants, puissance nulle…'
   tags:
   - TRACTION
-  - MEC3-TR
-  - MEC3
+  - MEC-L3-TR
+  - MEC-L3
   - Essai
 - type: trous
   titre: Miner
@@ -157,8 +157,8 @@ questions:
   mode: glisser
   tags:
   - TRACTION
-  - MEC3-TR
-  - MEC3
+  - MEC-L3-TR
+  - MEC-L3
   - Trous
 - type: trous
   titre: Domaines
@@ -181,6 +181,6 @@ questions:
   mode: liste
   tags:
   - TRACTION
-  - MEC3-TR
-  - MEC3
+  - MEC-L3-TR
+  - MEC-L3
   - Trous

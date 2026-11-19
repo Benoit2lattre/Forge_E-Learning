@@ -9,7 +9,7 @@
     <defaultgrade>1</defaultgrade>
     <penalty>1</penalty>
     <hidden>0</hidden>
-    <tags><tag><text>TRACTION</text></tag><tag><text>MEC3-TR</text></tag><tag><text>MEC3</text></tag><tag><text>VF</text></tag><tag><text>MEF</text></tag><tag><text>maillage</text></tag></tags>
+    <tags><tag><text>TRACTION</text></tag><tag><text>MEC-L3-TR</text></tag><tag><text>MEC-L3</text></tag><tag><text>VF</text></tag><tag><text>MEF</text></tag><tag><text>maillage</text></tag></tags>
     <answer fraction="0" format="moodle_auto_format"><text>true</text><feedback format="html"><text></text></feedback></answer>
     <answer fraction="100" format="moodle_auto_format"><text>false</text><feedback format="html"><text></text></feedback></answer>
   </question>

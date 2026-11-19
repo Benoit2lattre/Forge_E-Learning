@@ -41,7 +41,7 @@ Une ligne par version (la plus récente en dernier) :
 | `dates` | date de chaque état atteint |
 | `test_moodle`, `remarques` | nom du test dans Moodle, notes libres |
 | `bilans` | bilans DiagForge rattachés (classeur et fiche du professeur) |
-| `utilisee_par` | pour un extrait commun (registre du cours) : éditions qui l'utilisent (`epf-msd/2026`) |
+| `utilisee_par` | pour un extrait commun (registre du cours) : éditions qui l'utilisent (`ecole1-meca/2026`) |
 
 L'atelier change l'état, le test Moodle, les remarques et « utilisée par » (bouton **Registre** dans Questions, Exercices et l'écran Cours). DiagForge, au bilan, compare les noms des questions de l'export XML de Moodle aux versions des registres : il écrit la version reconnue dans un onglet « Version » du classeur de bilan (avec les questions absentes ou en plus) et inscrit le bilan au registre, état « bilan fait ».
 

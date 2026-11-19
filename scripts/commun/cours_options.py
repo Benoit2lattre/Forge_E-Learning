@@ -1,6 +1,6 @@
 """Forge E-Learning — option ``--cours`` commune aux outils : réglages d'un cours, d'une déclinaison, d'une édition.
 
-``--cours stat``, ``--cours stat:epf-mae`` ou ``--cours stat:epf-mae/2026`` (déclinaison et édition facultatives :
+``--cours traction``, ``--cours traction:ecole1-meca`` ou ``--cours traction:ecole1-meca/2026`` (déclinaison et édition facultatives :
 la seule déclinaison du cours, puis son édition en cours). Les options données sur la ligne de commande l'emportent ;
 les étiquettes du cours s'ajoutent à celles données.
 """

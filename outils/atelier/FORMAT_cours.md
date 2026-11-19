@@ -9,10 +9,10 @@ Statut : format écrit et vérifié par `scripts/forge/cours.py`, lu par `script
 | Niveau | Ce qu'il porte | Change |
 | --- | --- | --- |
 | Cours | le contenu générique : titre, domaine, description, objectifs, compétences, documents, sources | rarement |
-| Déclinaison | le cours dans une école : école (profil d'établissement), campus, parcours, niveau, codes du module et de l'UE, langues, cours et catégorie Moodle | peu d'une année à l'autre |
+| Déclinaison | le cours dans une école : école (profil d'établissement), campus, parcours, niveau, codes de l'enseignement et du bloc, langues, cours et catégorie Moodle | peu d'une année à l'autre |
 | Édition | une année de la déclinaison : promo, groupes (campus et langue de chacun), effectif, séances datées, dossiers des exports et des bilans | chaque année |
 
-Un cours désigne ses **sources** (classeurs, fiches, capsules, diaporamas, dossiers d'exports) **sans les déplacer** : tout objet situé dans une source, ou sous le dossier du cours, lui appartient. Un objet peut appartenir à plusieurs cours. Le vocabulaire propre à une école (EPF : Parcours > UE > Module) reste dans son profil ; ses campus aussi (clé `campus` du profil).
+Un cours désigne ses **sources** (classeurs, fiches, capsules, diaporamas, dossiers d'exports) **sans les déplacer** : tout objet situé dans une source, ou sous le dossier du cours, lui appartient. Un objet peut appartenir à plusieurs cours. Les mots employés ici sont génériques : un **enseignement** est un cours de la maquette, avec son code ; un **bloc** regroupe plusieurs enseignements ; un **parcours** est une filière de l'école. Chaque école garde ses propres mots dans son profil (clé `vocabulaire`, par exemple « Module » et « UE »), avec ses campus, ses parcours, ses formations, les gabarits de ses codes et de ses noms de promotion (voir [Formations, codes et promotions](../../profils/README.md#formations-codes-et-promotions)) ; l'atelier les affiche et les propose à la place des mots génériques.
 
 ## Champs du cours
 
@@ -35,10 +35,13 @@ Un cours désigne ses **sources** (classeurs, fiches, capsules, diaporamas, doss
 
 | Clé | Contenu |
 | --- | --- |
-| `nom` | nom court (`epf-msd`) : nom du dossier, ne change pas |
+| `nom` | nom court (`ecole1-meca`) : nom du dossier, ne change pas |
 | `ecole`, `campus` | profil d'établissement et campus concernés (un ou plusieurs) |
-| `parcours`, `niveau` | `MSD`, `majeure mécanique`… ; `L3`, `4A`, `M2`… |
-| `codes` | `module`, `ue` (ajoutés aux étiquettes des questions) |
+| `parcours` | `Aero`, `Auto`, `Meca`… (liste `parcours` du profil) |
+| `formation`, `niveau`, `modalite` | formation du profil (`L`, `M`, `B`, `I` par défaut), un de ses niveaux (`L3`, `I1`…) et, s'il y a lieu, la modalité (`FISE`, `FISA`, `FISEA`, `FC`) |
+| `rncp` | numéro au RNCP, quand il diffère de celui de la formation |
+| `codes` | `enseignement`, `bloc` : codes de l'enseignement et de son bloc, ajoutés aux étiquettes des questions (les anciens noms `module` et `ue` sont lus et réécrits sous les nouveaux) |
+| `abreges` | `bloc`, `cours` : abrégés d'où l'atelier tire les codes quand le profil de l'école donne leurs gabarits |
 | `langues` | une ou plusieurs : une déclinaison bilingue garde ses groupes français et anglais ensemble |
 | `moodle` | `cours` (nom ou adresse) et `categorie` (racine des catégories de questions) |
 | `sources` | sources propres à la déclinaison (version anglaise, TD et TP de l'école) |
@@ -49,7 +52,7 @@ Un cours désigne ses **sources** (classeurs, fiches, capsules, diaporamas, doss
 | Clé | Contenu |
 | --- | --- |
 | `nom` | l'année (`2026`) ou un nom court : nom du dossier, ne change pas |
-| `promo`, `effectif` | promotion ; nombre d'étudiants (plan du quiz de séance) |
+| `promo`, `effectif` | promotion (proposée d'après le gabarit `promo` du profil) ; nombre d'étudiants (plan du quiz de séance) |
 | `groupes` | `nom`, `campus`, `langue` de chaque groupe |
 | `seances` | `n`, `date` (AAAA-MM-JJ), `titre` : la prochaine séance est proposée pour le plan du quiz |
 | `exports`, `bilans` | dossiers `data/cours/<cours>/<déclinaison>/<année>/exports` et `bilans` |

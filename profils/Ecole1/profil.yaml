@@ -9,8 +9,29 @@ alias: [ecole, E1]
 # true : profil utilisé quand --profil n'est pas donné (un seul profil à true)
 defaut: false
 description: "Ecole1 — exemple d'établissement : Moodle de l'école, cours en français et en anglais (groupes FR/EN)"
-# Campus de l'établissement (facultatif) : proposés par l'Atelier Forge pour les déclinaisons d'un cours
-campus: [Nord, Sud]
+# Cours dans l'établissement (tout est facultatif) : ce qu'AtelierForge propose pour les déclinaisons d'un cours.
+# Sans ces clés : mots et listes génériques, codes libres (voir profils/README.md).
+structure: [parcours, bloc, enseignement]   # niveaux d'organisation des enseignements
+vocabulaire:                      # mots de l'école à la place des mots génériques
+  enseignement: Matière           # générique : Enseignement (un cours de la maquette, avec son code)
+  bloc: Pôle                      # générique : Bloc (bloc d'enseignements)
+  parcours: Majeure               # générique : Parcours
+campus:                           # code court : utilisé par les gabarits ({campus})
+  - {nom: Nord, code: N}
+  - {nom: Sud, code: S}
+parcours:
+  - {nom: Aero, code: AE}
+  - {nom: Auto, code: AU}
+  - {nom: Meca, code: ME}
+formations:                       # sans cette clé : L (L1-L3), M (M1-M2), B (B1-B3), I (I1-I3, modalités FISE, FISA, FISEA, FC)
+  - {code: L, nom: Licence, niveaux: [L1, L2, L3], suite: M}     # suite : formation qui la prolonge (année de diplomation)
+  - {code: M, nom: Master, niveaux: [M1, M2]}
+  - {code: I, nom: Ingénieur, niveaux: [I1, I2, I3], modalites: [FISE, FISA, FISEA, FC], rncp: RNCP00000}
+codes:                            # gabarits des codes : {bloc} et {cours} sont les abrégés saisis
+  longueurs: {bloc: 3, cours: 2}
+  bloc: "{bloc}-{niveau}"                  # MEC-L3
+  enseignement: "{bloc}-{niveau}-{cours}"  # MEC-L3-TR
+promo: "P{diplomation}"           # P2029 ; une école qui nomme par l'année d'entrée : "X{entree:aa}"
 
 # Racine de catégorie Moodle par défaut (vide : <classeur>/<onglet>)
 categorie: ""

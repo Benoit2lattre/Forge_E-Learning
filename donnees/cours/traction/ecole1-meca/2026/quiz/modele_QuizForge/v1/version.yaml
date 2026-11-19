@@ -4,13 +4,13 @@ date: 2026-09-14 10:00
 cours: traction
 classeur: outils/quizforge/exemples/classeurs/modele_QuizForge.xlsx
 empreinte_classeur: 81c545242a89d0799415233ec97a0125
-empreinte: ee7f4c368bb39841
+empreinte: d69f581a890b5be3
 seance: null
 reglages:
   profil: Ecole1
   categorie: MEC3/Traction
   nom: ''
-  tags: TRACTION;MEC3-TR;MEC3
+  tags: TRACTION;MEC-L3-TR;MEC-L3
   seance: null
   etudiants: 60
   formats:
