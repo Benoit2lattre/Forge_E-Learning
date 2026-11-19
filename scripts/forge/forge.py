@@ -345,6 +345,12 @@ class Atelier:
                 c["derive_de"] = f["derive_de"] if f["derive_de"] in K.tous() and f["derive_de"] != c["nom"] else None
         elif action == "declinaison":
             K.ajouter_declinaison(c, p.get("declinaison") or {})
+        elif action == "declinaison_modifier":
+            K.modifier_declinaison(c, p.get("declinaison_nom") or "", p.get("declinaison") or {})
+        elif action == "declinaison_supprimer":
+            K.supprimer_declinaison(c, p.get("declinaison_nom") or "")
+        elif action == "edition_modifier":
+            K.modifier_edition(c, p.get("declinaison") or "", p.get("edition_nom") or "", p.get("edition") or {})
         elif action == "edition":
             e = K.ajouter_edition(c, p.get("declinaison") or "", p.get("edition") or {})
             if not c.get("active"):

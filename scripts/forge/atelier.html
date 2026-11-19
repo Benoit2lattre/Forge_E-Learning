@@ -645,14 +645,18 @@ async function ficheCours(zone, nom) {
   const actifE = c.active || "";
   const lignesD = (c.declinaisons || []).map(dc => el("tr", {},
     el("td", {}, el("b", {}, [dc.ecole, dc.parcours].filter(Boolean).join(" ") || dc.nom), el("span", { class: "sous" },
-      [dc.nom, (dc.campus || []).join(", "), dc.niveau, Object.entries(dc.codes || {}).map(([k, v]) => `${k} ${v}`).join(", "), dc.langue].filter(Boolean).join(" · "))),
+      [dc.nom, (dc.campus || []).join(", "), dc.niveau, Object.entries(dc.codes || {}).map(([k, v]) => `${k} ${v}`).join(", "), (dc.langues || [dc.langue]).filter(Boolean).join(" et ")].filter(Boolean).join(" · "))),
     el("td", {}, (dc.editions || []).length ? (dc.editions || []).map(e => { const id = `${dc.nom}/${e.nom}`;
       return el("div", { class: "edition" }, el("b", {}, String(e.nom)), " ", e.promo ? el("span", { class: "sous-l" }, "promo " + e.promo) : null, " ",
-        el("span", { class: "sous-l" }, (e.groupes || []).map(g => g.nom + (g.campus ? ` (${g.campus})` : "")).join(", ") || "sans groupe"), " ",
+        el("span", { class: "sous-l" }, (e.groupes || []).map(g => g.nom + (g.campus || g.langue ? ` (${[g.campus, g.langue].filter(Boolean).join(", ")})` : "")).join(", ") || "sans groupe"), " ",
+        el("button", { class: "btn second petit", type: "button", onclick: () => formulaireEdition(nom, dc, recharger, e) }, "Modifier"), " ",
         id === actifE ? el("span", { class: "pastille p-ok" }, "en cours") : el("button", { class: "btn second petit", type: "button", onclick: async () => {
           if (await actionCours({ action: "active", nom, declinaison: dc.nom, edition: e.nom }, "Édition en cours changée.")) recharger(); } }, "En cours")); })
       : el("span", { class: "sous" }, "aucune édition")),
-    el("td", {}, el("button", { class: "btn second petit", type: "button", onclick: () => formulaireEdition(nom, dc, recharger) }, "Nouvelle édition…"))));
+    el("td", {}, el("div", { class: "actions" }, el("button", { class: "btn second petit", type: "button", onclick: () => formulaireEdition(nom, dc, recharger) }, "Nouvelle édition…"),
+      el("button", { class: "btn second petit", type: "button", onclick: () => formulaireDeclinaison(nom, c, d.profils, recharger, dc) }, "Modifier la déclinaison…"),
+      (dc.editions || []).length ? null : el("button", { class: "btn second petit", type: "button", onclick: async () => {
+        if (confirm(`Supprimer la déclinaison « ${dc.nom} » ?`) && await actionCours({ action: "declinaison_supprimer", nom, declinaison_nom: dc.nom }, "Déclinaison supprimée.")) recharger(); } }, "Supprimer")))));
   const carteDecl = el("div", { class: "carte large" }, el("div", { class: "nom" }, "Déclinaisons et éditions"),
     lignesD.length ? el("table", { class: "compact" }, el("thead", {}, el("tr", {}, el("th", {}, "Déclinaison"), el("th", {}, "Éditions"), el("th", {}, ""))), el("tbody", {}, lignesD))
       : el("p", {}, "Aucune déclinaison : une déclinaison est ce cours dans une école (campus, parcours, niveau, codes)."),
@@ -693,37 +697,53 @@ function formulaireCours() {
       const r = await actionCours({ action: "nouveau", nom: nom.value, titre: titre.value, domaine: domaine.value, langues: langue.value.split(","), sources, standard: standard.checked }, "Cours créé ; il est maintenant le cours choisi.");
       if (!r) return false; garder("cours_vu", r.nom); cours(); });
 }
-function formulaireDeclinaison(nomCours, c, profils, apres) {
+function formulaireDeclinaison(nomCours, c, profils, apres, ex) {
+  const connue = ex && ex.ecole && profils[ex.ecole] !== undefined;
   const ecole = el("select", {}, el("option", { value: "" }, "—"), Object.keys(profils).map(p => el("option", { value: p }, p)), el("option", { value: "_autre" }, "autre école…"));
-  const autre = el("input", { type: "text", placeholder: "nom de l'école", hidden: true });
+  const autre = el("input", { type: "text", placeholder: "nom de l'école", hidden: true, value: ex && !connue ? ex.ecole || "" : "" });
   const campusZone = el("div", { class: "actions" }), campusTexte = el("input", { type: "text", placeholder: "campus, séparés par des virgules" });
-  const parcours = el("input", { type: "text", placeholder: "ex. MSD, majeure mécanique, master VE" }), niveau = el("input", { type: "text", placeholder: "L3, 3A, 4A, 5A, M2…" });
-  const module = el("input", { type: "text", placeholder: "code du module" }), ue = el("input", { type: "text", placeholder: "code de l'UE" });
-  const langue = el("select", {}, (c.langues && c.langues.length ? c.langues : ["fr"]).map(l => el("option", { value: l }, l)));
-  const nom = el("input", { type: "text", placeholder: "rempli d'après l'école et le parcours" }); let nomTouche = false; nom.oninput = () => nomTouche = true;
+  const parcours = el("input", { type: "text", placeholder: "ex. MSD, majeure mécanique, master VE", value: ex ? ex.parcours || "" : "" });
+  const niveau = el("input", { type: "text", placeholder: "L3, 3A, 4A, 5A, M2…", value: ex ? ex.niveau || "" : "" });
+  const module = el("input", { type: "text", placeholder: "code du module", value: ex ? (ex.codes || {}).module || "" : "" }), ue = el("input", { type: "text", placeholder: "code de l'UE", value: ex ? (ex.codes || {}).ue || "" : "" });
+  const lgsEx = ex ? (ex.langues || [ex.langue]).filter(Boolean) : [], lgs = [...new Set([...(c.langues && c.langues.length ? c.langues : ["fr"]), ...lgsEx])];
+  const langues = lgs.map((l, i) => { const b = el("input", { type: "checkbox", value: l }); b.checked = ex ? lgsEx.includes(l) : i === 0; return el("label", { class: "case" }, b, LANGUE_NOM[l] || l); });
+  const nom = el("input", { type: "text", placeholder: "rempli d'après l'école et le parcours", value: ex ? ex.nom : "", disabled: !!ex }); let nomTouche = !!ex; nom.oninput = () => nomTouche = true;
   const proposerNom = () => { if (!nomTouche) nom.value = slug([ecole.value === "_autre" ? autre.value : ecole.value, parcours.value].filter(Boolean).join("-")).replace(/_/g, "-").slice(0, 24); };
-  ecole.onchange = () => { autre.hidden = ecole.value !== "_autre"; const cs = profils[ecole.value] || [];
-    campusZone.replaceChildren(...cs.map(x => { const b = el("input", { type: "checkbox", value: x }); return el("label", { class: "case" }, b, x); })); campusTexte.hidden = cs.length > 0; proposerNom(); };
+  const majCampus = coches => { const cs = profils[ecole.value] || [];
+    campusZone.replaceChildren(...cs.map(x => { const b = el("input", { type: "checkbox", value: x }); b.checked = (coches || []).includes(x); return el("label", { class: "case" }, b, x); }));
+    campusTexte.hidden = cs.length > 0; if (!cs.length && coches) campusTexte.value = coches.join(", "); };
+  ecole.onchange = () => { autre.hidden = ecole.value !== "_autre"; majCampus(); proposerNom(); };
   autre.oninput = parcours.oninput = proposerNom;
-  dialogue("Nouvelle déclinaison", [el("p", { class: "sous" }, "Le cours dans une école : campus, parcours, niveau et codes, stables d'une année à l'autre."),
+  if (ex) { ecole.value = connue ? ex.ecole : ex.ecole ? "_autre" : ""; autre.hidden = ecole.value !== "_autre"; majCampus(ex.campus || []); }
+  dialogue(ex ? `Déclinaison « ${ex.nom} »` : "Nouvelle déclinaison", [el("p", { class: "sous" }, "Le cours dans une école : campus, parcours, niveau, codes et langues, stables d'une année à l'autre. Une déclinaison bilingue garde ses groupes français et anglais ensemble ; la langue de chaque groupe se donne dans l'édition."),
     champ("École (profil d'établissement)", ecole), autre, el("label", {}, "Campus", campusZone, campusTexte), champ("Parcours", parcours), champ("Niveau", niveau),
-    el("div", { class: "grille2" }, champ("Code du module", module), champ("Code de l'UE", ue)), champ("Langue", langue), champ("Nom court de la déclinaison", nom)],
-    "Créer la déclinaison", async () => {
+    el("div", { class: "grille2" }, champ("Code du module", module), champ("Code de l'UE", ue)), el("label", {}, "Langues d'enseignement", el("div", { class: "actions" }, langues)),
+    champ(ex ? "Nom court (nom des dossiers, ne change pas)" : "Nom court de la déclinaison", nom)],
+    ex ? "Enregistrer" : "Créer la déclinaison", async () => {
       const coches = [...campusZone.querySelectorAll("input:checked")].map(b => b.value);
-      const r = await actionCours({ action: "declinaison", nom: nomCours, declinaison: { nom: nom.value, ecole: ecole.value === "_autre" ? autre.value : ecole.value,
-        campus: coches.length ? coches : campusTexte.value, parcours: parcours.value, niveau: niveau.value, codes: { module: module.value, ue: ue.value }, langue: langue.value } }, "Déclinaison créée.");
+      const decl = { nom: nom.value, ecole: ecole.value === "_autre" ? autre.value : ecole.value, campus: coches.length ? coches : campusTexte.value,
+        parcours: parcours.value, niveau: niveau.value, codes: { module: module.value, ue: ue.value }, langues: langues.map(l => l.firstChild).filter(b => b.checked).map(b => b.value) };
+      const r = await actionCours(ex ? { action: "declinaison_modifier", nom: nomCours, declinaison_nom: ex.nom, declinaison: decl } : { action: "declinaison", nom: nomCours, declinaison: decl },
+        ex ? "Déclinaison enregistrée." : "Déclinaison créée.");
       if (!r) return false; apres(); });
 }
-function formulaireEdition(nomCours, dc, apres) {
-  const prec = (dc.editions || []).slice(-1)[0], an = new Date().getFullYear();
-  const nom = el("input", { type: "text", value: prec && /^\d{4}$/.test(prec.nom) ? String(+prec.nom + 1) : String(new Date().getMonth() >= 6 ? an : an - 1) });
+const LANGUE_NOM = { fr: "français", en: "anglais", es: "espagnol", de: "allemand", it: "italien", pt: "portugais", ar: "arabe", zh: "chinois" };
+const texteGroupes = gs => (gs || []).map(g => g.nom + (g.campus || g.langue ? ":" + (g.campus || "") : "") + (g.langue ? ":" + g.langue : "")).join(", ");
+function formulaireEdition(nomCours, dc, apres, ex) {
+  const prec = ex || (dc.editions || []).slice(-1)[0], an = new Date().getFullYear();
+  const nom = el("input", { type: "text", disabled: !!ex, value: ex ? String(ex.nom) : prec && /^\d{4}$/.test(prec.nom) ? String(+prec.nom + 1) : String(new Date().getMonth() >= 6 ? an : an - 1) });
   const promo = el("input", { type: "text", value: prec ? prec.promo || "" : "", placeholder: "ex. P2028" });
-  const groupes = el("input", { type: "text", value: prec ? (prec.groupes || []).map(g => g.nom + (g.campus ? ":" + g.campus : "")).join(", ") : "", placeholder: "MSD1:Cachan, MSD2:Cachan" });
-  dialogue(`Nouvelle édition de « ${[dc.ecole, dc.parcours].filter(Boolean).join(" ") || dc.nom} »`, [
-    el("p", { class: "sous" }, prec ? `Copie de l'édition ${prec.nom} (séances décalées d'un an) ; les exports et les bilans auront leurs propres dossiers.` : "Première édition : les séances se rempliront avec le plan de séance."),
-    champ("Année ou nom court", nom), champ("Promo", promo), champ("Groupes, avec leur campus (groupe:campus, séparés par des virgules)", groupes)],
-    "Créer l'édition", async () => {
-      const r = await actionCours({ action: "edition", nom: nomCours, declinaison: dc.nom, edition: { nom: nom.value, promo: promo.value, groupes: groupes.value } }, "Édition créée.");
+  const lgs = (dc.langues || [dc.langue]).filter(Boolean);
+  const groupes = el("input", { type: "text", value: prec ? texteGroupes(prec.groupes) : "", placeholder: lgs.length > 1 ? "MAE1:Cachan:fr, MAE3:Cachan:en" : "MSD1:Cachan, MSD2:Cachan" });
+  const libelle = [dc.ecole, dc.parcours].filter(Boolean).join(" ") || dc.nom;
+  dialogue(ex ? `Édition ${ex.nom} de « ${libelle} »` : `Nouvelle édition de « ${libelle} »`, [
+    el("p", { class: "sous" }, ex ? "Promo et groupes ; l'année (nom des dossiers) ne change pas." : prec ? `Copie de l'édition ${prec.nom} (séances décalées d'un an) ; les exports et les bilans auront leurs propres dossiers.` : "Première édition : les séances se rempliront avec le plan de séance."),
+    champ("Année ou nom court", nom), champ("Promo", promo),
+    champ(`Groupes, séparés par des virgules : groupe:campus${lgs.length > 1 ? ":langue (" + lgs.join(" ou ") + ")" : ""}`, groupes)],
+    ex ? "Enregistrer" : "Créer l'édition", async () => {
+      const edition = { nom: nom.value, promo: promo.value, groupes: groupes.value };
+      const r = await actionCours(ex ? { action: "edition_modifier", nom: nomCours, declinaison: dc.nom, edition_nom: String(ex.nom), edition } : { action: "edition", nom: nomCours, declinaison: dc.nom, edition },
+        ex ? "Édition enregistrée." : "Édition créée.");
       if (!r) return false; apres(); });
 }
 async function sansCours() {

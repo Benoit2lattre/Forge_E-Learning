@@ -363,32 +363,75 @@ def longueur(p: Path) -> list[str]:
             "fichiers ; prenez des noms plus courts"] if n > LIMITE_CHEMIN else []
 
 
+def _liste(v, maxi: int) -> list[str]:
+    return [texte_valide(x, maxi) for x in (v.split(",") if isinstance(v, str) else v or []) if str(x).strip()]
+
+
+def langues_declinaison(d: dict) -> list[str]:
+    """Langues d'une déclinaison (``langues``, ou l'ancien ``langue`` seul)."""
+    return list(d.get("langues") or ([d["langue"]] if d.get("langue") else []))
+
+
+def _champs_declinaison(c: dict, d: dict) -> dict:
+    langues = _liste(d.get("langues") if d.get("langues") is not None else d.get("langue"), 5)
+    return {"ecole": texte_valide(d.get("ecole"), 80), "campus": _liste(d.get("campus"), 60),
+            "parcours": texte_valide(d.get("parcours"), 80), "niveau": texte_valide(d.get("niveau"), 20),
+            "codes": {k: texte_valide(v, 40) for k, v in (d.get("codes") or {}).items() if str(v or "").strip()},
+            "langues": langues or (c.get("langues") or ["fr"])[:1]}
+
+
 def ajouter_declinaison(c: dict, d: dict) -> dict:
     nom = nom_valide(d.get("nom"), "nom de la déclinaison")
     if any(x.get("nom") == nom for x in c.get("declinaisons") or []):
         raise ValueError(f"la déclinaison « {nom} » existe déjà")
-    campus = d.get("campus") or []
-    campus = [texte_valide(x, 60) for x in (campus.split(",") if isinstance(campus, str) else campus) if str(x).strip()]
-    neuve = {"nom": nom, "ecole": texte_valide(d.get("ecole"), 80), "campus": campus,
-             "parcours": texte_valide(d.get("parcours"), 80), "niveau": texte_valide(d.get("niveau"), 20),
-             "codes": {k: texte_valide(v, 40) for k, v in (d.get("codes") or {}).items() if str(v or "").strip()},
-             "langue": texte_valide(d.get("langue") or (c.get("langues") or ["fr"])[0], 5),
-             "moodle": {}, "sources": {}, "editions": []}
+    neuve = {"nom": nom, **_champs_declinaison(c, d), "moodle": {}, "sources": {}, "editions": []}
     c.setdefault("declinaisons", []).append(neuve)
     return neuve
 
 
+def modifier_declinaison(c: dict, nom: str, d: dict) -> dict:
+    """Change école, campus, parcours, niveau, codes et langues ; le nom court (nom des dossiers) reste."""
+    x = declinaison(c, nom)
+    x.pop("langue", None)
+    x.update(_champs_declinaison(c, d))
+    return x
+
+
+def supprimer_declinaison(c: dict, nom: str):
+    x = declinaison(c, nom)
+    if x.get("editions"):
+        raise ValueError("cette déclinaison a des éditions : elle ne peut pas être supprimée")
+    c["declinaisons"].remove(x)
+
+
+def modifier_edition(c: dict, decl: str, ed: str, e: dict) -> dict:
+    x = edition(c, decl, ed)
+    if e.get("promo") is not None:
+        x["promo"] = texte_valide(e["promo"], 40)
+    if e.get("groupes") is not None:
+        x["groupes"] = _groupes(e["groupes"])
+    return x
+
+
+def _groupe(nom, campus=None, langue=None) -> dict:
+    g = {"nom": texte_valide(nom, 40)}
+    if str(campus or "").strip():
+        g["campus"] = texte_valide(campus, 60)
+    if str(langue or "").strip():
+        g["langue"] = texte_valide(langue, 5).lower()
+    return g
+
+
 def _groupes(g) -> list[dict]:
-    """« MSD1:Cachan, MSD2:Cachan » ou une liste de dicts → [{nom, campus}]."""
+    """« MAE1:Cachan:fr, MAE3:Cachan:en » (campus et langue facultatifs) ou une liste de dicts → [{nom, campus, langue}]."""
     if isinstance(g, list):
-        return [{"nom": texte_valide(x.get("nom"), 40), **({"campus": texte_valide(x["campus"], 60)} if x.get("campus") else {})}
-                for x in g if isinstance(x, dict) and str(x.get("nom") or "").strip()]
+        return [_groupe(x.get("nom"), x.get("campus"), x.get("langue")) for x in g
+                if isinstance(x, dict) and str(x.get("nom") or "").strip()]
     out = []
     for morceau in str(g or "").split(","):
-        if not morceau.strip():
-            continue
-        n, _, cp = morceau.partition(":")
-        out.append({"nom": texte_valide(n, 40), **({"campus": texte_valide(cp, 60)} if cp.strip() else {})})
+        if morceau.strip():
+            n, cp, lg = (morceau.split(":") + ["", ""])[:3]
+            out.append(_groupe(n, cp, lg))
     return out
 
 
@@ -486,6 +529,11 @@ def verifier(c: dict, cours_par_nom: dict | None = None) -> list[str]:
     for n in {x for x in noms if noms.count(x) > 1}:
         r.append(f"déclinaison en double : {n}")
     for d in c.get("declinaisons") or []:
+        lgs = langues_declinaison(d)
+        for e in d.get("editions") or []:
+            for g in e.get("groupes") or []:
+                if g.get("langue") and lgs and g["langue"] not in lgs:
+                    r.append(f"groupe {g.get('nom')} ({d.get('nom')}/{e.get('nom')}) en {g['langue']}, langue absente de la déclinaison")
         eds = [str(e.get("nom")) for e in d.get("editions") or []]
         for n in {x for x in eds if eds.count(x) > 1}:
             r.append(f"édition en double : {d.get('nom')}/{n}")
@@ -523,9 +571,10 @@ def main(argv=None) -> int:
             print(f"  {TYPES.get(t, t)} : " + ", ".join(liste or []))
         for d in c.get("declinaisons") or []:
             print(f"  déclinaison {d.get('nom')} : {d.get('ecole', '')} {', '.join(d.get('campus') or [])} "
-                  f"{d.get('parcours', '')} {d.get('niveau', '')}".rstrip())
+                  f"{d.get('parcours', '')} {d.get('niveau', '')} {'/'.join(langues_declinaison(d))}".rstrip())
             for e in d.get("editions") or []:
-                g = ", ".join(x["nom"] + (f" ({x['campus']})" if x.get("campus") else "") for x in e.get("groupes") or [])
+                g = ", ".join(x["nom"] + (f" ({', '.join(v for v in (x.get('campus'), x.get('langue')) if v)})"
+                                          if x.get("campus") or x.get("langue") else "") for x in e.get("groupes") or [])
                 print(f"    édition {e.get('nom')} : promo {e.get('promo', '–')} ; groupes {g or '–'}")
         return 0
     if a.cmd == "verifier":
