@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Icône DiagForge">
+<defs>
+<clipPath id="djL"><rect width="48" height="96"></rect></clipPath>
+<clipPath id="djR"><rect x="48" width="48" height="96"></rect></clipPath>
+<g id="djC">
+<circle cx="43" cy="29" r="11.5" fill="none" stroke="currentColor" stroke-width="4.5"></circle>
+<rect x="37" y="29" width="3.5" height="6" rx="1" fill="currentColor"></rect>
+<rect x="41.5" y="25" width="3.5" height="10" rx="1" fill="currentColor"></rect>
+<rect x="46" y="22" width="3.5" height="13" rx="1" fill="currentColor"></rect>
+<path d="M52 38L61 47" stroke="currentColor" stroke-width="6" stroke-linecap="round"></path>
+<path d="M14 56H78V64H70L64 70V76H72V82H24V76H32V70L26 64H22Q16 62 14 56Z" fill="currentColor"></path>
+</g>
+</defs>
+<path d="M20 0H48V96H20A20 20 0 0 1 0 76V20A20 20 0 0 1 20 0Z" fill="#14213d"></path>
+<path d="M48 0H76A20 20 0 0 1 96 20V76A20 20 0 0 1 76 96H48Z" fill="#f5e6cc"></path>
+<use href="#djC" clip-path="url(#djL)" color="#f5e6cc"></use>
+<use href="#djC" clip-path="url(#djR)" color="#14213d"></use>
+</svg>
