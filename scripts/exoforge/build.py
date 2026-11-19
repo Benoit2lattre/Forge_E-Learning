@@ -6,6 +6,7 @@ Usage :
     (l'extension .yaml peut être omise)
 
 --cours : profil de l'école de l'édition (cours[:déclinaison[/édition]]), si --profil n'est pas donné.
+
 --profil (-p) : applique la charte (couleurs, police, jeu de couleurs LaTeX) de profils/<nom>/profil.yaml
                 (nom, alias ou première lettre) ; sinon le profil de la fiche, ou le profil par défaut.
 

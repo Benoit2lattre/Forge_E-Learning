@@ -40,7 +40,7 @@ Un cours désigne ses **sources** (classeurs, fiches, capsules, diaporamas, doss
 | `parcours` | `Aero`, `Auto`, `Meca`… (liste `parcours` du profil) |
 | `formation`, `niveau`, `modalite` | formation du profil (`L`, `M`, `B`, `I` par défaut), un de ses niveaux (`L3`, `I1`…) et, s'il y a lieu, la modalité (`FISE`, `FISA`, `FISEA`, `FC`) |
 | `rncp` | numéro au RNCP, quand il diffère de celui de la formation |
-| `codes` | `enseignement`, `bloc` : codes de l'enseignement et de son bloc, ajoutés aux étiquettes des questions (les anciens noms `module` et `ue` sont lus et réécrits sous les nouveaux) |
+| `codes` | `enseignement`, `bloc` : codes de l'enseignement et de son bloc, ajoutés aux étiquettes des questions |
 | `abreges` | `bloc`, `cours` : abrégés d'où l'atelier tire les codes quand le profil de l'école donne leurs gabarits |
 | `langues` | une ou plusieurs : une déclinaison bilingue garde ses groupes français et anglais ensemble |
 | `moodle` | `cours` (nom ou adresse) et `categorie` (racine des catégories de questions) |
