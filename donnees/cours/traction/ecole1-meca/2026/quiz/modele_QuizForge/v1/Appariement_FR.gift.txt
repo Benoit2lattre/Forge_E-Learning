@@ -1,0 +1,10 @@
+// Généré par QuizForge 0.2
+
+$CATEGORY: $course$/top/FR/MEC3/Traction/modele_QuizForge/Appariement
+
+::Éléments SDOF::Associer chaque élément à son rôle.{
+	=Masse -> Inertie
+	=Ressort -> Élasticité
+	=Amortisseur -> Dissipation
+	= -> Rigidité infinie
+####La masse stocke l'énergie cinétique, le ressort l'énergie de déformation, l'amortisseur la dissipe.}

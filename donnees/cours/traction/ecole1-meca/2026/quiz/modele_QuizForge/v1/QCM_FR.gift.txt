@@ -1,0 +1,16 @@
+// Généré par QuizForge 0.2
+
+$CATEGORY: $course$/top/FR/MEC3/Traction/modele_QuizForge/QCM
+
+::Unité fréquence::La pulsation propre d'un oscillateur vaut √(k/m). Quelle est sa fréquence propre ?{
+	~√(k/m)#C'est la pulsation, en rad/s.
+	=√(k/m) / 2π
+	~2π √(k/m)#Vous avez multiplié au lieu de diviser par 2π.
+####f \= ω / 2π, en Hz.}
+
+::Conditions de Dirichlet::Quelles conditions sont de type Dirichlet ?{
+	~%50%Déplacement imposé
+	~%-50%Force imposée
+	~%50%Température imposée
+	~%-50%Flux imposé
+####Dirichlet \: on impose la valeur de l'inconnue (déplacement, température) ; Neumann \: sa dérivée (force, flux).}

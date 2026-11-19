@@ -69,7 +69,7 @@ def lire(b: Path) -> dict:
 def ecrire(b: Path, reg: dict):
     f = Path(b) / FICHIER
     f.parent.mkdir(parents=True, exist_ok=True)
-    tete = ("# Registre des versions de quiz (Forge) : une ligne par conversion, complétée par l'Atelier Forge et "
+    tete = ("# Registre des versions (Forge) : une ligne par conversion de quiz ou paquet d'exercice, complétée par l'Atelier Forge et "
             "DiagForge ;\n# modifiable à la main (etat : convertie, importee, passee, bilan, abandonnee).\n")
     f.write_text(tete + _yaml().safe_dump(reg, allow_unicode=True, sort_keys=False, width=110), encoding="utf-8",
                  newline="\n")

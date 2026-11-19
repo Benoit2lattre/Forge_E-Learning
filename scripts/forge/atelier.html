@@ -658,9 +658,9 @@ async function ficheCours(zone, nom) {
     el("td", {}, el("b", {}, [dc.ecole, dc.parcours].filter(Boolean).join(" ") || dc.nom), el("span", { class: "sous" },
       [dc.nom, (dc.campus || []).join(", "), dc.niveau, Object.entries(dc.codes || {}).map(([k, v]) => `${k} ${v}`).join(", "), (dc.langues || [dc.langue]).filter(Boolean).join(" et ")].filter(Boolean).join(" · "))),
     el("td", {}, (dc.editions || []).length ? (dc.editions || []).map(e => { const id = `${dc.nom}/${e.nom}`;
-      return el("div", { class: "edition" }, el("b", {}, String(e.nom)), " ", e.promo ? el("span", { class: "sous-l" }, "promo " + e.promo) : null, " ",
+      return el("div", { class: "edition" }, el("b", {}, String(e.nom)), " ", e.promo ? el("span", { class: "sous-l" }, "promo " + e.promo + " · ") : null, " ",
         el("span", { class: "sous-l" }, (e.groupes || []).map(g => g.nom + (g.campus || g.langue ? ` (${[g.campus, g.langue].filter(Boolean).join(", ")})` : "")).join(", ") || "sans groupe"), " ",
-        el("span", { class: "sous-l" }, [e.effectif ? e.effectif + " étudiants" : "", (e.seances || []).length ? (e.seances || []).length + " séances" : ""].filter(Boolean).join(" · ")), " ",
+        el("span", { class: "sous-l" }, [e.effectif ? " · " + e.effectif + " étudiants" : "", (e.seances || []).length ? (e.seances || []).length + " séances" : ""].filter(Boolean).join(" · ")), " ",
         el("button", { class: "btn second petit", type: "button", onclick: () => formulaireEdition(nom, dc, recharger, e) }, "Modifier"), " ",
         el("button", { class: "btn second petit", type: "button", title: "Versions de quiz converties pour cette édition", onclick: () => registreDialog({ cours: nom, declinaison: dc.nom, edition: String(e.nom) }, `${[dc.ecole, dc.parcours].filter(Boolean).join(" ")} ${e.nom}`) }, "Registre"), " ",
         String(e.nom) === enCours(dc) ? el("span", { class: "pastille p-ok", title: "Édition en cours de cette déclinaison (chaque déclinaison a la sienne)" }, "en cours") : el("button", { class: "btn second petit", type: "button", onclick: async () => {
@@ -718,6 +718,8 @@ function formulaireDeclinaison(nomCours, c, profils, apres, ex) {
   const parcours = el("input", { type: "text", placeholder: "ex. MSD, majeure mécanique, master VE", value: ex ? ex.parcours || "" : "" });
   const niveau = el("input", { type: "text", placeholder: "L3, 3A, 4A, 5A, M2…", value: ex ? ex.niveau || "" : "" });
   const module = el("input", { type: "text", placeholder: "code du module", value: ex ? (ex.codes || {}).module || "" : "" }), ue = el("input", { type: "text", placeholder: "code de l'UE", value: ex ? (ex.codes || {}).ue || "" : "" });
+  const mCours = el("input", { type: "text", placeholder: "nom ou adresse du cours Moodle", value: ex ? (ex.moodle || {}).cours || "" : "" });
+  const mCat = el("input", { type: "text", placeholder: "ex. MEC3/Traction", value: ex ? (ex.moodle || {}).categorie || "" : "" });
   const lgsEx = ex ? (ex.langues || [ex.langue]).filter(Boolean) : [], lgs = [...new Set([...(c.langues && c.langues.length ? c.langues : ["fr"]), ...lgsEx])];
   const langues = lgs.map((l, i) => { const b = el("input", { type: "checkbox", value: l }); b.checked = ex ? lgsEx.includes(l) : i === 0; return el("label", { class: "case" }, b, LANGUE_NOM[l] || l); });
   const nom = el("input", { type: "text", placeholder: "rempli d'après l'école et le parcours", value: ex ? ex.nom : "", disabled: !!ex }); let nomTouche = !!ex; nom.oninput = () => nomTouche = true;
@@ -730,12 +732,14 @@ function formulaireDeclinaison(nomCours, c, profils, apres, ex) {
   if (ex) { ecole.value = connue ? ex.ecole : ex.ecole ? "_autre" : ""; autre.hidden = ecole.value !== "_autre"; majCampus(ex.campus || []); }
   dialogue(ex ? `Déclinaison « ${ex.nom} »` : "Nouvelle déclinaison", [el("p", { class: "sous" }, "Le cours dans une école : campus, parcours, niveau, codes et langues, stables d'une année à l'autre. Une déclinaison bilingue garde ses groupes français et anglais ensemble ; la langue de chaque groupe se donne dans l'édition."),
     champ("École (profil d'établissement)", ecole), autre, el("label", {}, "Campus", campusZone, campusTexte), champ("Parcours", parcours), champ("Niveau", niveau),
-    el("div", { class: "grille2" }, champ("Code du module", module), champ("Code de l'UE", ue)), el("label", {}, "Langues d'enseignement", el("div", { class: "actions" }, langues)),
+    el("div", { class: "grille2" }, champ("Code du module", module), champ("Code de l'UE", ue)),
+    el("div", { class: "grille2" }, champ("Cours Moodle", mCours), champ("Catégorie Moodle des questions (racine)", mCat)),
+    el("label", {}, "Langues d'enseignement", el("div", { class: "actions" }, langues)),
     champ(ex ? "Nom court (nom des dossiers, ne change pas)" : "Nom court de la déclinaison", nom)],
     ex ? "Enregistrer" : "Créer la déclinaison", async () => {
       const coches = [...campusZone.querySelectorAll("input:checked")].map(b => b.value);
       const decl = { nom: nom.value, ecole: ecole.value === "_autre" ? autre.value : ecole.value, campus: coches.length ? coches : campusTexte.value,
-        parcours: parcours.value, niveau: niveau.value, codes: { module: module.value, ue: ue.value }, langues: langues.map(l => l.firstChild).filter(b => b.checked).map(b => b.value) };
+        parcours: parcours.value, niveau: niveau.value, codes: { module: module.value, ue: ue.value }, moodle: { cours: mCours.value, categorie: mCat.value }, langues: langues.map(l => l.firstChild).filter(b => b.checked).map(b => b.value) };
       const r = await actionCours(ex ? { action: "declinaison_modifier", nom: nomCours, declinaison_nom: ex.nom, declinaison: decl } : { action: "declinaison", nom: nomCours, declinaison: decl },
         ex ? "Déclinaison enregistrée." : "Déclinaison créée.");
       if (!r) return false; apres(); });

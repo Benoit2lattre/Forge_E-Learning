@@ -10,6 +10,9 @@ parts:
   - caption: Les outils
     chapters:
       - file: outils/atelier/README
+        sections:
+          - file: outils/atelier/FORMAT_cours
+          - file: outils/atelier/FORMAT_registre
       - file: outils/quizforge/README
       - file: outils/exoforge/README
       - file: outils/capsuleforge/README

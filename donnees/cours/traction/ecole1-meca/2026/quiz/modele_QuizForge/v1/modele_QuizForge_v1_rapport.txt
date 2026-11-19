@@ -1,0 +1,25 @@
+Cours : Traction simple (cours de démonstration) — Ecole1 Mécanique — 2026 (profil Ecole1)
+Profil : Ecole1 (profils/Ecole1/profil.yaml)
+modele_QuizForge.xlsx › VF : 1 question(s) de type vf
+modele_QuizForge.xlsx › QCM : 2 question(s) de type qcm
+modele_QuizForge.xlsx › Appariement : 1 question(s) de type appariement
+modele_QuizForge.xlsx › Numerique : 1 question(s) de type numerique
+modele_QuizForge.xlsx › ReponseCourte : 1 question(s) de type courte
+modele_QuizForge.xlsx › Essai : 1 question(s) de type essai
+modele_QuizForge.xlsx › Schema › ligne 2 : ignorée (projet du pointeur introuvable : vecteur_contrainte_pointeur.json)
+modele_QuizForge.xlsx › Schema › ligne 3 : ignorée (projet du pointeur introuvable : rainflow_pointeur.json)
+modele_QuizForge.xlsx › Schema : 0 question(s) de type schema
+modele_QuizForge.xlsx › Trous : 2 question(s) de type trous
+   Trous : questions « Schéma » ou « Texte à trous » en Moodle XML seulement (GIFT ne les décrit pas)
+   version FR : 9 question(s)
+   version EN : 1 question(s)
+→ 9 question(s) écrites dans donnees/cours/traction/ecole1-meca/2026/quiz/modele_QuizForge/v1
+Score au hasard et seuil conseillé (barème du profil ; QCM à plusieurs réponses : mauvaise_option = negative) :
+   VF (1 q.) : au hasard 50 % ; avec la moitié des connaissances 75 %
+   QCM (2 q.) : au hasard 26 % ; avec la moitié des connaissances 60 %
+   Appariement (1 q.) : au hasard 25 % ; avec la moitié des connaissances 62 %
+   Numerique (1 q.) : au hasard 0 % ; avec la moitié des connaissances 50 %
+   ReponseCourte (1 q.) : au hasard 0 % ; avec la moitié des connaissances 50 %
+   Essai (1 q.) : au hasard 0 % ; avec la moitié des connaissances 50 %
+   Trous (2 q.) : au hasard 0 % ; avec la moitié des connaissances 50 %
+   Toutes les questions, même poids : au hasard 14 % ; seuil conseillé pour exiger la moitié des connaissances : 56 %. Seuil calculé pour un test qui reprend toutes ces questions avec le même poids ; à refaire pour un tirage. QCM à plusieurs réponses avec des points négatifs : annoncez le barème aux étudiants (lesage2013).

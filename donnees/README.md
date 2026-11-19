@@ -3,6 +3,15 @@
 Données d'exemple suivies par git. **Aucune donnée réelle d'étudiant** : uniquement le bac à sable Moodle
 (un étudiant fictif, « Sam Student ») et des promotions fictives générées par `scripts/diagforge/outils/promotion_fictive.py`.
 
+## cours/ — cours de démonstration de l'Atelier Forge
+
+`cours/traction/` : cours fictif « Traction simple » (format `forge-cours/1`, voir [outils/atelier/FORMAT_cours.md](../outils/atelier/FORMAT_cours.md)) : syllabus d'exemple, sources publiées (classeur modèle de QuizForge, exercice `premier_exercice`, exports `diagforge/promotion_groupes`), une déclinaison bilingue pour l'école fictive Ecole1 (campus Nord et Sud), une édition 2026 (trois groupes, trois séances) et son registre avec une version de quiz (`ecole1-meca/2026/quiz/modele_QuizForge/v1/`). Les dossiers `exports/` et `bilans/` de l'édition sont créés par l'atelier à la demande.
+
+```
+python scripts/forge/cours.py montrer traction
+python scripts/quizforge/quizforge.py convertir outils/quizforge/exemples/classeurs/modele_QuizForge.xlsx --cours traction:ecole1-meca/2026
+```
+
 ## diagforge/ — exports Moodle pour DiagForge (bilan des résultats)
 
 | Dossier | Contenu | Pour tester |

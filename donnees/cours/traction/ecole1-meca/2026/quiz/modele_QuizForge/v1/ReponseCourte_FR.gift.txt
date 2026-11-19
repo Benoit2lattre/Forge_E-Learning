@@ -1,0 +1,5 @@
+// Généré par QuizForge 0.2
+
+$CATEGORY: $course$/top/FR/MEC3/Traction/modele_QuizForge/ReponseCourte
+
+::Condition naturelle::Une condition aux limites portant sur la dérivée est dite condition de …{=Neumann =Von Neumann####Neumann \: condition sur la dérivée (flux, effort) ; Dirichlet \: sur la valeur.}

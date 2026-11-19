@@ -1,0 +1,5 @@
+// Généré par QuizForge 0.2
+
+$CATEGORY: $course$/top/FR/MEC3/Traction/modele_QuizForge/VF
+
+::Maillage fin::Un maillage plus fin garantit toujours une meilleure précision des résultats.{FALSE####La convergence dépend aussi du type d'élément et des singularités.}

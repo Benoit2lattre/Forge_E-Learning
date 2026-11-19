@@ -1,0 +1,20 @@
+# Registre des versions (Forge) : une ligne par conversion de quiz ou paquet d'exercice, complétée par l'Atelier Forge et DiagForge ;
+# modifiable à la main (etat : convertie, importee, passee, bilan, abandonnee).
+versions:
+- id: modele_QuizForge/v1
+  genre: quiz
+  classeur: outils/quizforge/exemples/classeurs/modele_QuizForge.xlsx
+  version: 1
+  seance: null
+  dossier: donnees/cours/traction/ecole1-meca/2026/quiz/modele_QuizForge/v1
+  date: 2026-09-14 10:00
+  questions: 9
+  empreinte: ee7f4c368bb39841
+  etat: importee
+  dates:
+    convertie: 2026-09-14 10:00
+    importee: 2026-09-14 18:00
+  test_moodle: Quiz S1 — traction (démonstration)
+  bilans: []
+  utilisee_par: []
+  remarques: 'Exemple : importée dans Moodle le soir de la séance 1.'

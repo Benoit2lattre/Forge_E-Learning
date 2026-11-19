@@ -9,6 +9,8 @@ alias: [ecole, E1]
 # true : profil utilisé quand --profil n'est pas donné (un seul profil à true)
 defaut: false
 description: "Ecole1 — exemple d'établissement : Moodle de l'école, cours en français et en anglais (groupes FR/EN)"
+# Campus de l'établissement (facultatif) : proposés par l'Atelier Forge pour les déclinaisons d'un cours
+campus: [Nord, Sud]
 
 # Racine de catégorie Moodle par défaut (vide : <classeur>/<onglet>)
 categorie: ""

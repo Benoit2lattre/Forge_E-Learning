@@ -1583,6 +1583,14 @@ def lire_fichiers(fichiers, racine, rapport, reparer=False, nom=""):
     return qs
 
 
+def chemin_court(p) -> str:
+    """Chemin relatif au dépôt quand il y est (rapports sans chemin personnel), sinon tel quel."""
+    try:
+        return Path(p).resolve().relative_to(chemins.RACINE).as_posix()
+    except (ValueError, OSError):
+        return str(p)
+
+
 def appliquer_cours(a) -> list:
     """Option ``--cours`` : complète profil, catégorie, effectif et étiquettes avec ceux du cours, de sa déclinaison
     et de son édition (les options données l'emportent ; les étiquettes s'ajoutent). Renvoie les lignes du rapport."""
@@ -1622,7 +1630,7 @@ def appliquer_profil(a):
         a.langue_base = P["langues"]["base"]
     a.formats = ([comprendre(x, ["xml", "gift", "yaml"], "--formats") for x in decouper_tags(a.formats)]
                  if getattr(a, "formats", None) else P["formats"])
-    ligne = f"Profil : {P['nom']} ({P['_fichier']})" if P.get("nom") else "Profil : aucun (réglages par défaut)"
+    ligne = f"Profil : {P['nom']} ({chemin_court(P['_fichier'])})" if P.get("nom") else "Profil : aucun (réglages par défaut)"
     return [ligne]
 
 
@@ -1685,7 +1693,7 @@ def cmd_convertir(a):
             par = Counter(q["seance"] for q in qs if "seance" in q)
             rapport.append("   Séances : " + ", ".join(f"{k} : {v} q." for k, v in sorted(par.items(), key=lambda x: str(x[0])))
                            + " (tags S01, S02… ; --seance n compose le quiz de la séance n avec des rappels)")
-        rapport.append(f"→ {len(qs)} question(s) écrites dans {sortie}")
+        rapport.append(f"→ {len(qs)} question(s) écrites dans {chemin_court(sortie)}")
         import qualite
         rapport += qualite.rapport_hasard(qs, P["bareme"]["qcm"]["mauvaise_option"])
         (sortie / (f"{prefixe}_rapport.txt" if version else "rapport.txt")).write_text("\n".join(rapport) + "\n", encoding="utf-8")
@@ -1896,7 +1904,7 @@ def cmd_modele(a):
     print(f"{'Classeur vide' if a.vide else 'Modèle'} créé : {sortie}")
 
 
-CLES_PROFIL = set(PROFIL_DEFAUT) | {"nom", "description", "alias", "defaut", "charte", "categorie"}
+CLES_PROFIL = set(PROFIL_DEFAUT) | {"nom", "description", "alias", "defaut", "charte", "categorie", "campus"}
 
 
 def valider_profil(f: Path) -> list:

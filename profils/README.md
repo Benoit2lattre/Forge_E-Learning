@@ -27,7 +27,8 @@ python scripts/quizforge/quizforge.py profils Ecole1     # réglages d'un profil
 
 1. Copiez `Ecole1/` sous le nom de votre établissement (ex. `MonEcole/`), renommez `Ecole1_ColorScheme.tex` et mettez à jour `charte.latex_couleurs`.
 2. Modifiez `nom`, `alias`, `description`, puis `charte.couleurs` et `charte.roles` (voir les rôles dans [style/README.md](../style/README.md)).
-3. Vérifiez : `python scripts/quizforge/quizforge.py valider profils`.
+3. Facultatif : `campus: [Nord, Sud]`, la liste des campus de l'établissement, que l'Atelier Forge propose pour les déclinaisons d'un cours.
+4. Vérifiez : `python scripts/quizforge/quizforge.py valider profils`.
 
 Un profil que vous ne voulez pas publier se range dans `data/profils/<nom>/` (dossier non suivi par git) : les outils le trouvent de la même façon. Ordre de recherche : `profils/` du répertoire courant, puis `data/profils/`, puis `profils/` du dépôt ; à nom ou alias égal, le premier trouvé l'emporte.
 

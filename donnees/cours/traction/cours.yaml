@@ -1,0 +1,78 @@
+# Cours Forge (format forge-cours/1) : écrit par l'Atelier Forge ; modifiable à la main.
+# Chemins relatifs à la racine du dépôt. Mode d'emploi : outils/atelier/README.md (Cours).
+format: forge-cours/1
+nom: traction
+titre: Traction simple (cours de démonstration)
+domaine: résistance des matériaux
+langues:
+- fr
+- en
+description: 'Cours fictif : une barre en traction, de la contrainte au dimensionnement. Il montre un cours Forge
+  complet (sources, déclinaison bilingue, édition, registre des versions) sans aucune donnée réelle.'
+objectifs:
+- Calculer la contrainte normale dans une barre en traction
+- Relier contrainte et déformation (loi de Hooke)
+- Dimensionner une section avec un coefficient de sécurité
+competences:
+- Modéliser un effort de traction
+- Choisir un matériau et une section
+inclut: []
+derive_de: null
+documents:
+  syllabus: donnees/cours/traction/documents/syllabus.md
+sources:
+  questions:
+  - outils/quizforge/exemples/classeurs/modele_QuizForge.xlsx
+  exercices:
+  - outils/exoforge/exemples/premier_exercice.yaml
+  exports:
+  - donnees/diagforge/promotion_groupes
+erreurs: null
+etiquettes:
+- TRACTION
+declinaisons:
+- nom: ecole1-meca
+  ecole: Ecole1
+  campus:
+  - Nord
+  - Sud
+  parcours: Mécanique
+  niveau: 3A
+  codes:
+    module: MEC3-TR
+    ue: MEC3
+  langues:
+  - fr
+  - en
+  moodle:
+    cours: Résistance des matériaux 3A
+    categorie: MEC3/Traction
+  sources: {}
+  editions:
+  - nom: '2026'
+    promo: P2029
+    groupes:
+    - nom: G1
+      campus: Nord
+      langue: fr
+    - nom: G2
+      campus: Nord
+      langue: en
+    - nom: G3
+      campus: Sud
+      langue: fr
+    effectif: 60
+    seances:
+    - n: 1
+      date: '2026-09-14'
+      titre: Contrainte et déformation
+    - n: 2
+      date: '2026-09-21'
+      titre: Loi de Hooke
+    - n: 3
+      date: '2026-09-28'
+      titre: Dimensionnement
+    exports: donnees/cours/traction/ecole1-meca/2026/exports
+    bilans: donnees/cours/traction/ecole1-meca/2026/bilans
+  en_cours: '2026'
+comparaisons: []

@@ -1,0 +1,8 @@
+// Généré par QuizForge 0.2
+
+$CATEGORY: $course$/top/FR/MEC3/Traction/modele_QuizForge/Numerique
+
+::Dommage Miner::D1 \= n1/N1 avec n1 \= 5000 et N1 \= 10000. Que vaut D1 ?{#
+	=%100%0.5:0.01#Exact.
+	=%0%2:0.04#Rapport inversé \: le dommage vaut n/N (cycles appliqués / cycles à rupture), pas N/n.
+####D1 \= 5000 / 10000 \= 0,5}

@@ -382,14 +382,16 @@ def _champs_declinaison(c: dict, d: dict) -> dict:
     return {"ecole": texte_valide(d.get("ecole"), 80), "campus": _liste(d.get("campus"), 60),
             "parcours": texte_valide(d.get("parcours"), 80), "niveau": texte_valide(d.get("niveau"), 20),
             "codes": {k: texte_valide(v, 40) for k, v in (d.get("codes") or {}).items() if str(v or "").strip()},
-            "langues": langues or (c.get("langues") or ["fr"])[:1]}
+            "langues": langues or (c.get("langues") or ["fr"])[:1],
+            "moodle": {k: texte_valide(v, 120) for k, v in (d.get("moodle") or {}).items()
+                       if k in ("cours", "categorie") and str(v or "").strip()}}
 
 
 def ajouter_declinaison(c: dict, d: dict) -> dict:
     nom = nom_valide(d.get("nom"), "nom de la déclinaison")
     if any(x.get("nom") == nom for x in c.get("declinaisons") or []):
         raise ValueError(f"la déclinaison « {nom} » existe déjà")
-    neuve = {"nom": nom, **_champs_declinaison(c, d), "moodle": {}, "sources": {}, "editions": []}
+    neuve = {"nom": nom, **_champs_declinaison(c, d), "sources": {}, "editions": []}
     c.setdefault("declinaisons", []).append(neuve)
     return neuve
 

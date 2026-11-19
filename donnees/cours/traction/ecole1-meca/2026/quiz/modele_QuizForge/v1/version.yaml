@@ -1,0 +1,55 @@
+id: modele_QuizForge/v1
+version: 1
+date: 2026-09-14 10:00
+cours: traction
+classeur: outils/quizforge/exemples/classeurs/modele_QuizForge.xlsx
+empreinte_classeur: 81c545242a89d0799415233ec97a0125
+empreinte: ee7f4c368bb39841
+seance: null
+reglages:
+  profil: Ecole1
+  categorie: MEC3/Traction
+  nom: ''
+  tags: TRACTION;MEC3-TR;MEC3
+  seance: null
+  etudiants: 60
+  formats:
+  - xml
+  - gift
+  - yaml
+  reparer: false
+  langues: separe
+  langue_base: fr
+  rappel: null
+  graine: null
+fichiers:
+- Appariement_FR.gift.txt
+- Essai_FR.gift.txt
+- Numerique_FR.gift.txt
+- QCM_FR.gift.txt
+- ReponseCourte_FR.gift.txt
+- VF_EN.gift.txt
+- VF_FR.gift.txt
+- modele_QuizForge_v1_banque.yaml
+- modele_QuizForge_v1_moodle_EN.xml
+- modele_QuizForge_v1_moodle_FR.xml
+- modele_QuizForge_v1_rapport.txt
+questions:
+- nom: Maillage fin
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/VF
+- nom: Unité fréquence
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/QCM
+- nom: Conditions de Dirichlet
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/QCM
+- nom: Éléments SDOF
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/Appariement
+- nom: Dommage Miner
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/Numerique
+- nom: Condition naturelle
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/ReponseCourte
+- nom: Corps rigide
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/Essai
+- nom: Miner
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/Trous
+- nom: Domaines
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/Trous

@@ -1,0 +1,5 @@
+// Généré par QuizForge 0.2
+
+$CATEGORY: $course$/top/FR/MEC3/Traction/modele_QuizForge/Essai
+
+::Corps rigide::Pourquoi le modèle de corps rigide ne suffit-il pas à décrire les efforts intérieurs ?{}

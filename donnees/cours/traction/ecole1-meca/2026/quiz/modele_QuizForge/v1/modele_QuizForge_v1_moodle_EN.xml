@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Généré par QuizForge 0.2 -->
+<quiz>
+  <question type="category"><category><text>$course$/top/EN/MEC3/Traction/modele_QuizForge/VF</text></category></question>
+  <question type="truefalse">
+    <name><text>Maillage fin-EN</text></name>
+    <questiontext format="html"><text>A finer mesh always guarantees more accurate results.</text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<div style="padding:.6em .9em;border-left:4px solid #470A68;background:#F4EEF8;">Convergence also depends on the element type and on singularities.</div>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>1</penalty>
+    <hidden>0</hidden>
+    <tags><tag><text>TRACTION</text></tag><tag><text>MEC3-TR</text></tag><tag><text>MEC3</text></tag><tag><text>VF</text></tag><tag><text>MEF</text></tag><tag><text>maillage</text></tag></tags>
+    <answer fraction="0" format="moodle_auto_format"><text>true</text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="100" format="moodle_auto_format"><text>false</text><feedback format="html"><text></text></feedback></answer>
+  </question>
+</quiz>

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Généré par QuizForge 0.2 -->
+<quiz>
+  <question type="category"><category><text>$course$/top/FR/MEC3/Traction/modele_QuizForge/VF</text></category></question>
+  <question type="truefalse">
+    <name><text>Maillage fin</text></name>
+    <questiontext format="html"><text>Un maillage plus fin garantit toujours une meilleure précision des résultats.</text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<div style="padding:.6em .9em;border-left:4px solid #470A68;background:#F4EEF8;">La convergence dépend aussi du type d'élément et des singularités.</div>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>1</penalty>
+    <hidden>0</hidden>
+    <tags><tag><text>TRACTION</text></tag><tag><text>MEC3-TR</text></tag><tag><text>MEC3</text></tag><tag><text>VF</text></tag><tag><text>MEF</text></tag><tag><text>maillage</text></tag></tags>
+    <answer fraction="0" format="moodle_auto_format"><text>true</text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="100" format="moodle_auto_format"><text>false</text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="category"><category><text>$course$/top/FR/MEC3/Traction/modele_QuizForge/QCM</text></category></question>
+  <question type="multichoice">
+    <name><text>Unité fréquence</text></name>
+    <questiontext format="html"><text>La pulsation propre d'un oscillateur vaut √(k/m). Quelle est sa fréquence propre ?</text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<div style="padding:.6em .9em;border-left:4px solid #470A68;background:#F4EEF8;">f = ω / 2π, en Hz.</div>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <tags><tag><text>TRACTION</text></tag><tag><text>MEC3-TR</text></tag><tag><text>MEC3</text></tag><tag><text>QCM</text></tag></tags>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <answer fraction="0" format="html"><text>√(k/m)</text><feedback format="html"><text>C'est la pulsation, en rad/s.</text></feedback></answer>
+    <answer fraction="100" format="html"><text>√(k/m) / 2π</text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text>2π √(k/m)</text><feedback format="html"><text>Vous avez multiplié au lieu de diviser par 2π.</text></feedback></answer>
+  </question>
+  <question type="multichoice">
+    <name><text>Conditions de Dirichlet</text></name>
+    <questiontext format="html"><text>Quelles conditions sont de type Dirichlet ?</text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<div style="padding:.6em .9em;border-left:4px solid #470A68;background:#F4EEF8;">Dirichlet : on impose la valeur de l'inconnue (déplacement, température) ; Neumann : sa dérivée (force, flux).</div>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <tags><tag><text>TRACTION</text></tag><tag><text>MEC3-TR</text></tag><tag><text>MEC3</text></tag><tag><text>QCM</text></tag></tags>
+    <single>false</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <answer fraction="50" format="html"><text>Déplacement imposé</text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="-50" format="html"><text>Force imposée</text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="50" format="html"><text>Température imposée</text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="-50" format="html"><text>Flux imposé</text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="category"><category><text>$course$/top/FR/MEC3/Traction/modele_QuizForge/Appariement</text></category></question>
+  <question type="matching">
+    <name><text>Éléments SDOF</text></name>
+    <questiontext format="html"><text>Associer chaque élément à son rôle.</text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<div style="padding:.6em .9em;border-left:4px solid #470A68;background:#F4EEF8;">La masse stocke l'énergie cinétique, le ressort l'énergie de déformation, l'amortisseur la dissipe.</div>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <tags><tag><text>TRACTION</text></tag><tag><text>MEC3-TR</text></tag><tag><text>MEC3</text></tag><tag><text>Appariement</text></tag></tags>
+    <shuffleanswers>true</shuffleanswers>
+    <subquestion format="html"><text>Masse</text><answer><text>Inertie</text></answer></subquestion>
+    <subquestion format="html"><text>Ressort</text><answer><text>Élasticité</text></answer></subquestion>
+    <subquestion format="html"><text>Amortisseur</text><answer><text>Dissipation</text></answer></subquestion>
+    <subquestion format="html"><text></text><answer><text>Rigidité infinie</text></answer></subquestion>
+  </question>
+  <question type="category"><category><text>$course$/top/FR/MEC3/Traction/modele_QuizForge/Numerique</text></category></question>
+  <question type="numerical">
+    <name><text>Dommage Miner</text></name>
+    <questiontext format="html"><text>D1 = n1/N1 avec n1 = 5000 et N1 = 10000. Que vaut D1 ?</text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<div style="padding:.6em .9em;border-left:4px solid #470A68;background:#F4EEF8;">D1 = 5000 / 10000 = 0,5</div>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <tags><tag><text>TRACTION</text></tag><tag><text>MEC3-TR</text></tag><tag><text>MEC3</text></tag><tag><text>Numerique</text></tag></tags>
+    <answer fraction="100" format="moodle_auto_format"><text>0.5</text><feedback format="html"><text>Exact.</text></feedback><tolerance>0.01</tolerance></answer>
+    <answer fraction="0" format="moodle_auto_format"><text>2</text><feedback format="html"><text>Rapport inversé : le dommage vaut n/N (cycles appliqués / cycles à rupture), pas N/n.</text></feedback><tolerance>0.04</tolerance></answer>
+    <answer fraction="0" format="moodle_auto_format"><text>*</text><feedback format="html"><text>Reprenez la définition du dommage partiel d'un bloc.</text></feedback><tolerance>0</tolerance></answer>
+    <hint format="html"><text>Le dommage est une fraction de la durée de vie consommée : il est compris entre 0 et 1.</text></hint>
+  </question>
+  <question type="category"><category><text>$course$/top/FR/MEC3/Traction/modele_QuizForge/ReponseCourte</text></category></question>
+  <question type="shortanswer">
+    <name><text>Condition naturelle</text></name>
+    <questiontext format="html"><text>Une condition aux limites portant sur la dérivée est dite condition de …</text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<div style="padding:.6em .9em;border-left:4px solid #470A68;background:#F4EEF8;">Neumann : condition sur la dérivée (flux, effort) ; Dirichlet : sur la valeur.</div>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <tags><tag><text>TRACTION</text></tag><tag><text>MEC3-TR</text></tag><tag><text>MEC3</text></tag><tag><text>ReponseCourte</text></tag></tags>
+    <usecase>0</usecase>
+    <answer fraction="100" format="moodle_auto_format"><text>Neumann</text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="100" format="moodle_auto_format"><text>Von Neumann</text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="category"><category><text>$course$/top/FR/MEC3/Traction/modele_QuizForge/Essai</text></category></question>
+  <question type="essay">
+    <name><text>Corps rigide</text></name>
+    <questiontext format="html"><text>Pourquoi le modèle de corps rigide ne suffit-il pas à décrire les efforts intérieurs ?</text></questiontext>
+    <generalfeedback format="html"><text></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <tags><tag><text>TRACTION</text></tag><tag><text>MEC3-TR</text></tag><tag><text>MEC3</text></tag><tag><text>Essai</text></tag></tags>
+    <responseformat>editor</responseformat>
+    <responserequired>1</responserequired>
+    <responsefieldlines>10</responsefieldlines>
+    <attachments>0</attachments>
+    <graderinfo format="html"><text>Éléments attendus : mouvements rigidifiants, puissance nulle…</text></graderinfo>
+    <responsetemplate format="html"><text></text></responsetemplate>
+  </question>
+  <question type="category"><category><text>$course$/top/FR/MEC3/Traction/modele_QuizForge/Trous</text></category></question>
+  <question type="ddwtos">
+    <name><text>Miner</text></name>
+    <questiontext format="html"><text>Le dommage partiel d'un bloc vaut [[1]] divisé par [[2]] ; la règle de Miner prédit la rupture quand la somme des dommages atteint [[3]].</text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<div style="padding:.6em .9em;border-left:4px solid #470A68;background:#F4EEF8;">D = Σ nᵢ/Nᵢ ; rupture prédite pour D = 1.</div>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>1</shuffleanswers>
+    <correctfeedback format="html"><text>Votre réponse est correcte.</text></correctfeedback>
+    <partiallycorrectfeedback format="html"><text>Votre réponse est partiellement correcte.</text></partiallycorrectfeedback>
+    <incorrectfeedback format="html"><text>Votre réponse est incorrecte.</text></incorrectfeedback>
+    <shownumcorrect/>
+    <tags><tag><text>TRACTION</text></tag><tag><text>MEC3-TR</text></tag><tag><text>MEC3</text></tag><tag><text>Trous</text></tag></tags>
+    <dragbox><text>n</text><group>1</group></dragbox>
+    <dragbox><text>N</text><group>1</group></dragbox>
+    <dragbox><text>1</text><group>2</group></dragbox>
+    <dragbox><text>σ</text><group>1</group></dragbox>
+    <dragbox><text>0</text><group>2</group></dragbox>
+  </question>
+  <question type="gapselect">
+    <name><text>Domaines</text></name>
+    <questiontext format="html"><text>La fatigue [[1]] se termine vers 10⁴ cycles ; l'endurance [[2]] commence vers 10⁷ cycles.</text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<div style="padding:.6em .9em;border-left:4px solid #470A68;background:#F4EEF8;">Oligocyclique : peu de cycles, déformation plastique à chaque cycle ; endurance illimitée au-delà d'environ 10⁷ cycles.</div>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>1</shuffleanswers>
+    <correctfeedback format="html"><text>Votre réponse est correcte.</text></correctfeedback>
+    <partiallycorrectfeedback format="html"><text>Votre réponse est partiellement correcte.</text></partiallycorrectfeedback>
+    <incorrectfeedback format="html"><text>Votre réponse est incorrecte.</text></incorrectfeedback>
+    <shownumcorrect/>
+    <tags><tag><text>TRACTION</text></tag><tag><text>MEC3-TR</text></tag><tag><text>MEC3</text></tag><tag><text>Trous</text></tag></tags>
+    <selectoption><text>oligocyclique</text><group>1</group></selectoption>
+    <selectoption><text>illimitée</text><group>1</group></selectoption>
+    <selectoption><text>polycyclique</text><group>1</group></selectoption>
+    <selectoption><text>limitée</text><group>1</group></selectoption>
+  </question>
+</quiz>

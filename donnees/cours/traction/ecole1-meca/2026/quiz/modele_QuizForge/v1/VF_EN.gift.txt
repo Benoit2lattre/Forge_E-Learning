@@ -1,0 +1,5 @@
+// Généré par QuizForge 0.2
+
+$CATEGORY: $course$/top/EN/MEC3/Traction/modele_QuizForge/VF
+
+::Maillage fin-EN::A finer mesh always guarantees more accurate results.{FALSE####Convergence also depends on the element type and on singularities.}

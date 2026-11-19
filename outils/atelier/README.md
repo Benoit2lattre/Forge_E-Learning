@@ -22,6 +22,8 @@ Les écrans suivent l'ordre des outils, du plus simple au plus complet, après l
 
 Un **cours** regroupe ce qui sert pour lui dans les quatre outils (classeurs, fiches d'exercices, capsules, diaporamas, dossiers d'exports) **sans rien déplacer** : il désigne des dossiers et des fichiers. Il a des **déclinaisons** (le cours dans une école : campus, parcours, niveau, codes du module et de l'UE, langue) et chaque déclinaison des **éditions** (une année : promo, groupes et campus de chacun). Tout tient dans un fichier, `data/cours/<nom>/cours.yaml`, que l'écran Cours remplit par formulaire.
 
+![L'écran Cours : fiche du cours de démonstration, documents et sources](../../_static/captures/atelier/cours.png)
+
 Le sélecteur **Cours**, en haut de la page, choisit un cours (et une édition) : les écrans Questions, Exercices, Capsules et Bilans n'affichent alors que ce qui lui appartient, et ce qu'on y crée (nouvelle capsule, nouveau classeur) lui est ajouté. « Tous les cours » montre tout ; « Sans cours » montre ce qu'aucun cours ne désigne.
 
 L'écran **Cours** montre la fiche du cours choisi (titre, domaine, langues, étiquettes Moodle, description, objectifs, compétences, catalogue d'erreurs types, cours dont il est dérivé, cours qu'il inclut comme séances), ses documents (syllabus, plan, fiche de compétences : ouverts d'un clic), ses sources, ses déclinaisons et leurs éditions.
@@ -35,7 +37,11 @@ L'écran **Cours** montre la fiche du cours choisi (titre, domaine, langues, ét
 
 **Versions et registre.** Avec un cours choisi, chaque « Convertir… » produit une version rangée dans l'édition (`quiz/<classeur>/S03_v2/`, fichiers au nom explicite), et chaque « Construire » d'un exercice range son paquet SCORM (`exercices/<id>/v2/`) ; rien n'est écrasé, et refaire sans rien changer ne crée pas de version. Les écrans Questions et Exercices montrent la dernière version et son état (« Paquet SCORM » montre alors celui de la dernière version) ; « Registre » (dans Questions, ou pour chaque édition dans l'écran Cours) liste les versions : état (convertie, importée dans Moodle, passée, bilan fait, abandonnée), nom du test Moodle, remarques, fiche du bilan, dossier. Une version faite au niveau du cours (extrait commun) se rattache aux éditions qui l'utilisent. Le bilan DiagForge reconnaît la version du test d'après ses questions et s'inscrit au registre. Les commandes reçoivent `--cours cours:déclinaison/édition` ; ce qu'on choisit dans un formulaire l'emporte.
 
-En ligne de commande : `python scripts/forge/cours.py liste`, `montrer <nom>`, `verifier [<nom>]`, `proposer <nom>`.
+![Le registre d'une édition : la version d'un quiz, son état et le test Moodle](../../_static/captures/atelier/registre.png)
+
+**Cours de démonstration.** `donnees/cours/traction/` est un cours fictif complet, sans aucune donnée réelle : une déclinaison bilingue pour l'école fictive Ecole1 (campus Nord et Sud), une édition 2026 avec trois groupes et trois séances, des sources publiées (classeur modèle, exercice `premier_exercice`, exports `donnees/diagforge/promotion_groupes`) et un registre avec une version de quiz. Choisissez-le en haut de la page pour essayer l'écran Cours et le registre.
+
+En ligne de commande : `python scripts/forge/cours.py liste`, `montrer <nom>`, `verifier [<nom>]`, `proposer <nom>`. Formats : [cours.yaml](FORMAT_cours.md), [registre.yaml et version.yaml](FORMAT_registre.md).
 
 ## Questions (QuizForge)
 

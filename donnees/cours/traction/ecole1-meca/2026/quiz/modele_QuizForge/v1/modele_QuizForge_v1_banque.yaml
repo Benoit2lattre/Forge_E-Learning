@@ -1,0 +1,186 @@
+quizforge: '0.2'
+questions:
+- type: vf
+  titre: Maillage fin
+  question: Un maillage plus fin garantit toujours une meilleure précision des résultats.
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/VF
+  source: modele_QuizForge.xlsx › VF › ligne 2
+  feedback: La convergence dépend aussi du type d'élément et des singularités.
+  tags:
+  - TRACTION
+  - MEC3-TR
+  - MEC3
+  - VF
+  - MEF
+  - maillage
+  reponse: false
+  traductions:
+    en:
+      question: A finer mesh always guarantees more accurate results.
+      feedback: Convergence also depends on the element type and on singularities.
+      reponse: false
+- type: qcm
+  titre: Unité fréquence
+  question: La pulsation propre d'un oscillateur vaut √(k/m). Quelle est sa fréquence propre ?
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/QCM
+  source: modele_QuizForge.xlsx › QCM › ligne 2
+  feedback: f = ω / 2π, en Hz.
+  choix:
+  - texte: √(k/m)
+    feedback: C'est la pulsation, en rad/s.
+    erreur: pulsation pour fréquence
+    correct: false
+  - texte: √(k/m) / 2π
+    correct: true
+  - texte: 2π √(k/m)
+    feedback: Vous avez multiplié au lieu de diviser par 2π.
+    erreur: facteur 2π inversé
+    correct: false
+  plusieurs: false
+  tags:
+  - TRACTION
+  - MEC3-TR
+  - MEC3
+  - QCM
+- type: qcm
+  titre: Conditions de Dirichlet
+  question: Quelles conditions sont de type Dirichlet ?
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/QCM
+  source: modele_QuizForge.xlsx › QCM › ligne 3
+  feedback: 'Dirichlet : on impose la valeur de l''inconnue (déplacement, température) ; Neumann : sa dérivée (force,
+    flux).'
+  choix:
+  - texte: Déplacement imposé
+    correct: true
+  - texte: Force imposée
+    erreur: Neumann pris pour Dirichlet
+    correct: false
+  - texte: Température imposée
+    correct: true
+  - texte: Flux imposé
+    erreur: Neumann pris pour Dirichlet
+    correct: false
+  plusieurs: true
+  tags:
+  - TRACTION
+  - MEC3-TR
+  - MEC3
+  - QCM
+- type: appariement
+  titre: Éléments SDOF
+  question: Associer chaque élément à son rôle.
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/Appariement
+  source: modele_QuizForge.xlsx › Appariement › ligne 2
+  feedback: La masse stocke l'énergie cinétique, le ressort l'énergie de déformation, l'amortisseur la dissipe.
+  paires:
+  - - Masse
+    - Inertie
+  - - Ressort
+    - Élasticité
+  - - Amortisseur
+    - Dissipation
+  distracteurs:
+  - Rigidité infinie
+  tags:
+  - TRACTION
+  - MEC3-TR
+  - MEC3
+  - Appariement
+- type: numerique
+  titre: Dommage Miner
+  question: D1 = n1/N1 avec n1 = 5000 et N1 = 10000. Que vaut D1 ?
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/Numerique
+  source: modele_QuizForge.xlsx › Numerique › ligne 2
+  feedback: D1 = 5000 / 10000 = 0,5
+  indices:
+  - 'Le dommage est une fraction de la durée de vie consommée : il est compris entre 0 et 1.'
+  valeur: 0.5
+  tolerance: 0.01
+  erreurs:
+  - valeur: 2.0
+    tolerance: 0.04
+    feedback: 'Rapport inversé : le dommage vaut n/N (cycles appliqués / cycles à rupture), pas N/n.'
+    code: rapport inversé
+  feedback_juste: Exact.
+  feedback_faux: Reprenez la définition du dommage partiel d'un bloc.
+  tags:
+  - TRACTION
+  - MEC3-TR
+  - MEC3
+  - Numerique
+- type: courte
+  titre: Condition naturelle
+  question: Une condition aux limites portant sur la dérivée est dite condition de …
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/ReponseCourte
+  source: modele_QuizForge.xlsx › ReponseCourte › ligne 2
+  feedback: 'Neumann : condition sur la dérivée (flux, effort) ; Dirichlet : sur la valeur.'
+  reponses:
+  - Neumann
+  - Von Neumann
+  casse: false
+  tags:
+  - TRACTION
+  - MEC3-TR
+  - MEC3
+  - ReponseCourte
+- type: essai
+  titre: Corps rigide
+  question: Pourquoi le modèle de corps rigide ne suffit-il pas à décrire les efforts intérieurs ?
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/Essai
+  source: modele_QuizForge.xlsx › Essai › ligne 2
+  reponse_attendue: 'Éléments attendus : mouvements rigidifiants, puissance nulle…'
+  tags:
+  - TRACTION
+  - MEC3-TR
+  - MEC3
+  - Essai
+- type: trous
+  titre: Miner
+  question: Le dommage partiel d'un bloc vaut [[1]] divisé par [[2]] ; la règle de Miner prédit la rupture quand
+    la somme des dommages atteint [[3]].
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/Trous
+  source: modele_QuizForge.xlsx › Trous › ligne 2
+  feedback: D = Σ nᵢ/Nᵢ ; rupture prédite pour D = 1.
+  mots:
+  - texte: n
+    groupe: 1
+  - texte: N
+    groupe: 1
+  - texte: '1'
+    groupe: 2
+  leurres:
+  - texte: σ
+    groupe: 1
+  - texte: '0'
+    groupe: 2
+  reutilises: []
+  mode: glisser
+  tags:
+  - TRACTION
+  - MEC3-TR
+  - MEC3
+  - Trous
+- type: trous
+  titre: Domaines
+  question: La fatigue [[1]] se termine vers 10⁴ cycles ; l'endurance [[2]] commence vers 10⁷ cycles.
+  categorie: $course$/top/MEC3/Traction/modele_QuizForge/Trous
+  source: modele_QuizForge.xlsx › Trous › ligne 3
+  feedback: 'Oligocyclique : peu de cycles, déformation plastique à chaque cycle ; endurance illimitée au-delà d''environ
+    10⁷ cycles.'
+  mots:
+  - texte: oligocyclique
+    groupe: 1
+  - texte: illimitée
+    groupe: 1
+  leurres:
+  - texte: polycyclique
+    groupe: 1
+  - texte: limitée
+    groupe: 1
+  reutilises: []
+  mode: liste
+  tags:
+  - TRACTION
+  - MEC3-TR
+  - MEC3
+  - Trous

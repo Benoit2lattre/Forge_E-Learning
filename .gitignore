@@ -47,3 +47,6 @@ desktop.ini
 
 # ExoForge : script d'enregistrement régénéré à chaque construction
 script_enregistrement.md
+
+# Versions de quiz rangées par l'Atelier Forge : le classeur modèle du cours de démonstration s'appelle modele_QuizForge
+!donnees/cours/**/quiz/*_QuizForge/
