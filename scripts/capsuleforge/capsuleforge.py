@@ -435,13 +435,17 @@ def cmd_relire(a):
 
 
 def cmd_nouvelle(a):
-    """Crée une capsule neuve dans data/capsuleforge/<nom> (vide, ou plan proposé à partir d'un diaporama)."""
+    """Crée une capsule neuve dans data/capsuleforge/<nom>, ou au chemin donné (vide, ou plan d'après un diaporama)."""
     import nouvelle
-    nom = nouvelle.nom_valide(a.nom)
+    cible = Path(a.nom)
+    if len(cible.parts) > 1:                        # chemin donné (dossier capsules/ d'un cours, par l'atelier)
+        cible = cible.parent / nouvelle.nom_valide(cible.name)
+    else:
+        cible = DOSSIER / nouvelle.nom_valide(a.nom)
     diaporama = Path(a.diaporama) if a.diaporama else None
     if diaporama and not diaporama.is_file():
         raise SystemExit(f"Diaporama introuvable : {diaporama}")
-    nouvelle.creer(DOSSIER / nom, a.titre, langue=a.langue, diaporama=diaporama, decoupe=a.decoupe,
+    nouvelle.creer(cible, a.titre, langue=a.langue, diaporama=diaporama, decoupe=a.decoupe,
                    minutes=a.minutes, diapos=a.diapos)
 
 

@@ -2,7 +2,7 @@
 
 L'Atelier Forge lance toute la suite Forge depuis une page du navigateur, par boutons et listes : rien à taper, ni commande ni chemin. Il ne refait aucun calcul : chaque bouton lance la commande de l'outil (QuizForge, ExoForge, CapsuleForge, DiagForge), et son journal s'affiche en bas de la page.
 
-Statut : version 0.4, essayée sous Windows sur les cours de l'auteur. Les commandes restent utilisables seules (voir le mode d'emploi de chaque outil).
+Statut : version 0.5, essayée sous Windows sur les cours de l'auteur. Les commandes restent utilisables seules (voir le mode d'emploi de chaque outil).
 
 ## Lancer et fermer
 
@@ -14,9 +14,24 @@ Sans le fichier `.bat` : `python scripts/forge/forge.py` (options `--port`, `--s
 
 L'**accueil** montre l'état de l'ordinateur : Python, les modules utiles (et ce que chacun permet), PowerPoint, les voix de synthèse téléchargées. Un élément facultatif absent n'empêche que ce qu'il sert à faire.
 
-Les écrans suivent l'ordre des outils, du plus simple au plus complet : Questions, Exercices, Capsules (qui utilise les deux premiers), Bilans (qui analyse les trois autres), puis Réglages. Le **panneau des tâches**, en bas, est commun à tous les écrans : chaque tâche lancée y garde son journal, son état, sa durée, un bouton « Arrêter » tant qu'elle tourne et, à la fin, les boutons utiles (essayer l'exercice, ouvrir le lecteur, la fiche du professeur, montrer le paquet SCORM…). Toutes les tâches sont aussi notées dans `data/_atelier/journal.jsonl`.
+Les écrans suivent l'ordre des outils, du plus simple au plus complet, après l'écran Cours : Questions, Exercices, Capsules (qui utilise les deux premiers), Bilans (qui analyse les trois autres), puis Réglages. Le **panneau des tâches**, en bas, est commun à tous les écrans : chaque tâche lancée y garde son journal, son état, sa durée, un bouton « Arrêter » tant qu'elle tourne et, à la fin, les boutons utiles (essayer l'exercice, ouvrir le lecteur, la fiche du professeur, montrer le paquet SCORM…). Toutes les tâches sont aussi notées dans `data/_atelier/journal.jsonl`.
 
 « Montrer » ouvre l'explorateur sur un fichier ; « Ouvrir » ouvre un fichier avec son programme (Excel, navigateur). La fenêtre est mise au premier plan ; le bouton reste grisé quelques secondes, pour ne pas en ouvrir plusieurs. Les fichiers se choisissent par « Parcourir… », qui ouvre le dialogue de fichiers de Windows (il peut s'ouvrir derrière le navigateur).
+
+## Cours
+
+Un **cours** regroupe ce qui sert pour lui dans les quatre outils (classeurs, fiches d'exercices, capsules, diaporamas, dossiers d'exports) **sans rien déplacer** : il désigne des dossiers et des fichiers. Il a des **déclinaisons** (le cours dans une école : campus, parcours, niveau, codes du module et de l'UE, langue) et chaque déclinaison des **éditions** (une année : promo, groupes et campus de chacun). Tout tient dans un fichier, `data/cours/<nom>/cours.yaml`, que l'écran Cours remplit par formulaire.
+
+Le sélecteur **Cours**, en haut de la page, choisit un cours (et une édition) : les écrans Questions, Exercices, Capsules et Bilans n'affichent alors que ce qui lui appartient, et ce qu'on y crée (nouvelle capsule, nouveau classeur) lui est ajouté. « Tous les cours » montre tout ; « Sans cours » montre ce qu'aucun cours ne désigne.
+
+L'écran **Cours** montre la fiche du cours choisi (titre, domaine, langues, étiquettes Moodle, description, objectifs, compétences, catalogue d'erreurs types, cours dont il est dérivé, cours qu'il inclut comme séances), ses documents (syllabus, plan, fiche de compétences : ouverts d'un clic), ses sources, ses déclinaisons et leurs éditions.
+
+- **Nouveau cours…** : un titre et un nom court (`mef`, `stat` : il sert de nom de dossier, d'où sa brièveté, à cause de la longueur des chemins sous Windows). « Chercher dans data/ » propose les dossiers et fichiers qui portent ce nom ; on coche ce qui convient. Pour partir de rien, l'arborescence standard crée `documents/` (un syllabus et une fiche de compétences à remplir), `diaporamas/`, `questions/`, `exercices/` et `capsules/` sous `data/cours/<nom>/`.
+- **Nouvelle déclinaison…** : l'école (profil d'établissement, ou une autre), ses campus (lus dans le profil quand il les donne), le parcours, le niveau, les codes, la langue.
+- **Nouvelle édition…** : l'année, la promo et les groupes avec leur campus (`G1:Nord, G2:Sud`) ; une nouvelle édition reprend la précédente (séances décalées d'un an) et reçoit ses propres dossiers `exports/` et `bilans/`. « En cours » marque l'édition de l'année.
+- **À ranger…** liste les classeurs, fiches, capsules et dossiers d'exports qu'aucun cours ne désigne ; « Ranger » les ajoute au cours choisi.
+
+En ligne de commande : `python scripts/forge/cours.py liste`, `montrer <nom>`, `verifier [<nom>]`, `proposer <nom>`.
 
 ## Questions (QuizForge)
 

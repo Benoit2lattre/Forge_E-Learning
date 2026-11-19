@@ -96,6 +96,16 @@ dialog.formulaire h3{margin:0 0 4px}
 .panneau-rec p{margin:0;font-size:13px;color:var(--texte2)}
 .rec-etat{font-weight:600}.rec-etat.actif{color:var(--ko)}
 p.erreur{color:var(--ko-t)}
+header .cours-actif{display:flex;align-items:center;gap:8px;margin-left:18px;color:#B7C4DA;font-size:13px}
+header .cours-actif select{background:var(--navy2);color:#fff;border:1px solid var(--slate);border-radius:6px;padding:5px 8px;max-width:420px}
+.note-cours{margin:-8px 0 14px;font-size:13px;color:var(--texte2)}
+.cartes-cours{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;align-items:start}
+.cartes-cours .large{grid-column:1/-1}.cartes-cours .pile{display:flex;flex-direction:column;gap:14px}
+.cartes-cours label,.grille2 label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--texte2)}
+.cartes-cours input[type=text],.cartes-cours textarea,.cartes-cours select,dialog.formulaire textarea{padding:6px;border:1px solid var(--bord);border-radius:6px;font:inherit;font-size:14px;background:var(--carte);color:var(--texte)}
+.grille2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+table.compact td{padding:5px 8px;font-size:13px}.chemin{font-size:12.5px;word-break:break-all}
+.edition{padding:3px 0}.sous-l{color:var(--texte2);font-size:12.5px}
 .avec-bouton{display:flex;gap:8px;align-items:center}.avec-bouton select{flex:1;min-width:0}
 .mesure{margin:-4px 0 6px}.mesure .jauge{height:8px;border-radius:4px;background:var(--filet);overflow:hidden;margin-bottom:4px}
 .mesure .niveau{height:100%;width:0;background:var(--sable-t);transition:width .4s}.mesure.ok .niveau{background:var(--ok-t)}.mesure.ko .niveau{background:var(--ko-t)}
@@ -129,12 +139,14 @@ dialog.formulaire .bloc[hidden]{display:none}
 <header>
   <img src="/static/identite/logos/forge_e-learning_logo_nuit.png" alt="" height="30" data-fixe onerror="this.remove()">
   <h1>Atelier Forge</h1><span class="version" id="version"></span>
+  <label class="cours-actif">Cours <select id="cours-actif" aria-label="Cours choisi : limite les listes"><option value="">Tous les cours</option></select></label>
   <span class="espace"></span>
   <button type="button" id="theme" title="Apparence : jour ou nuit">☾ Nuit</button>
   <button type="button" id="quitter" title="Arrêter l'atelier (la fenêtre de commande se ferme)">Quitter</button>
 </header>
 <nav aria-label="Écrans">
   <button type="button" data-ecran="accueil" aria-current="page"><img src="/static/identite/icones/exoforge_icone_jour_32.png" alt="" style="visibility:hidden">Accueil</button>
+  <button type="button" data-ecran="cours"><img src="/static/identite/icones/exoforge_icone_jour_32.png" alt="" style="visibility:hidden">Cours</button>
   <button type="button" data-ecran="questions"><img src="/static/identite/icones/quizforge_icone_jour_32.png" alt="">Questions</button>
   <button type="button" data-ecran="exercices"><img src="/static/identite/icones/exoforge_icone_jour_32.png" alt="">Exercices</button>
   <button type="button" data-ecran="capsules"><img src="/static/identite/icones/capsuleforge_icone_jour_32.png" alt="">Capsules</button>
@@ -196,11 +208,13 @@ const duree = s => s < 60 ? Math.round(s) + " s" : Math.floor(s / 60) + " min " 
 
 /* ---------- écrans ---------- */
 let ECRAN = "accueil", ETAT = null;
-const ecrans = { accueil, questions, exercices, capsules, bilans, reglages };
+const ecrans = { accueil, cours, questions, exercices, capsules, bilans, reglages };
 function aller(nom) { ECRAN = nom; document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-current", b.dataset.ecran === nom ? "page" : "false"));
   try { sessionStorage.setItem("forge-ecran", nom); } catch (e) {} ecrans[nom](); $("main").focus({ preventScroll: true }); }
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => aller(b.dataset.ecran));
-function vider(...enfants) { const m = $("main"); m.replaceChildren(...enfants); return m; }
+function vider(...enfants) { const m = $("main"); m.replaceChildren(...enfants);
+  if (["questions", "exercices", "capsules", "bilans"].includes(ECRAN)) { const n = noteCours(), ch = m.querySelector(".chapeau"); if (n && ch) ch.after(n); }
+  return m; }
 /* en-tête d'un écran : logo de l'outil (nom et devise) puis le nom de l'écran */
 const entete = (outil, titre) => el("div", { class: "entete" }, outil ? el("img", { src: `/static/identite/logos/${outil}_logo_jour.png`, alt: { quizforge: "QuizForge", exoforge: "ExoForge", capsuleforge: "CapsuleForge", diagforge: "DiagForge" }[outil] }) : null, el("h2", {}, titre));
 function bientot(outil, titre, lot) { vider(entete(outil, titre), el("p", { class: "chapeau" }, `Cet écran arrive avec le lot ${lot} de l'atelier. En attendant, la commande et l'assistant .bat restent disponibles.`)); }
@@ -537,6 +551,195 @@ async function parcourirDossier(titre, depart) {
   return r.chemin;
 }
 
+/* ---------- Cours : sélecteur en haut de page et écran Cours ---------- */
+let COURS = { choix: [], actif: {}, cours: [] };
+const cleChoix = a => !a || !a.cours ? "" : a.cours === "_sans" ? "_sans" : [a.cours, a.declinaison || "", a.edition || ""].join("|");
+async function chargerCours() {
+  const r = await api("/api/cours"); if (!r.ok) return;
+  COURS = r; const s = $("cours-actif");
+  s.replaceChildren(el("option", { value: "" }, "Tous les cours"), el("option", { value: "_sans" }, "Sans cours (à ranger)"),
+    ...r.choix.map(x => el("option", { value: cleChoix(x), disabled: !!x.erreur }, (x.edition ? "   " : "") + x.libelle)));
+  s.value = cleChoix(r.actif); if (s.selectedIndex < 0) s.value = "";
+}
+$("cours-actif").onchange = async e => {
+  const v = e.target.value, [cours, declinaison, edition] = v === "_sans" ? ["_sans"] : v.split("|");
+  const r = await api("/api/cours", { action: "actif", cours: cours || "", declinaison: declinaison || "", edition: edition || "" });
+  if (!r.ok) return message(r.message || "Choix impossible.", true);
+  COURS.actif = r.actif; aller(ECRAN);
+};
+function libelleActif() {
+  const a = COURS.actif || {}; if (!a.cours) return null; if (a.cours === "_sans") return "Sans cours";
+  const x = COURS.choix.find(c => cleChoix(c) === cleChoix(a)); return x ? x.libelle.trim() : a.cours;
+}
+function noteCours() {
+  const l = libelleActif(); if (!l) return null;
+  return el("p", { class: "note-cours" }, el("span", { class: "pastille p-sable" }, l), " Liste limitée à ce cours ; « Tous les cours » en haut de la page pour tout voir.");
+}
+const listeLignes = v => (v || []).join("\n");
+async function cours() {
+  vider(el("div", { class: "entete" }, el("h2", {}, "Cours")), el("p", { class: "chapeau" }, "Un cours regroupe ses classeurs, fiches, capsules et diaporamas sans les déplacer ; ses déclinaisons (une école, ses campus, un parcours) et leurs éditions (une année) gardent leurs réglages. Le cours choisi en haut de la page limite les listes des autres écrans."));
+  await chargerCours();
+  const nouveau = el("button", { class: "btn", type: "button", onclick: formulaireCours }, "Nouveau cours…");
+  const ranger = el("button", { class: "btn second", type: "button", onclick: () => sansCours() }, "À ranger…");
+  if (!COURS.cours.length) return $("main").append(el("div", { class: "barre" }, nouveau, ranger), el("div", { class: "vide" }, "Aucun cours pour l'instant : « Nouveau cours… » le crée à partir des dossiers existants ou de rien."));
+  const actif = COURS.actif && COURS.actif.cours && COURS.actif.cours !== "_sans" ? COURS.actif.cours : null;
+  const sel = el("select", { "aria-label": "Cours à afficher", class: "large" }, COURS.cours.map(c => el("option", { value: c.nom }, `${c.titre} (${c.nom})${c.public ? " — démonstration" : ""}`)));
+  sel.value = actif || opt("cours_vu", COURS.cours[0].nom); if (sel.selectedIndex < 0) sel.selectedIndex = 0;
+  const zone = el("div", {});
+  sel.onchange = () => { garder("cours_vu", sel.value); ficheCours(zone, sel.value); };
+  $("main").append(el("div", { class: "barre" }, el("label", {}, "Cours", sel), nouveau, ranger), zone);
+  ficheCours(zone, sel.value);
+}
+async function actionCours(params, ok) {
+  const r = await api("/api/cours", params);
+  if (!r.ok) { message(r.message || "Modification impossible.", true); return null; }
+  (r.avertissements || []).forEach(a => message(a, true));
+  if (ok) message(ok); return r;
+}
+async function ficheCours(zone, nom) {
+  zone.replaceChildren(el("div", { class: "vide" }, "Lecture du cours…"));
+  const d = await api("/api/cours/" + encodeURIComponent(nom));
+  if (!d.ok) return zone.replaceChildren(el("div", { class: "vide" }, d.message || "Lecture impossible."));
+  const c = d.cours, recharger = () => { chargerCours(); ficheCours(zone, nom); };
+  const entree = (v, attrs = {}) => el("input", { type: "text", value: v || "", ...attrs });
+  const zoneTexte = (v, lignes) => { const t = el("textarea", { rows: lignes }); t.value = v || ""; return t; };
+  const f = { titre: entree(c.titre), domaine: entree(c.domaine), langues: entree((c.langues || []).join(", ")), etiquettes: entree((c.etiquettes || []).join(", ")),
+    description: zoneTexte(c.description, 3), objectifs: zoneTexte(listeLignes(c.objectifs), 3), competences: zoneTexte(listeLignes(c.competences), 3),
+    erreurs: entree(c.erreurs, { placeholder: "data/reference/erreurs/<domaine>.yaml" }) };
+  const derive = el("select", {}, el("option", { value: "" }, "—"), d.autres.map(n => el("option", { value: n }, n))); derive.value = c.derive_de || "";
+  const inclut = d.autres.map(n => { const b = el("input", { type: "checkbox", value: n }); b.checked = (c.inclut || []).includes(n); return el("label", { class: "case" }, b, n); });
+  const carteFiche = el("div", { class: "carte formulaire-cours" }, el("div", { class: "nom" }, "Fiche du cours"),
+    el("div", { class: "grille2" }, champ("Titre", f.titre), champ("Domaine", f.domaine), champ("Langues (fr, en…)", f.langues), champ("Étiquettes Moodle", f.etiquettes)),
+    champ("Description", f.description), el("div", { class: "grille2" }, champ("Objectifs (un par ligne)", f.objectifs), champ("Compétences visées (une par ligne)", f.competences)),
+    el("div", { class: "grille2" }, champ("Catalogue d'erreurs types", f.erreurs), champ("Dérivé de", derive)),
+    inclut.length ? el("div", {}, el("div", { class: "sous" }, "Cours inclus (repris comme séances) :"), el("div", { class: "actions" }, inclut)) : null,
+    el("div", { class: "actions" }, el("button", { class: "btn", type: "button", onclick: async () => {
+      const fiche = Object.fromEntries(Object.entries(f).map(([k, v]) => [k, v.value]));
+      fiche.derive_de = derive.value || null; fiche.inclut = inclut.map(l => l.firstChild).filter(b => b.checked).map(b => b.value);
+      if (await actionCours({ action: "fiche", nom, fiche }, "Fiche enregistrée.")) recharger(); } }, "Enregistrer la fiche")));
+  // documents
+  const docs = Object.entries(c.documents || {});
+  const typeDoc = el("select", {}, Object.entries(d.documents).map(([k, l]) => el("option", { value: k }, l)));
+  const carteDocs = el("div", { class: "carte" }, el("div", { class: "nom" }, "Documents"),
+    docs.length ? el("table", { class: "compact" }, el("tbody", {}, docs.map(([k, chemin]) => el("tr", {},
+      el("td", {}, d.documents[k] || (k.startsWith("autre") ? "Autre document" : k)), el("td", {}, el("span", { class: "sous" }, chemin)),
+      el("td", {}, el("div", { class: "actions" }, el("button", { class: "btn second petit", type: "button", onclick: () => ouvrirFichier(chemin) }, "Ouvrir"),
+        el("button", { class: "btn second petit", type: "button", onclick: async () => { if (await actionCours({ action: "document_retirer", nom, cle: k })) recharger(); } }, "Retirer"))))))) : el("p", {}, "Aucun document lié."),
+    el("div", { class: "actions" }, typeDoc, el("button", { class: "btn second", type: "button", onclick: async () => {
+      const ch = await parcourirFichier("Choisir un document du cours", [["Documents", "*.pdf *.docx *.md *.odt *.pptx *.txt"]], "");
+      if (ch && await actionCours({ action: "document_ajouter", nom, cle: typeDoc.value, chemin: ch }, "Document ajouté.")) recharger(); } }, "Ajouter…")));
+  // sources
+  const typeSrc = el("select", {}, Object.entries(d.types).map(([k, l]) => el("option", { value: k }, l)));
+  const lignesSrc = Object.entries(c.sources || {}).flatMap(([t, l]) => (l || []).map(ch => el("tr", {}, el("td", {}, d.types[t] || t), el("td", {}, el("span", { class: "chemin" }, ch)),
+    el("td", {}, el("div", { class: "actions" }, ch.includes("*") ? null : el("button", { class: "btn second petit", type: "button", onclick: e => montrer(ch, e.currentTarget) }, "Montrer"),
+      el("button", { class: "btn second petit", type: "button", onclick: async () => { if (await actionCours({ action: "source_retirer", nom, type: t, chemin: ch })) recharger(); } }, "Retirer"))))));
+  const ajouterSrc = async dossier => { const ch = dossier ? await parcourirDossier("Dossier de sources du cours", "data") : await parcourirFichier("Fichier de sources du cours", [["Tous", "*.*"]], "data");
+    if (ch && await actionCours({ action: "source_ajouter", nom, type: typeSrc.value, chemin: ch }, "Source ajoutée.")) recharger(); };
+  const carteSrc = el("div", { class: "carte" }, el("div", { class: "nom" }, "Sources"),
+    el("p", {}, `Dossiers et fichiers désignés (rien n'est déplacé)${c.nom ? " ; ce qui est sous " + d.fichier.replace(/\/cours\.yaml$/, "/") + " en fait aussi partie" : ""}.`),
+    lignesSrc.length ? el("table", { class: "compact" }, el("tbody", {}, lignesSrc)) : null,
+    el("div", { class: "actions" }, typeSrc, el("button", { class: "btn second", type: "button", onclick: () => ajouterSrc(true) }, "Ajouter un dossier…"),
+      el("button", { class: "btn second", type: "button", onclick: () => ajouterSrc(false) }, "Ajouter un fichier…"),
+      el("button", { class: "btn second", type: "button", onclick: () => propositions(nom, recharger) }, `Chercher « ${nom} » dans data/`)));
+  // déclinaisons et éditions
+  const actifE = c.active || "";
+  const lignesD = (c.declinaisons || []).map(dc => el("tr", {},
+    el("td", {}, el("b", {}, [dc.ecole, dc.parcours].filter(Boolean).join(" ") || dc.nom), el("span", { class: "sous" },
+      [dc.nom, (dc.campus || []).join(", "), dc.niveau, Object.entries(dc.codes || {}).map(([k, v]) => `${k} ${v}`).join(", "), dc.langue].filter(Boolean).join(" · "))),
+    el("td", {}, (dc.editions || []).length ? (dc.editions || []).map(e => { const id = `${dc.nom}/${e.nom}`;
+      return el("div", { class: "edition" }, el("b", {}, String(e.nom)), " ", e.promo ? el("span", { class: "sous-l" }, "promo " + e.promo) : null, " ",
+        el("span", { class: "sous-l" }, (e.groupes || []).map(g => g.nom + (g.campus ? ` (${g.campus})` : "")).join(", ") || "sans groupe"), " ",
+        id === actifE ? el("span", { class: "pastille p-ok" }, "en cours") : el("button", { class: "btn second petit", type: "button", onclick: async () => {
+          if (await actionCours({ action: "active", nom, declinaison: dc.nom, edition: e.nom }, "Édition en cours changée.")) recharger(); } }, "En cours")); })
+      : el("span", { class: "sous" }, "aucune édition")),
+    el("td", {}, el("button", { class: "btn second petit", type: "button", onclick: () => formulaireEdition(nom, dc, recharger) }, "Nouvelle édition…"))));
+  const carteDecl = el("div", { class: "carte large" }, el("div", { class: "nom" }, "Déclinaisons et éditions"),
+    lignesD.length ? el("table", { class: "compact" }, el("thead", {}, el("tr", {}, el("th", {}, "Déclinaison"), el("th", {}, "Éditions"), el("th", {}, ""))), el("tbody", {}, lignesD))
+      : el("p", {}, "Aucune déclinaison : une déclinaison est ce cours dans une école (campus, parcours, niveau, codes)."),
+    el("div", { class: "actions" }, el("button", { class: "btn second", type: "button", onclick: () => formulaireDeclinaison(nom, c, d.profils, recharger) }, "Nouvelle déclinaison…")));
+  const remarques = d.remarques.length ? el("div", { class: "carte large" }, el("div", { class: "nom" }, "À vérifier"), el("ul", {}, d.remarques.map(r => el("li", {}, r)))) : null;
+  zone.replaceChildren(el("p", { class: "sous" }, "Fichier : " + d.fichier),
+    el("div", { class: "cartes-cours" }, carteFiche, el("div", { class: "pile" }, carteDocs, carteSrc), carteDecl, remarques));
+}
+async function ouvrirFichier(chemin) { const r = await api("/api/ouvrir", { chemin }); if (!r.ok) message(r.message || "Ouverture impossible.", true); }
+async function propositions(nom, apres) {
+  const r = await actionCours({ action: "proposer", nom }); if (!r) return;
+  if (!r.propositions.length) return message(`Rien dans data/ ne porte le nom « ${nom} ».`);
+  const cases = r.propositions.map(x => { const b = el("input", { type: "checkbox" }); b.checked = true; b._x = x; return el("label", { class: "case" }, b, `${COURS_TYPES[x.type] || x.type} : ${x.chemin}`); });
+  dialogue(`Sources trouvées pour « ${nom} »`, [el("p", { class: "sous" }, "Cochez ce qui appartient au cours ; rien n'est déplacé."), ...cases], "Ajouter au cours", async () => {
+    for (const l of cases) if (l.firstChild.checked) await actionCours({ action: "source_ajouter", nom, type: l.firstChild._x.type, chemin: l.firstChild._x.chemin });
+    message("Sources ajoutées."); apres(); });
+}
+const COURS_TYPES = { questions: "Classeurs de questions", exercices: "Fiches d'exercices", capsules: "Capsules", diaporamas: "Diaporamas", exports: "Exports Moodle et bilans" };
+function formulaireCours() {
+  let nomTouche = false, trouvees = [];
+  const titre = el("input", { type: "text", placeholder: "ex. Méthode des éléments finis" }), nom = el("input", { type: "text", placeholder: "nom court : mef, stat, fiabilite" });
+  const domaine = el("input", { type: "text", placeholder: "ex. mécanique des structures" });
+  const langue = el("select", {}, [["fr", "français"], ["en", "anglais"], ["fr,en", "français et anglais"]].map(([v, l]) => el("option", { value: v }, l)));
+  titre.oninput = () => { if (!nomTouche) nom.value = slug(titre.value).replace(/_/g, "").slice(0, 12); };
+  nom.oninput = () => nomTouche = true;
+  const standard = el("input", { type: "checkbox" });
+  const zoneP = el("div", { class: "bloc" }, el("span", { class: "sous" }, "« Chercher » propose les dossiers et fichiers de data/ qui portent le nom court."));
+  const chercher = el("button", { class: "btn second", type: "button", onclick: async () => {
+    const r = await actionCours({ action: "proposer", nom: nom.value }); if (!r) return;
+    trouvees = r.propositions.map(x => { const b = el("input", { type: "checkbox" }); b.checked = true; b._x = x; return el("label", { class: "case" }, b, `${COURS_TYPES[x.type]} : ${x.chemin}`); });
+    zoneP.replaceChildren(...(trouvees.length ? trouvees : [el("span", { class: "sous" }, "Rien trouvé : cochez l'arborescence standard pour partir de rien.")]));
+    if (!trouvees.length) standard.checked = true; } }, "Chercher dans data/");
+  dialogue("Nouveau cours", [champ("Titre", titre), champ("Nom court (dossier data/cours/<nom>, 24 caractères au plus)", nom), champ("Domaine", domaine), champ("Langues", langue),
+    el("div", { class: "ligne" }, el("b", {}, "À partir de l'existant"), chercher), zoneP,
+    el("label", { class: "case" }, standard, "Créer l'arborescence standard (documents, diaporamas, questions, exercices, capsules) avec un syllabus et une fiche de compétences à remplir")],
+    "Créer le cours", async () => {
+      const sources = trouvees.filter(l => l.firstChild.checked).map(l => l.firstChild._x);
+      const r = await actionCours({ action: "nouveau", nom: nom.value, titre: titre.value, domaine: domaine.value, langues: langue.value.split(","), sources, standard: standard.checked }, "Cours créé ; il est maintenant le cours choisi.");
+      if (!r) return false; garder("cours_vu", r.nom); cours(); });
+}
+function formulaireDeclinaison(nomCours, c, profils, apres) {
+  const ecole = el("select", {}, el("option", { value: "" }, "—"), Object.keys(profils).map(p => el("option", { value: p }, p)), el("option", { value: "_autre" }, "autre école…"));
+  const autre = el("input", { type: "text", placeholder: "nom de l'école", hidden: true });
+  const campusZone = el("div", { class: "actions" }), campusTexte = el("input", { type: "text", placeholder: "campus, séparés par des virgules" });
+  const parcours = el("input", { type: "text", placeholder: "ex. MSD, majeure mécanique, master VE" }), niveau = el("input", { type: "text", placeholder: "L3, 3A, 4A, 5A, M2…" });
+  const module = el("input", { type: "text", placeholder: "code du module" }), ue = el("input", { type: "text", placeholder: "code de l'UE" });
+  const langue = el("select", {}, (c.langues && c.langues.length ? c.langues : ["fr"]).map(l => el("option", { value: l }, l)));
+  const nom = el("input", { type: "text", placeholder: "rempli d'après l'école et le parcours" }); let nomTouche = false; nom.oninput = () => nomTouche = true;
+  const proposerNom = () => { if (!nomTouche) nom.value = slug([ecole.value === "_autre" ? autre.value : ecole.value, parcours.value].filter(Boolean).join("-")).replace(/_/g, "-").slice(0, 24); };
+  ecole.onchange = () => { autre.hidden = ecole.value !== "_autre"; const cs = profils[ecole.value] || [];
+    campusZone.replaceChildren(...cs.map(x => { const b = el("input", { type: "checkbox", value: x }); return el("label", { class: "case" }, b, x); })); campusTexte.hidden = cs.length > 0; proposerNom(); };
+  autre.oninput = parcours.oninput = proposerNom;
+  dialogue("Nouvelle déclinaison", [el("p", { class: "sous" }, "Le cours dans une école : campus, parcours, niveau et codes, stables d'une année à l'autre."),
+    champ("École (profil d'établissement)", ecole), autre, el("label", {}, "Campus", campusZone, campusTexte), champ("Parcours", parcours), champ("Niveau", niveau),
+    el("div", { class: "grille2" }, champ("Code du module", module), champ("Code de l'UE", ue)), champ("Langue", langue), champ("Nom court de la déclinaison", nom)],
+    "Créer la déclinaison", async () => {
+      const coches = [...campusZone.querySelectorAll("input:checked")].map(b => b.value);
+      const r = await actionCours({ action: "declinaison", nom: nomCours, declinaison: { nom: nom.value, ecole: ecole.value === "_autre" ? autre.value : ecole.value,
+        campus: coches.length ? coches : campusTexte.value, parcours: parcours.value, niveau: niveau.value, codes: { module: module.value, ue: ue.value }, langue: langue.value } }, "Déclinaison créée.");
+      if (!r) return false; apres(); });
+}
+function formulaireEdition(nomCours, dc, apres) {
+  const prec = (dc.editions || []).slice(-1)[0], an = new Date().getFullYear();
+  const nom = el("input", { type: "text", value: prec && /^\d{4}$/.test(prec.nom) ? String(+prec.nom + 1) : String(new Date().getMonth() >= 6 ? an : an - 1) });
+  const promo = el("input", { type: "text", value: prec ? prec.promo || "" : "", placeholder: "ex. P2028" });
+  const groupes = el("input", { type: "text", value: prec ? (prec.groupes || []).map(g => g.nom + (g.campus ? ":" + g.campus : "")).join(", ") : "", placeholder: "MSD1:Cachan, MSD2:Cachan" });
+  dialogue(`Nouvelle édition de « ${[dc.ecole, dc.parcours].filter(Boolean).join(" ") || dc.nom} »`, [
+    el("p", { class: "sous" }, prec ? `Copie de l'édition ${prec.nom} (séances décalées d'un an) ; les exports et les bilans auront leurs propres dossiers.` : "Première édition : les séances se rempliront avec le plan de séance."),
+    champ("Année ou nom court", nom), champ("Promo", promo), champ("Groupes, avec leur campus (groupe:campus, séparés par des virgules)", groupes)],
+    "Créer l'édition", async () => {
+      const r = await actionCours({ action: "edition", nom: nomCours, declinaison: dc.nom, edition: { nom: nom.value, promo: promo.value, groupes: groupes.value } }, "Édition créée.");
+      if (!r) return false; apres(); });
+}
+async function sansCours() {
+  vider(el("div", { class: "entete" }, el("h2", {}, "À ranger")), el("p", { class: "chapeau" }, "Les classeurs, fiches, capsules et dossiers d'exports qu'aucun cours ne désigne (les exemples publiés ne sont pas listés). « Ranger » ajoute l'objet aux sources du cours choisi, sans le déplacer."));
+  const d = await api("/api/cours_sans"); if (!d.ok) return $("main").append(el("div", { class: "vide" }, d.message || "Lecture impossible."));
+  const blocs = Object.entries(d.objets).filter(([, l]) => l.length);
+  $("main").append(el("div", { class: "barre" }, el("button", { class: "btn second", type: "button", onclick: () => aller("cours") }, "← Retour aux cours")));
+  if (!blocs.length) return $("main").append(el("div", { class: "vide" }, "Tout est rangé."));
+  if (!d.cours.length) return $("main").append(el("div", { class: "vide" }, "Créez d'abord un cours."));
+  for (const [t, l] of blocs) $("main").append(el("h3", {}, d.types[t]), el("table", {}, el("tbody", {}, l.map(o => {
+    const s = el("select", {}, d.cours.map(c => el("option", { value: c.nom }, c.titre)));
+    const b = el("button", { class: "btn second petit", type: "button", onclick: async () => { if (await actionCours({ action: "ranger", nom: s.value, type: t, chemin: o.chemin }, "Rangé.")) { b.closest("tr").remove(); chargerCours(); } } }, "Ranger");
+    return el("tr", {}, el("td", {}, el("b", {}, o.libelle), el("span", { class: "sous" }, o.chemin)), el("td", {}, el("div", { class: "actions" }, s, b)));
+  }))));
+}
+
 /* ---------- Questions (QuizForge) ---------- */
 async function questions() {
   vider(entete("quizforge", "Questions"), el("p", { class: "chapeau" }, "Les classeurs de questions de data/quizforge et le modèle. « Valider » relit les questions sans rien écrire (points d'écriture à vérifier, score au hasard) ; « Convertir » écrit le Moodle XML (et le GIFT) dans le dossier <classeur>_QuizForge, avec, si on le demande, le plan du quiz d'une séance."));
@@ -815,7 +1018,7 @@ window.addEventListener("pagehide", () => { if (!FINI) navigator.sendBeacon("/ap
 
 /* ---------- départ ---------- */
 if (!JETON) vider(el("h2", {}, "Atelier Forge"), el("p", { class: "chapeau" }, "Cette page doit être ouverte par Forge.bat (double-clic à la racine du dépôt)."));
-else { let e = "accueil"; try { e = sessionStorage.getItem("forge-ecran") || "accueil"; } catch (x) {} aller(ecrans[e] ? e : "accueil"); rafraichir(); }
+else { let e = "accueil"; try { e = sessionStorage.getItem("forge-ecran") || "accueil"; } catch (x) {} chargerCours().then(() => aller(ecrans[e] ? e : "accueil")); rafraichir(); }
 </script>
 </body>
 </html>

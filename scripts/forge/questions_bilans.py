@@ -43,6 +43,14 @@ def _resume_classeur(f: Path, origine: str) -> dict:
             "sortie": rel(sortie) if sortie.exists() else None, "plans": [rel(p) for p in plans]}
 
 
+def _bases_cours(type_: str) -> list[Path]:
+    try:
+        import cours
+        return cours.Index().dossiers(type_)
+    except Exception:
+        return []
+
+
 def classeurs(ajoutes: list | None = None) -> list[dict]:
     """Classeurs QuizForge : data/quizforge (privés), classeurs ajoutés par l'atelier, puis exemples."""
     out, vus = [], set()
@@ -51,6 +59,13 @@ def classeurs(ajoutes: list | None = None) -> list[dict]:
             continue
         out.append(_resume_classeur(f, "data"))
         vus.add(f.resolve())
+    for base in _bases_cours("questions"):              # dossiers désignés par les cours (et leur questions/)
+        for f in sorted(base.rglob("*.xlsx") if base.is_dir() else [base], key=lambda x: str(x).lower()):
+            if (f.suffix.lower() != ".xlsx" or f.name.startswith(("~$", "bilan_")) or f.resolve() in vus
+                    or any(p.endswith("_QuizForge") for p in f.parts[:-1])):
+                continue
+            out.append(_resume_classeur(f, "cours"))
+            vus.add(f.resolve())
     for c in ajoutes or []:
         f = Path(c)
         if f.is_file() and f.resolve() not in vus:
@@ -81,7 +96,7 @@ def texte_court(v: str, maxi: int = 80) -> str:
 def dossiers_exports() -> list[dict]:
     """Dossiers qui contiennent un export « notes » de Moodle (CSV ou classeur), avec leur bilan s'il existe."""
     out, vus = [], set()
-    for base, origine in ((chemins.DATA / "diagforge", "data"), (EXEMPLES_D, "exemple")):
+    for base, origine in [(chemins.DATA / "diagforge", "data")] + [(b, "cours") for b in _bases_cours("exports")] + [(EXEMPLES_D, "exemple")]:
         if not base.is_dir():
             continue
         for f in sorted(base.rglob("*")):

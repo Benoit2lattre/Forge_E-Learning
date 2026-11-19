@@ -4,6 +4,11 @@ Chaque outil a son propre numéro de version (voir la page « État des outils �
 
 ## Forge E-Learning 0.3 — en préparation
 
+### Atelier Forge 0.5 — cours et éditions (première étape)
+
+- Écran Cours et sélecteur « Cours » en haut de la page : un cours (`data/cours/<nom>/cours.yaml`) désigne ses classeurs, fiches, capsules, diaporamas et dossiers d'exports sans les déplacer ; il a des déclinaisons (école, campus, parcours, niveau, codes, langue) et des éditions (année, promo, groupes et leur campus). Le cours choisi limite les listes des écrans Questions, Exercices, Capsules et Bilans ; ce qu'on crée lui est ajouté. « Nouveau cours » à partir des dossiers qui portent son nom, ou de rien avec une arborescence standard (syllabus et fiche de compétences à remplir) ; nouvelle déclinaison, nouvelle édition (copie de la précédente) ; objets « à ranger ». Commande `python scripts/forge/cours.py liste | montrer | verifier | proposer`.
+- CapsuleForge : `nouvelle` accepte un chemin (capsule créée dans le dossier `capsules/` d'un cours).
+
 ### Atelier Forge 0.4 (nouveau)
 
 - Une page dans le navigateur qui lance les outils Forge sans ligne de commande : double-clic sur `Forge.bat` à la racine du dépôt. Premier lot : état de l'ordinateur (modules, PowerPoint, voix) et écran Exercices (ExoForge : construire, essayer avec des valeurs fixes ou tirées, montrer le paquet SCORM, choisir une autre fiche par le dialogue de fichiers de Windows) ; journal des tâches en direct, arrêt d'une tâche, fermeture avec l'onglet. Les écrans suivent l'ordre des outils, du plus simple au plus complet (Questions, Exercices, Capsules, Bilans) ; 

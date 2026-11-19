@@ -49,14 +49,40 @@ def garder_reglage(cle: str, valeur):
 
 
 # ------------------------------------------------------------------------------------------------ liste
+def _est_capsule(d: Path) -> bool:
+    return (d / "chapitre.yaml").is_file() or (d / "capsule.yaml").is_file()
+
+
+def dossiers_capsules() -> list[Path]:
+    """Dossiers des capsules : data/capsuleforge, puis ceux que désignent les cours (``capsules/`` d'un cours,
+    sources) ; un nom déjà vu masque les suivants (les capsules se désignent par leur nom)."""
+    racines = [DOSSIER]
+    try:
+        import cours
+        racines += cours.Index().dossiers("capsules")
+    except Exception:
+        pass
+    out, vus = [], set()
+    for r in racines:
+        cands = [r] if _est_capsule(r) else (sorted(r.iterdir(), key=lambda x: x.name.lower()) if r.is_dir() else [])
+        for d in cands:
+            if d.is_dir() and not d.name.startswith(("_", ".")) and _est_capsule(d) and d.name not in vus:
+                vus.add(d.name)
+                out.append(d)
+    return out
+
+
 def dossier(nom: str) -> Path:
-    """Dossier d'une capsule de ``data/capsuleforge`` (nom exact, sans chemin) ; ``ValueError`` sinon."""
+    """Dossier d'une capsule (nom exact, sans chemin) de data/capsuleforge ou d'un cours ; ``ValueError`` sinon."""
     if not nom or "/" in nom or "\\" in nom or nom.startswith((".", "_")):
         raise ValueError("capsule inconnue")
     d = DOSSIER / nom
-    if not ((d / "chapitre.yaml").is_file() or (d / "capsule.yaml").is_file()):
-        raise ValueError(f"capsule inconnue : {nom}")
-    return d
+    if _est_capsule(d):
+        return d
+    for d in dossiers_capsules():
+        if d.name == nom:
+            return d
+    raise ValueError(f"capsule inconnue : {nom}")
 
 
 def texte(v) -> str:
@@ -65,19 +91,13 @@ def texte(v) -> str:
 
 def liste() -> list[dict]:
     out = []
-    if not DOSSIER.is_dir():
-        return out
-    for d in sorted(DOSSIER.iterdir(), key=lambda x: x.name.lower()):
-        if not d.is_dir() or d.name.startswith(("_", ".")):
-            continue
+    for d in dossiers_capsules():
         ch, cap = d / "chapitre.yaml", d / "capsule.yaml"
-        if not (ch.is_file() or cap.is_file()):
-            continue
         try:
             c = F().lire(ch if ch.is_file() else cap)
         except Exception:
             c = {}
-        out.append({"nom": d.name, "titre": texte(c.get("titre")) or d.name,
+        out.append({"nom": d.name, "titre": texte(c.get("titre")) or d.name, "dossier": chemins_rel(d),
                     "ancienne": not ch.is_file(), "construit": _date(SORTIES / d.name / "index.html")})
     return out
 

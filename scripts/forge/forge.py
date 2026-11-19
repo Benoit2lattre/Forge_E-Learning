@@ -50,10 +50,11 @@ sys.path.insert(0, str(ICI.parent / "commun"))
 sys.path.insert(0, str(ICI.parent / "capsuleforge"))
 import capsules as C              # noqa: E402
 import questions_bilans as QB      # noqa: E402
+import cours as K                  # noqa: E402
 import chemins                    # noqa: E402
 import serveur_local as S         # noqa: E402
 
-VERSION = "0.4"
+VERSION = "0.5"
 RACINE = chemins.RACINE
 PY = sys.executable
 PORT = 8770
@@ -78,6 +79,13 @@ def dans_depot(chemin: str) -> Path:
     p = (RACINE / chemin).resolve() if not Path(chemin).is_absolute() else Path(chemin).resolve()
     if p == RACINE or RACINE in p.parents:
         return p
+    try:                                                 # dossiers désignés par un cours, même hors du dépôt
+        for ms in K.Index().motifs.values():
+            for m in ms:
+                if "*" not in m and K.correspond(p, m):
+                    return p
+    except Exception:
+        pass
     for c in C.reglages().get("classeurs") or []:
         c = Path(c).resolve()
         sortie = c.parent / f"{c.stem}_QuizForge"
@@ -250,19 +258,164 @@ class Atelier:
     def en_cours(self) -> int:
         return sum(t.etat == "en_cours" for t in self.taches.values())
 
+    # ------------------------------------------------------------------ cours
+    def cours_actif(self) -> dict:
+        """Choix du sélecteur : {cours, declinaison?, edition?}, {cours: "_sans"} ou {} (tous les cours)."""
+        r = C.reglages().get("cours_actif") or {}
+        if r.get("cours") and r["cours"] != "_sans" and r["cours"] not in K.tous():
+            return {}
+        return r
+
+    def filtre(self, objets: list[dict], cle: str, chemin=None) -> list[dict]:
+        try:
+            return K.filtrer(objets, cle, self.cours_actif(), chemin=chemin)
+        except Exception:                                # un cours mal écrit ne vide pas les listes
+            return objets
+
+    def cours_liste(self) -> dict:
+        resumes = []
+        for c in K.tous().values():
+            resumes.append({"nom": c["nom"], "titre": str(c.get("titre") or c["nom"]), "domaine": c.get("domaine") or "",
+                            "fichier": rel(c["_fichier"]), "erreur": c.get("_erreur"),
+                            "declinaisons": len(c.get("declinaisons") or []), "active": c.get("active"),
+                            "public": K.RACINES[1] in c["_fichier"].parents})
+        return {"ok": True, "choix": K.choix_possibles(), "actif": self.cours_actif(), "cours": resumes}
+
+    def cours_detail(self, nom: str) -> dict:
+        c = K.trouver(nom)
+        propre = json.loads(json.dumps({k: v for k, v in c.items() if not k.startswith("_")}, ensure_ascii=False, default=str))
+        return {"ok": True, "cours": propre, "fichier": rel(c["_fichier"]), "remarques": K.verifier(c),
+                "types": K.TYPES, "documents": K.DOCUMENTS, "profils": profils_campus(),
+                "autres": [n for n in K.tous() if n != nom]}
+
+    def cours_sans(self) -> dict:
+        idx = K.Index()
+        def sans(objs, cle, chemin=None):
+            return [o for o in K.filtrer(objs, cle, {"cours": "_sans"}, idx, chemin=chemin) if o.get("origine") != "exemple"]
+        return {"ok": True, "objets": {
+            "questions": [{"chemin": o["classeur"], "libelle": o["nom"]} for o in sans(QB.classeurs(C.reglages().get("classeurs")), "classeur")],
+            "exercices": [{"chemin": o["fiche"], "libelle": o["titre"]} for o in sans(self.fiches_exoforge(), "fiche")],
+            "capsules": [{"chemin": o["dossier"], "libelle": o["titre"]} for o in sans(C.liste(), "dossier")],
+            "exports": [{"chemin": o["dossier"], "libelle": o["dossier"]} for o in sans(QB.dossiers_exports(), "dossier")]},
+            "types": K.TYPES, "cours": [{"nom": c["nom"], "titre": str(c.get("titre") or c["nom"])} for c in K.tous().values()]}
+
+    def cours_action(self, p: dict) -> dict:
+        """Modifications d'un cours venues de l'écran Cours (un formulaire, jamais le YAML)."""
+        action, avert = p.get("action"), []
+        if action == "actif":
+            choix = {}
+            if p.get("cours") == "_sans":
+                choix = {"cours": "_sans"}
+            elif p.get("cours"):
+                c = K.trouver(p["cours"])
+                choix = {"cours": c["nom"]}
+                if p.get("declinaison"):
+                    K.edition(c, p["declinaison"], p.get("edition") or "")
+                    choix.update(declinaison=p["declinaison"], edition=str(p["edition"]))
+            C.garder_reglage("cours_actif", choix)
+            return {"ok": True, "actif": choix}
+        if action == "proposer":
+            return {"ok": True, "propositions": K.proposer(K.nom_valide(p.get("nom")))}
+        if action == "nouveau":
+            c, avert = K.creer(p.get("nom"), p.get("titre"), p.get("domaine") or "",
+                               [K.texte_valide(x, 5) for x in (p.get("langues") or ["fr"])],
+                               sources=p.get("sources") or [], standard=bool(p.get("standard")))
+            C.garder_reglage("cours_actif", {"cours": c["nom"]})
+            return {"ok": True, "nom": c["nom"], "avertissements": avert}
+        c = K.trouver(p.get("nom") or "")
+        if action == "fiche":
+            f = p.get("fiche") or {}
+            lignes = lambda v: [K.texte_valide(x, 300) for x in (v if isinstance(v, list) else str(v or "").splitlines()) if str(x).strip()]
+            if "titre" in f:
+                c["titre"] = K.texte_valide(f["titre"]) or c["nom"]
+            for k in ("domaine", "erreurs"):
+                if k in f:
+                    c[k] = K.texte_valide(f[k]) or None
+            if "description" in f:
+                c["description"] = K.texte_valide(f["description"], 4000, lignes=True)
+            for k in ("objectifs", "competences"):
+                if k in f:
+                    c[k] = lignes(f[k])
+            for k in ("langues", "etiquettes"):
+                if k in f:
+                    c[k] = [K.texte_valide(x, 40) for x in (f[k] if isinstance(f[k], list) else str(f[k]).split(",")) if str(x).strip()]
+            if "inclut" in f:
+                c["inclut"] = [n for n in f["inclut"] or [] if n in K.tous() and n != c["nom"]]
+            if "derive_de" in f:
+                c["derive_de"] = f["derive_de"] if f["derive_de"] in K.tous() and f["derive_de"] != c["nom"] else None
+        elif action == "declinaison":
+            K.ajouter_declinaison(c, p.get("declinaison") or {})
+        elif action == "edition":
+            e = K.ajouter_edition(c, p.get("declinaison") or "", p.get("edition") or {})
+            if not c.get("active"):
+                c["active"] = f"{p['declinaison']}/{e['nom']}"
+            avert += K.longueur(K.absolu(e["exports"]))
+        elif action == "active":
+            K.edition(c, p.get("declinaison") or "", p.get("edition") or "")
+            c["active"] = f"{p['declinaison']}/{p['edition']}"
+        elif action in ("source_ajouter", "ranger"):
+            K.ajouter_source(c, p.get("type") or "", p.get("chemin") or "")
+        elif action == "source_retirer":
+            K.retirer_source(c, p.get("type") or "", p.get("chemin") or "")
+        elif action == "document_ajouter":
+            cle = p.get("cle") if p.get("cle") in K.DOCUMENTS else "autre"
+            f = K.absolu(p.get("chemin") or "")
+            if not f.is_file():
+                raise ValueError("document introuvable")
+            docs = c.setdefault("documents", {})
+            if cle == "autre":
+                n = 1
+                while f"autre{n}" in docs:
+                    n += 1
+                cle = f"autre{n}"
+            docs[cle] = K.rel(f)
+        elif action == "document_retirer":
+            (c.get("documents") or {}).pop(p.get("cle"), None)
+        else:
+            raise ValueError("action inconnue")
+        K.ecrire(c)
+        return {"ok": True, "avertissements": avert}
+
+    def rattacher(self, type_: str, chemin: Path):
+        """Ajoute un objet créé par l'atelier au cours actif s'il n'y est pas déjà (sources du cours)."""
+        actif = self.cours_actif().get("cours")
+        if not actif or actif == "_sans" or not chemin.exists():
+            return
+        try:
+            if actif not in K.Index().de(chemin):
+                c = K.trouver(actif)
+                K.ajouter_source(c, type_, str(chemin))
+                K.ecrire(c)
+        except Exception:
+            pass
+
+    def dossier_du_cours(self, type_: str, defaut: Path) -> Path:
+        """Dossier standard du cours actif pour un type (``capsules/``, ``questions/``…), sinon ``defaut``."""
+        actif = self.cours_actif().get("cours")
+        if actif and actif != "_sans":
+            try:
+                d = K.dossier_cours(K.trouver(actif)) / type_
+                if d.is_dir():
+                    return d
+            except ValueError:
+                pass
+        return defaut
+
     # ------------------------------------------------------------------ ExoForge
     def fiches_exoforge(self) -> list[dict]:
         """Fiches ExoForge du dépôt : exemples publiés et data/exoforge (fiches privées)."""
         import yaml
         trouvees = []
-        for base, origine in ((chemins.OUTILS / "exoforge" / "exemples", "exemple"), (chemins.DATA / "exoforge", "data")):
-            if not base.is_dir():
-                continue
-            for f in sorted(base.rglob("*.y*ml")):
-                if "media" in f.relative_to(base).parts or f.name.startswith("_"):
+        vues = set()
+        bases = [(chemins.OUTILS / "exoforge" / "exemples", "exemple"), (chemins.DATA / "exoforge", "data")]
+        bases += [(b, "cours") for b in K.Index().dossiers("exercices")]
+        for base, origine in bases:
+            for f in sorted(base.rglob("*.y*ml")) if base.is_dir() else ([base] if base.is_file() else []):
+                if f.resolve() in vues or (base.is_dir() and "media" in f.relative_to(base).parts) or f.name.startswith("_"):
                     continue
                 d = lire_fiche(f, yaml)
                 if d:
+                    vues.add(f.resolve())
                     trouvees.append({**d, "origine": origine})
         return trouvees
 
@@ -449,10 +602,10 @@ class Atelier:
         nom = (p.get("nom") or "").strip()
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,47}", nom):
             raise ValueError("nom de dossier : lettres sans accent, chiffres, - et _")
-        d = C.DOSSIER / nom
-        if (d / "chapitre.yaml").exists() or (d / "capsule.yaml").exists():
+        d = self.dossier_du_cours("capsules", C.DOSSIER) / nom
+        if (d / "chapitre.yaml").exists() or (d / "capsule.yaml").exists() or nom in {x.name for x in C.dossiers_capsules()}:
             raise ValueError(f"une capsule « {nom} » existe déjà")
-        argv = C.argv_base(PY, "nouvelle") + [nom, "--titre", titre, "--langue", C.langue_valide(p.get("langue") or "fr")]
+        argv = C.argv_base(PY, "nouvelle") + [str(d) if d.parent != C.DOSSIER else nom, "--titre", titre, "--langue", C.langue_valide(p.get("langue") or "fr")]
         if p.get("chemin"):
             f = Path(p["chemin"])
             if f.suffix.lower() != ".pptx" or not f.is_file():
@@ -467,8 +620,10 @@ class Atelier:
             connus = C.reglages().get("diaporamas") or {}
             connus[f.name] = str(f)
             C.garder_reglage("diaporamas", connus)
-        t = Tache(self.nouvel_id(), f"Créer la capsule « {titre} »", "capsuleforge", argv, verrou=str(d.resolve()),
-                  apres=lambda tache: {"capsule": nom})
+        def apres(tache):
+            self.rattacher("capsules", d)
+            return {"capsule": nom}
+        t = Tache(self.nouvel_id(), f"Créer la capsule « {titre} »", "capsuleforge", argv, verrou=str(d.resolve()), apres=apres)
         return t
 
     def a_cap_filmer(self, p: dict) -> Tache:
@@ -531,7 +686,8 @@ class Atelier:
             raise ValueError("écran inconnu")
         argv = C.argv_base(PY, "enregistrer") + [nom, "--titre", titre, "--ecran", str(ecran)]
         return Tache(self.nouvel_id(), f"Enregistrer une manipulation : « {titre} »", "capsuleforge", argv,
-                     verrou=str(d.resolve()), apres=lambda tache: {"capsule": nom}, entree=True, genre="enregistrer")
+                     verrou=str(d.resolve()), apres=lambda tache: (self.rattacher("capsules", d), {"capsule": nom})[1],
+                     entree=True, genre="enregistrer")
 
     def a_cap_approj(self, p: dict) -> Tache:
         titre, nom, d = self._nouveau_dossier(p)
@@ -647,14 +803,16 @@ class Atelier:
         nom = (p.get("nom") or "").strip()
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 _-]{0,60}", nom):
             raise ValueError("nom du classeur : lettres sans accent, chiffres, espaces, - et _")
-        dossier = chemins.DATA / "quizforge"
+        dossier = self.dossier_du_cours("questions", chemins.DATA / "quizforge")
         f = dossier / f"{nom}.xlsx"
         if f.exists():
             raise ValueError(f"{rel(f)} existe déjà : choisissez un autre nom")
         dossier.mkdir(parents=True, exist_ok=True)
         argv = [PY, str(QB.QUIZFORGE), "modele", "--sortie", str(f)] + (["--vide"] if p.get("vide") else [])
-        return Tache(self.nouvel_id(), f"Créer le classeur « {f.name} »", "quizforge", argv,
-                     apres=lambda t: {"classeur": rel(f)} if f.is_file() else {})
+        def apres(t):
+            self.rattacher("questions", f)
+            return {"classeur": rel(f)} if f.is_file() else {}
+        return Tache(self.nouvel_id(), f"Créer le classeur « {f.name} »", "quizforge", argv, apres=apres)
 
     def a_quiz_fusionner(self, p: dict) -> Tache:
         f = QB.classeur_valide(p.get("classeur") or "")
@@ -683,7 +841,7 @@ class Atelier:
     def ouvrir(self, p: dict) -> dict:
         """Ouvre un fichier du dépôt avec son programme habituel (Excel, navigateur…)."""
         f = dans_depot(p.get("chemin") or "")
-        if not f.is_file() or f.suffix.lower() not in (".xlsx", ".html", ".md", ".txt", ".xml", ".csv", ".pdf", ".yaml"):
+        if not f.is_file() or f.suffix.lower() not in (".xlsx", ".html", ".md", ".txt", ".xml", ".csv", ".pdf", ".yaml", ".docx", ".odt", ".pptx"):
             return {"ok": False, "message": "fichier introuvable ou d'un type que l'atelier n'ouvre pas"}
         cle, maintenant = "ouvrir:" + str(f), time.time()
         if maintenant - self.montres.get(cle, 0) < 8:
@@ -907,6 +1065,22 @@ def lire_fiche(f: Path, yaml) -> dict | None:
             "paquet": rel(zipf) if zipf.is_file() else None}
 
 
+def profils_campus() -> dict:
+    """Profils d'établissement et leurs campus (clé ``campus`` du profil, facultative)."""
+    import yaml
+    out = {}
+    for f in chemins.fichiers_profils():
+        n = chemins.nom_profil(f)
+        if n in out:
+            continue
+        try:
+            d = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+        except Exception:
+            d = {}
+        out[n] = [str(x) for x in d.get("campus") or []] if isinstance(d, dict) else []
+    return out
+
+
 def noms_profils() -> list[str]:
     noms = []
     for f in chemins.fichiers_profils():
@@ -942,17 +1116,27 @@ def gestionnaire(at: Atelier):
                 return self._json({"ok": True, "version": VERSION, "racine": str(RACINE), "poste": at.etat_poste(),
                                    "profils": noms_profils(), "windows": WINDOWS})
             if chemin == "/api/exoforge/fiches":
-                return self._json({"ok": True, "fiches": at.fiches_exoforge()})
+                return self._json({"ok": True, "fiches": at.filtre(at.fiches_exoforge(), "fiche"), "actif": at.cours_actif()})
             if chemin == "/api/quizforge/classeurs":
-                return self._json({"ok": True, "classeurs": QB.classeurs(C.reglages().get("classeurs"))})
+                return self._json({"ok": True, "classeurs": at.filtre(QB.classeurs(C.reglages().get("classeurs")), "classeur"),
+                                   "actif": at.cours_actif()})
             if chemin == "/api/diagforge/dossiers":
-                return self._json({"ok": True, "dossiers": QB.dossiers_exports()})
+                return self._json({"ok": True, "dossiers": at.filtre(QB.dossiers_exports(), "dossier"), "actif": at.cours_actif()})
             if chemin == "/api/reglages":
                 return self._json({"ok": True, "reglages": C.reglages()})
             if chemin == "/api/appareils":
                 return self._json(at.appareils())
             if chemin == "/api/capsules":
-                return self._json({"ok": True, "capsules": C.liste()})
+                return self._json({"ok": True, "capsules": at.filtre(C.liste(), "dossier"), "actif": at.cours_actif()})
+            if chemin == "/api/cours":
+                return self._json(at.cours_liste())
+            if chemin == "/api/cours_sans":
+                return self._json(at.cours_sans())
+            if chemin.startswith("/api/cours/"):
+                try:
+                    return self._json(at.cours_detail(chemin[11:]))
+                except ValueError as e:
+                    return self._json({"ok": False, "message": str(e)})
             if chemin.startswith("/api/capsule/"):
                 try:
                     return self._json({"ok": True, **C.detail(chemin[13:])})
@@ -996,6 +1180,8 @@ def gestionnaire(at: Atelier):
                     return self._json(at.tester_micro(p))
                 if chemin == "/api/ouvrir":
                     return self._json(at.ouvrir(p))
+                if chemin == "/api/cours":
+                    return self._json(at.cours_action(p))
                 if chemin == "/api/reglages":
                     r = p.get("reglages") or {}
                     if "profil" in r:
