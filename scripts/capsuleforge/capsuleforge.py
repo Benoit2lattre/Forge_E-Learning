@@ -191,7 +191,8 @@ def cmd_construire(a):
             return construire_pour_cours(a, y2)
         sortie = Path(a.sortie) if a.sortie else chemins.SORTIES / "capsuleforge" / y2.parent.name
         construire_chapitre.construire(y2, sortie, largeur=a.largeur, fmt=a.format or "webp", audio=a.audio,
-                                       scorm=getattr(a, "scorm", None), scorm_version=getattr(a, "scorm_version", None) or "2004")
+                                       scorm=getattr(a, "scorm", None), scorm_version=getattr(a, "scorm_version", None) or "2004",
+                                       variante=getattr(a, "variante", None))
         return 0
     import construire
     sortie = Path(a.sortie) if a.sortie else chemins.SORTIES / "capsuleforge" / y.parent.name
@@ -226,7 +227,7 @@ def empreinte_capsule(y: Path, reglages: dict) -> str:
             if fiche:
                 h.update(fiche.read_bytes())
     lecteur = hashlib.md5(b"".join((ICI / n).read_bytes() for n in ("lecteur_chapitre.html", "construire_chapitre.py",
-                                                                  "habillage.py"))).hexdigest()
+                                                                  "habillage.py", "variantes.py"))).hexdigest()
     return registre.empreinte(y, {**reglages, "medias": h.hexdigest(), "lecteur": lecteur})
 
 
@@ -239,6 +240,10 @@ def construire_pour_cours(a, y: Path) -> int:
     nom = y.parent.name
     chap = F.lire(y)
     h = HB.pour_cours(a.cours, F.texte(chap.get("titre")))
+    if getattr(a, "variante", None):
+        h["variante"] = a.variante
+    if h.get("variante"):
+        print(f"Variante : {h['variante']}")
     print(f"Cours : {h['libelle']}" + (f" (profil {h['profil']})" if h["profil"] else " (aucun profil d'école : charte de Forge)"))
     scorm = getattr(a, "scorm", None) or "chapitre"
     version = getattr(a, "scorm_version", None) or "2004"
@@ -637,6 +642,7 @@ def main(argv=None):
     c.add_argument("--scorm-version", choices=["2004", "1.2"], default="2004", help="format des paquets : 2004 (défaut) ou 1.2 (seul format officiellement pris en charge par Moodle)")
     c.add_argument("--cours", help="cours[:déclinaison[/édition]] : capsule habillée pour l'édition (profil de l'école, "
                    "titre, codes, promo), rangée comme version de l'édition et inscrite au registre")
+    c.add_argument("--variante", help="variante du chapitre à construire (sinon celle de l'édition avec --cours, sinon la capsule nue)")
     c.add_argument("--lecteur", choices=["1", "2"], help="dossier qui a capsule.yaml et chapitre.yaml : format à construire (défaut : le plus récent)")
     ed = sp.add_parser("editer", help="ouvrir l'éditeur visuel (navigateur)"); ed.add_argument("capsule")
     ed.add_argument("--port", type=int, default=8765); ed.add_argument("--sans-navigateur", action="store_true")

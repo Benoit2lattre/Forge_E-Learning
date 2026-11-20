@@ -94,6 +94,9 @@ h2{font-size:13px;margin:6px 0 0;color:var(--texte2);font-weight:600;text-transf
 .phrase .outils button{white-space:nowrap;text-align:left}
 .phrase .outils select{font-size:12px;padding:1px 2px;width:100%;color:var(--ko)}
 .phrase .duree{grid-column:1;font-size:11px;color:var(--texte2);text-align:center}
+.phrase .public{grid-column:2/4;display:flex;flex-wrap:wrap;gap:4px}
+.phrase .public[hidden]{display:none}
+.phrase .public input{flex:1;min-width:180px;font:inherit;font-size:13px;padding:3px 6px;border:1px solid var(--bord);border-radius:6px}
 .phrase.longue .duree{color:var(--ko);font-weight:600}
 .marque{display:flex;align-items:center;gap:6px;color:var(--ko);font-size:12px;margin:1px 4px 1px 70px}
 .marque::after{content:"";flex:1;border-top:1px dashed var(--ko)}
@@ -266,13 +269,35 @@ function dessinerPhrases() {
     const bf = bouton("Fusionner ↓", "Fusionner avec la phrase suivante", () => fusionner(i)); bf.disabled = i === P.phrases.length - 1;
     const bd = bouton("Début ici", "Faire commencer cette phrase à l'instant de lecture", () => debutIci(i)); bd.disabled = !P.audio;
     o1.append(bc, bf, bd); o.append(o1);
+    {                                                                                        /* public de la phrase */
+      const resume = () => ph.variantes ? "Seulement : " + ph.variantes.join(", ") : ph.sauf ? "Sauf : " + ph.sauf.join(", ") : ph.pour ? "Remplacée pour " + Object.keys(ph.pour).join(", ") : "Public : tous";
+      const bp = bouton(resume(), "Pour quelles variantes de la capsule cette phrase est dite (une école, un client)", () => { panneau.hidden = !panneau.hidden; });
+      if (ph.variantes || ph.sauf || ph.pour) bp.style.color = "var(--ko)";
+      const panneau = document.createElement("div"); panneau.className = "public"; panneau.hidden = true;
+      const mode = document.createElement("select"); mode.innerHTML = "<option value=''>dite pour tous</option><option value='variantes'>seulement pour…</option><option value='sauf'>retirée pour…</option>";
+      mode.value = ph.variantes ? "variantes" : ph.sauf ? "sauf" : "";
+      const ids = document.createElement("input"); ids.placeholder = "variantes, séparées par des virgules : " + ((C.variantes || []).map(v => v.id).join(", ") || "psa, ecole1");
+      ids.value = (ph.variantes || ph.sauf || []).join(", ");
+      const maj = () => { delete ph.variantes; delete ph.sauf; const l = ids.value.split(",").map(x => x.trim()).filter(Boolean); if (mode.value && l.length) ph[mode.value] = l; bp.textContent = resume(); marquer(); };
+      mode.onchange = maj; ids.oninput = maj;
+      panneau.append(mode, ids);
+      /* texte dit à la place, pour une variante (connue du chapitre, ou nouvelle) */
+      const pourV = document.createElement("input"); pourV.placeholder = "variante"; pourV.style.flex = "0 0 110px";
+      const pourT = document.createElement("input"); pourT.placeholder = "texte dit à la place pour cette variante (vide : le même)";
+      const listeV = document.createElement("datalist"); listeV.id = "variantes-" + i; listeV.innerHTML = (C.variantes || []).map(v => `<option value="${v.id}">`).join(""); pourV.setAttribute("list", listeV.id);
+      const k0 = Object.keys(ph.pour || {})[0]; if (k0) { pourV.value = k0; pourT.value = ph.pour[k0]; }
+      const majPour = () => { const v = pourV.value.trim(); delete ph.pour; if (v && pourT.value.trim()) ph.pour = { [v]: pourT.value }; bp.textContent = resume(); marquer(); };
+      pourV.oninput = majPour; pourT.oninput = majPour;
+      panneau.append(pourV, pourT, listeV);
+      o.append(bp); l.append(panneau);
+    }
     if (P.apparitions.length && horodatee(ph)) {
       const s = document.createElement("select"); s.title = "Poser une apparition au début de cette phrase";
       s.innerHTML = "<option value=''>▣ apparition…</option>" + P.apparitions.map(a => `<option value="${a.id}">${a.id}</option>`).join("");
       s.onchange = () => { if (s.value) poser(s.value, ph.debut_s); };
       o.append(s);
     }
-    l.append(g, t, o); z.appendChild(l); hauteur(t);
+    l.prepend(g, t, o); z.appendChild(l); hauteur(t);
   });
   while (k < app.length) marque(app[k++]);
   while (ko < obj.length) marqueO(obj[ko++]);

@@ -1,0 +1,17 @@
+id: demo_traction/v3
+genre: capsule
+version: 3
+date: 2026-11-20 19:06
+cours: traction
+source: data/capsuleforge/demo_traction/chapitre.yaml
+empreinte: ebbad29ca8fbc5a1
+reglages:
+  scorm: chapitre
+  scorm_version: '1.2'
+  largeur: null
+  format: webp
+  audio: mp3
+  profil: Ecole1
+  filigrane: true
+fichiers:
+- demo_traction_ecole1-meca_2026_v3_scorm12.zip

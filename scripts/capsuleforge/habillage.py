@@ -17,7 +17,9 @@ Clé ``habillage`` du profil (toutes facultatives) ::
 
 Champs des textes : ``{cours}`` (titre du cours), ``{code}`` (code de l'enseignement), ``{bloc}``, ``{promo}``,
 ``{annee}`` (2026-2027), ``{ecole}``, ``{declinaison}``, ``{edition}``, ``{enseignant}``, ``{capsule}``.
-Le filigrane n'est posé que pour une édition qui le demande (``filigrane: true`` dans ``cours.yaml``).
+Le filigrane n'est posé que pour une édition qui le demande (``filigrane: true`` dans ``cours.yaml``). La variante
+de la capsule (``variante`` de la déclinaison, ou de l'édition qui la remplace) choisit ce qui ne vaut que pour ce
+public (``variantes.py``).
 """
 from __future__ import annotations
 
@@ -104,7 +106,7 @@ def pour_cours(spec: str, titre_capsule: str = "") -> dict:
             "polices_url": charte.get("polices_url"), "logo": logo,
             "pied": remplir(hab.get("pied") or "{code} · {promo} · {ecole}", champs),
             "mentions": remplir(hab.get("mentions"), champs), "licence": str(hab.get("licence") or ""),
-            "filigrane": filigrane}
+            "filigrane": filigrane, "variante": (e or {}).get("variante") or (d or {}).get("variante") or None}
 
 
 def resume(h: dict) -> dict:

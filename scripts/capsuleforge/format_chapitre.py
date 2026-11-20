@@ -397,6 +397,11 @@ def verifier(chap: dict, dossier: Path) -> tuple[list[str], list[str]]:
             av.append(f"partie {N[('partie', p.get('id'))]} ({texte(p.get('titre'))}) : annexe appelée nulle part")
     if sum(1 for p in parties if p.get("place") == "debut") > 1:
         av.append("plusieurs parties ont place: debut")
+    try:                                               # noms d'établissements à ne pas laisser dans la capsule nue
+        import variantes
+        av += variantes.noms_a_eviter(chap)
+    except Exception:
+        pass
     return err, av
 
 

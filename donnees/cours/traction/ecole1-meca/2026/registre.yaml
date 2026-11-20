@@ -1,4 +1,4 @@
-# Registre des versions (Forge) : une ligne par conversion de quiz ou paquet d'exercice, complétée par l'Atelier Forge et DiagForge ;
+# Registre des versions (Forge) : une ligne par conversion de quiz, paquet d'exercice ou capsule, complétée par AtelierForge et DiagForge ;
 # modifiable à la main (etat : convertie, importee, passee, bilan, abandonnee).
 versions:
 - id: modele_QuizForge/v1
@@ -18,3 +18,18 @@ versions:
   bilans: []
   utilisee_par: []
   remarques: 'Exemple : importée dans Moodle le soir de la séance 1.'
+- id: demo_traction/v3
+  genre: capsule
+  nom: demo_traction
+  source: data/capsuleforge/demo_traction/chapitre.yaml
+  version: 3
+  dossier: donnees/cours/traction/ecole1-meca/2026/capsules/demo_traction/v3
+  date: 2026-11-20 19:06
+  empreinte: ebbad29ca8fbc5a1
+  etat: convertie
+  dates:
+    convertie: 2026-11-20 19:06
+  test_moodle: ''
+  bilans: []
+  utilisee_par: []
+  remarques: ''

@@ -394,7 +394,7 @@ def _champs_declinaison(c: dict, d: dict) -> dict:
             "parcours": texte_valide(d.get("parcours"), 80), "niveau": texte_valide(d.get("niveau"), 20),
             "codes": {ANCIENS_CODES.get(k, k): texte_valide(v, 40) for k, v in (d.get("codes") or {}).items()
                       if str(v or "").strip()},
-            **{k: texte_valide(d.get(k), 40) for k in ("formation", "modalite", "rncp") if str(d.get(k) or "").strip()},
+            **{k: texte_valide(d.get(k), 40) for k in ("formation", "modalite", "rncp", "variante") if str(d.get(k) or "").strip()},
             **({"abreges": ab} if (ab := {k: texte_valide(v, 12) for k, v in (d.get("abreges") or {}).items()
                                           if k in ("bloc", "cours") and str(v or "").strip()}) else {}),
             "langues": langues or (c.get("langues") or ["fr"])[:1],
@@ -415,7 +415,7 @@ def modifier_declinaison(c: dict, nom: str, d: dict) -> dict:
     """Change école, campus, parcours, niveau, codes et langues ; le nom court (nom des dossiers) reste."""
     x = declinaison(c, nom)
     x.pop("langue", None)
-    for k in ("formation", "modalite", "rncp", "abreges"):
+    for k in ("formation", "modalite", "rncp", "abreges", "variante"):
         x.pop(k, None)
     x.update(_champs_declinaison(c, d))
     return x
@@ -455,6 +455,12 @@ def _champs_edition(x: dict, e: dict):
             x["enseignant"] = t
         else:
             x.pop("enseignant", None)
+    if e.get("variante") is not None:               # variante des capsules, si elle diffère de celle de la déclinaison
+        t = texte_valide(e["variante"], 40)
+        if t:
+            x["variante"] = t
+        else:
+            x.pop("variante", None)
     if e.get("filigrane") is not None:              # filigrane d'édition sur les images des capsules (habillage)
         if e["filigrane"] in (True, "true", "1", 1):
             x["filigrane"] = True

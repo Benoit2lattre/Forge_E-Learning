@@ -112,9 +112,9 @@ Un pas de didacticiel porte en plus les gestes attendus et les retours :
 
 **Exercice** (sur une partie, seul ou en liste) : `outil` (`exoforge`, valeur par défaut), `fiche` (fiche ExoForge, cherchée à côté du chapitre puis dans `data/exoforge`), `titre` (sinon celui de la fiche), `objectif`, `duree_min` (sinon 1,5 min par étape de la fiche), `poids` dans la note SCORM (une question pèse 1 ; par défaut la durée en minutes ; 0 = hors note). À la construction, la fiche est construite par ExoForge si besoin et l'exercice devient la dernière section de la partie (nom `B-Ex`). Une annexe peut ainsi porter du cours et un exercice ; une partie de type `exercice` peut n'avoir aucune section. L'exercice n'est proposé que par les parcours `exercices: true` ; il est appelé comme une annexe (`annexes: [id]` sur une section). Le lecteur l'affiche dans un cadre et lui sert d'API SCORM 1.2 : l'exercice compte comme fait quand il est terminé, avec son score (meilleur, dernier, nombre de fois) et ses réponses gardés dans le navigateur.
 
-**Section** : `id`, `titre`, `objectif`, `source`, `narration`, `audio`, `arret`, `ouverture`, `questions`, `annexes`, `pas`.
+**Section** : `id`, `titre`, `objectif`, `source`, `narration`, `audio`, `arret`, `ouverture`, `questions`, `annexes`, `variantes`, `sauf`, `pas`.
 
-**Pas** : `id`, `fond`, `vue`, `source`, `narration`, `phrases` (`debut_s`, `fin_s`, `texte`), `audio`, `duree_s`, `voix`, `objets`, `gestes`, `a_vous` (`observer`, `indice`), `retours` (`juste`, `faux`), `ecarte`, `raison`.
+**Pas** : `id`, `fond`, `fond_pour`, `vue`, `source`, `narration`, `phrases` (`debut_s`, `fin_s`, `texte`, `variantes`, `sauf`, `pour`, `audio_pour`), `variantes`, `sauf`, `audio`, `duree_s`, `voix`, `objets`, `gestes`, `a_vous` (`observer`, `indice`), `retours` (`juste`, `faux`), `ecarte`, `raison`.
 
 **Pas vidéo** : `video` = `{fichier: videos/<nom>.mp4, debut_s, fin_s}` (extrait de la vidéo joué pendant le pas) ; le pas garde `fond` (image d'affiche), `audio` (son de l'extrait, horloge du pas), `duree_s`, `phrases` et `objets` comme une diapositive ; `source: {type: video, fichier, debut_s, fin_s}` (instants dans le fichier d'origine). Écrit par `capsuleforge video`. `camera` = `{fichier: videos/<nom>_camera.mp4, debut_s, fin_s}` : webcam filmée en même temps (caméo), même découpage que `video` (écrit par `capsuleforge filmer --webcam`) ; le lecteur la montre en médaillon, calée sur la vidéo (bouton « Caméo », touche V) ; `position`, `taille` et `forme` sur un pas remplacent ceux du chapitre.
 
@@ -125,6 +125,19 @@ Un pas de didacticiel porte en plus les gestes attendus et les retours :
 **Geste** : `type`, `zone`, `point`, `arrivee`, `crans`, `texte`, `accepte`, `tolerance`, `touches`, `cible` (`nom`, `type`, `origine`, `dans`), `trajectoire`, `trajet`. Types : `clic`, `double_clic`, `clic_droit`, `clic_milieu`, `glisser`, `molette`, `saisie`, `touche`.
 
 Un texte (titre, narration, bulle, retour) est une chaîne dans la langue source, ou un dictionnaire par langue.
+
+**Variantes** : une capsule reste nue (aucun établissement nommé) ; ce qui ne vaut que pour un public (une école, un client) le dit, et la construction le retient ou non selon la variante (`construire --variante psa`, ou celle de la déclinaison du cours avec `--cours`) :
+
+| Clé | Sur | Effet |
+| --- | --- | --- |
+| `variantes: [psa]` | partie, section, pas, phrase | seulement pour ces variantes ; absent de la capsule nue |
+| `sauf: [psa]` | partie, section, pas, phrase | retiré pour ces variantes |
+| `pour: {psa: "…"}` | phrase | autre texte pour cette variante (sous-titres, texte de la section) |
+| `audio_pour: {psa: audio/….wav}` | phrase | son de remplacement de la phrase ; sans lui, le son dit encore l'ancienne phrase (signalé) |
+| `fond_pour: {psa: images/….png}` | pas | autre image pour cette variante |
+| `{zone: [x, y, l, h], variantes: […]}` ou `sauf` | masque | zone floutée selon la variante |
+
+Une phrase retirée coupe son extrait de narration (de son début au début de la suivante) dans le son du pas et dans les voix de synthèse des autres langues ; les phrases, apparitions et objets qui suivent sont recalés. Un pas vidéo garde son film : seuls ses sous-titres changent. Dans l'écran de relecture, le bouton « Public » de chaque phrase règle `variantes`, `sauf` et `pour`.
 
 ## Règles
 

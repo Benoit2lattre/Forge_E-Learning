@@ -114,7 +114,8 @@ class SeanceRelecture:
                 "section": f"{N.get(('section', partie.get('id'), sec.get('id')), '')} {F.texte(sec.get('titre'))}".strip(),
                 "titre": (pas.get("source") or {}).get("titre") or "",
                 "fond": pas.get("fond"), "audio": pas.get("audio"), "duree_s": pas.get("duree_s"),
-                "phrases": [{"debut_s": ph.get("debut_s"), "fin_s": ph.get("fin_s"), "texte": F.texte(ph.get("texte"))}
+                "phrases": [{"debut_s": ph.get("debut_s"), "fin_s": ph.get("fin_s"), "texte": F.texte(ph.get("texte")),
+                             **{k: ph[k] for k in ("variantes", "sauf", "pour") if ph.get(k)}}
                             for ph in phrases],
                 "apparitions": [{"id": o["id"], "fichier": o.get("fichier"), "debut_s": o.get("debut_s") or 0}
                                 for o in pas.get("objets") or [] if o.get("type") == "apparition"],
@@ -124,6 +125,8 @@ class SeanceRelecture:
             })
         par_pas, generales = self.remarques(chap)
         return {"ok": True, "titre": F.texte(chap.get("titre")), "dossier": self.dossier.name,
+                "variantes": [{"id": v.get("id"), "titre": F.texte(v.get("titre")) or v.get("id")}
+                              for v in chap.get("variantes") or [] if v.get("id")],
                 "ecran": chap.get("ecran") or {}, "pas": out, "remarques": par_pas, "generales": generales}
 
     def ecrire(self, modifs: dict) -> dict:
@@ -137,6 +140,7 @@ class SeanceRelecture:
         with self.verrou:
             chap = F.lire(self.yaml)
             n = 0
+            nouvelles: list[str] = []
             for _, _, pas in self._pas(chap):
                 m = modifs.get(pas.get("id"))
                 if not m:
@@ -147,6 +151,7 @@ class SeanceRelecture:
                     # une phrase dont le texte n'a pas changé garde ses traductions ({fr: …, en: …})
                     traduites = {" ".join(str(v.get(src) or "").split()): v for v in
                                  (ph.get("texte") for ph in pas.get("phrases") or []) if isinstance(v, dict)}
+                    anciennes = {" ".join(F.texte(ph.get("texte")).split()): ph for ph in pas.get("phrases") or []}
                     phrases = []
                     for ph in m["phrases"]:
                         txt = " ".join(str(ph.get("texte") or "").split())
@@ -158,6 +163,20 @@ class SeanceRelecture:
                         if ph.get("fin_s") is not None:
                             x["fin_s"] = round(float(ph["fin_s"]), 2)
                         x["texte"] = dict(traduites[txt]) if txt in traduites else txt
+                        for k in ("variantes", "sauf"):            # public de la phrase (variantes de la capsule)
+                            ids = [str(v).strip() for v in ph.get(k) or [] if str(v).strip()][:20]
+                            if ids:
+                                x[k] = ids
+                        pour = {str(v).strip(): " ".join(str(t).split()) for v, t in (ph.get("pour") or {}).items()
+                                if str(v).strip() and str(t or "").strip()}
+                        if pour:
+                            x["pour"] = pour
+                        connues = {v.get("id") for v in chap.get("variantes") or []}
+                        for v in list(x.get("variantes") or []) + list(x.get("sauf") or []) + list(x.get("pour") or {}):
+                            if v not in connues and v not in nouvelles:
+                                nouvelles.append(v)
+                        if txt in anciennes and anciennes[txt].get("audio_pour"):
+                            x["audio_pour"] = anciennes[txt]["audio_pour"]
                         phrases.append(x)
                     if phrases:
                         pas["phrases"] = phrases
@@ -212,6 +231,8 @@ class SeanceRelecture:
                 (self.dossier / "sauvegardes").mkdir(exist_ok=True)
                 shutil.copy2(self.yaml, self.dossier / "sauvegardes" / f"chapitre_{time.strftime('%Y%m%d_%H%M%S')}.yaml")
                 self.sauvegarde_faite = True
+            if nouvelles:                                  # une variante nommée dans la relecture rejoint la liste du chapitre
+                chap["variantes"] = list(chap.get("variantes") or []) + [{"id": v, "titre": v} for v in nouvelles]
             F.ecrire(chap, self.yaml)
             par_pas, generales = self.remarques(chap)
             return {"ok": True, "message": f"{n} pas enregistré(s)", "remarques": par_pas, "generales": generales}
