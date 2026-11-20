@@ -1,11 +1,12 @@
 """CapsuleForge — variantes d'une capsule : ce qui ne vaut que pour certains publics (une école, un client).
 
-La capsule source reste unique et nue ; une **variante** (``variantes`` du chapitre, choisie par la déclinaison du
-cours ou ``construire --variante``) ajoute, retire ou remplace des morceaux à la construction :
+La capsule source reste unique et nue ; les **variantes** actives (``variantes`` du chapitre, choisies par la
+déclinaison et l'édition du cours ou ``construire --variante a,b``) ajoutent, retirent ou remplacent des morceaux à
+la construction. Plusieurs variantes peuvent être actives ensemble (école, parcours, année) :
 
-- partie, section, pas ou phrase avec ``variantes: [psa]`` : seulement pour ces variantes (absent de la capsule nue) ;
-  avec ``sauf: [psa]`` : retiré pour ces variantes ;
-- phrase avec ``pour: {psa: "…"}`` : autre texte pour cette variante (sous-titres, texte de la section) ; avec
+- partie, section, pas ou phrase avec ``variantes: [psa]`` : seulement si l'une de ces variantes est active (absent de
+  la capsule nue) ; avec ``sauf: [psa]`` : retiré si l'une d'elles est active ;
+- phrase avec ``pour: {psa: "…"}`` : autre texte pour cette variante (la première active qui en a un) ; avec
   ``audio_pour: {psa: audio/….wav}``, le son de la phrase est remplacé aussi ;
 - pas avec ``fond_pour: {psa: images/….png}`` : autre image ;
 - masque ``{zone: [x, y, l, h], variantes: […]}`` ou ``{zone: …, sauf: […]}`` : zone floutée selon la variante.
@@ -24,16 +25,34 @@ ICI = Path(__file__).resolve().parent
 sys.path.insert(0, str(ICI))
 
 
-def retenu(e: dict, variante: str | None) -> bool:
-    """Un élément (partie, section, pas, phrase, masque) est-il gardé pour cette variante (None : capsule nue) ?"""
+def actives(v) -> tuple:
+    """Variantes actives : None, « psa », « ecole1, aero » ou une liste → tuple ordonné sans doublon."""
+    if not v:
+        return ()
+    if isinstance(v, str):
+        v = v.split(",")
+    return tuple(dict.fromkeys(str(x).strip() for x in v if str(x).strip()))
+
+
+def retenu(e: dict, variante) -> bool:
+    """Un élément (partie, section, pas, phrase, masque) est-il gardé pour ces variantes (aucune : capsule nue) ?"""
     if not isinstance(e, dict):
         return True
+    act = set(actives(variante))
     seules = e.get("variantes")
-    if seules and (variante not in seules):
+    if seules and not (act & set(actives(seules))):
         return False
-    if variante and variante in (e.get("sauf") or []):
+    if act & set(actives(e.get("sauf"))):
         return False
     return True
+
+
+def _pour(d, variante):
+    """Valeur de ``d`` (``pour``, ``fond_pour``, ``audio_pour``) pour la première variante active qui en a une."""
+    for v in actives(variante):
+        if (d or {}).get(v):
+            return d[v]
+    return None
 
 
 def masques(liste: list, variante: str | None) -> list:
@@ -125,8 +144,8 @@ def appliquer(chap: dict, variante: str | None, dossier: Path, travail: Path, jo
                 if not retenu(q, variante):
                     n_pas += 1
                     continue
-                if variante and (q.get("fond_pour") or {}).get(variante):
-                    q["fond"] = q["fond_pour"][variante]
+                if _pour(q.get("fond_pour"), variante):
+                    q["fond"] = _pour(q.get("fond_pour"), variante)
                 n_phr += _phrases(q, variante, dossier, travail, journal)
                 pas.append(q)
             s["pas"] = pas
@@ -134,7 +153,7 @@ def appliquer(chap: dict, variante: str | None, dossier: Path, travail: Path, jo
         p["sections"] = sections
         parties.append(p)
     c["parties"] = parties
-    nom = f"variante {variante}" if variante else "capsule nue"
+    nom = ("variantes " + ", ".join(actives(variante))) if actives(variante) else "capsule nue"
     if n_pas or n_phr:
         journal(f"  {nom} : {n_pas} pas et {n_phr} phrase(s) retirés ou remplacés")
     return c
@@ -149,8 +168,8 @@ def _phrases(q: dict, variante: str | None, dossier: Path, travail: Path, journa
     horo = [ph for ph in phr if ph.get("debut_s") is not None]
     for i, ph in enumerate(phr):
         ok = retenu(ph, variante)
-        nouveau = (ph.get("pour") or {}).get(variante) if variante else None
-        son_neuf = (ph.get("audio_pour") or {}).get(variante) if variante else None
+        nouveau = _pour(ph.get("pour"), variante)
+        son_neuf = _pour(ph.get("audio_pour"), variante)
         if ok and nouveau is None:
             garder.append(ph)
             continue
@@ -182,7 +201,7 @@ def _phrases(q: dict, variante: str | None, dossier: Path, travail: Path, journa
     cc = [(a, b, longueurs[i]) for a, b, f, i in coupes]
     if q.get("audio") and (dossier / q["audio"]).is_file():
         src = dossier / q["audio"]
-        dst = travail / f"{src.stem}_{q.get('id')}_{variante or 'nue'}.wav"
+        dst = travail / f"{src.stem}_{q.get('id')}_{'-'.join(actives(variante)) or 'nue'}.wav"
         _monter(src, [(a, b) for a, b, _, _ in coupes], {a: f for a, b, f, _ in coupes if f}, dst)
         q["audio"] = str(dst)
     for ph in garder:
@@ -210,7 +229,7 @@ def _phrases(q: dict, variante: str | None, dossier: Path, travail: Path, journa
                 cv.append((a, b))
         if not cv:
             continue
-        dst = travail / f"{Path(v['audio']).stem}_{q.get('id')}_{variante or 'nue'}.wav"
+        dst = travail / f"{Path(v['audio']).stem}_{q.get('id')}_{'-'.join(actives(variante)) or 'nue'}.wav"
         _monter(dossier / v["audio"], cv, {}, dst)
         ccv = [(a, b, 0.0) for a, b in cv]
         v["audio"] = str(dst)

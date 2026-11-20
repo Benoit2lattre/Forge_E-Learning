@@ -541,7 +541,7 @@ def didacticiel(q: dict, chap: dict) -> dict | None:
 def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fmt: str = "webp",
                audio: str = "mp3", journal=print, scorm: str | None = None, scorm_version: str = "2004",
                habillage: dict | None = None, nom_paquets: str | None = None, paquets: list | None = None,
-               variante: str | None = None) -> Path:
+               variante=None) -> Path:
     """Construit le lecteur d'un chapitre et renvoie le chemin de ``<sortie>/index.html``.
 
     ``largeur`` : largeur maximale des images (réduction seulement) ; ``fmt`` : ``webp`` ou ``png`` ;
@@ -549,8 +549,8 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
     ``tout`` pour écrire aussi les paquets SCORM ; ``scorm_version`` : ``2004`` (défaut) ou ``1.2``. Arrête le programme (``SystemExit``) si le chapitre
     contient des erreurs bloquantes. ``habillage`` (``habillage.pour_cours``) : charte, logo, accueil, pied, crédits et
     filigrane d'une édition ; ``nom_paquets`` : nom de base des paquets (sinon le dossier de sortie) ; ``paquets`` :
-    liste complétée par les paquets écrits ; ``variante`` : variante du chapitre (sinon celle de l'édition, sinon la
-    capsule nue) — voir ``variantes.py``.
+    liste complétée par les paquets écrits ; ``variante`` : variante(s) du chapitre (sinon celles de l'édition, sinon
+    la capsule nue) — voir ``variantes.py``.
     """
     from PIL import Image
     chapitre_yaml = Path(chapitre_yaml)
@@ -561,9 +561,10 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
         raise SystemExit("Chapitre non construit :\n  - " + "\n  - ".join(err))
     sortie = Path(sortie)
     import variantes as V
-    variante = variante or (habillage or {}).get("variante")
-    if variante and variante not in {v.get("id") for v in chap.get("variantes") or []}:
-        journal(f"  variante « {variante} » absente de la liste « variantes » du chapitre")
+    variante = list(V.actives(variante or (habillage or {}).get("variante")))
+    inconnues = [v for v in variante if v not in {x.get("id") for x in chap.get("variantes") or []}]
+    if inconnues:
+        journal(f"  variante(s) {', '.join(inconnues)} absente(s) de la liste « variantes » du chapitre (rien ne la concerne)")
     chap = V.appliquer(chap, variante, dossier, sortie / "_variante", journal)
     (sortie / "images").mkdir(parents=True, exist_ok=True)
     (sortie / "audio").mkdir(parents=True, exist_ok=True)

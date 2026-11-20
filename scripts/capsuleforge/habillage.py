@@ -17,9 +17,9 @@ Clé ``habillage`` du profil (toutes facultatives) ::
 
 Champs des textes : ``{cours}`` (titre du cours), ``{code}`` (code de l'enseignement), ``{bloc}``, ``{promo}``,
 ``{annee}`` (2026-2027), ``{ecole}``, ``{declinaison}``, ``{edition}``, ``{enseignant}``, ``{capsule}``.
-Le filigrane n'est posé que pour une édition qui le demande (``filigrane: true`` dans ``cours.yaml``). La variante
-de la capsule (``variante`` de la déclinaison, ou de l'édition qui la remplace) choisit ce qui ne vaut que pour ce
-public (``variantes.py``).
+Le filigrane n'est posé que pour une édition qui le demande (``filigrane: true`` dans ``cours.yaml``). Les
+variantes de la capsule (``variantes`` de la déclinaison, plus celles de l'édition) choisissent ce qui ne vaut que
+pour ce public : école, parcours, année (``variantes.py``).
 """
 from __future__ import annotations
 
@@ -106,7 +106,17 @@ def pour_cours(spec: str, titre_capsule: str = "") -> dict:
             "polices_url": charte.get("polices_url"), "logo": logo,
             "pied": remplir(hab.get("pied") or "{code} · {promo} · {ecole}", champs),
             "mentions": remplir(hab.get("mentions"), champs), "licence": str(hab.get("licence") or ""),
-            "filigrane": filigrane, "variante": (e or {}).get("variante") or (d or {}).get("variante") or None}
+            "filigrane": filigrane, "variante": variantes_edition(d, e)}
+
+
+def variantes_edition(d: dict | None, e: dict | None) -> list[str]:
+    """Variantes actives d'une édition : celles de la déclinaison, puis celles de l'édition (``variantes`` : liste,
+    ou ancienne clé ``variante``)."""
+    import variantes as V
+    out = []
+    for x in (d or {}, e or {}):
+        out += list(V.actives(x.get("variantes") or x.get("variante")))
+    return list(dict.fromkeys(out))
 
 
 def resume(h: dict) -> dict:

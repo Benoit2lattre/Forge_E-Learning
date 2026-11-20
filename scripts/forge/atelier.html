@@ -738,7 +738,8 @@ function formulaireDeclinaison(nomCours, c, infos, apres, ex) {
   const parcours = el("input", { type: "text", list: "liste-parcours", placeholder: "ex. Aero, Auto, Meca", value: ex ? ex.parcours || "" : "" });
   const formation = el("select", {}), niveau = el("select", {}), modalite = el("select", {}), modaliteL = el("label", {}, "Modalité ", modalite);
   const rncp = el("input", { type: "text", placeholder: "numéro au RNCP (facultatif)", value: ex ? ex.rncp || "" : "" });
-  const varianteD = el("input", { type: "text", placeholder: "aucune : capsules nues (ex. psa, ecole1)", value: ex ? ex.variante || "" : "" });
+  const listeV = x => [].concat(x.variantes || x.variante || []).join(", ");
+  const varianteD = el("input", { type: "text", placeholder: "aucune : capsules nues (ex. ecole1, aero)", value: ex ? listeV(ex) : "" });
   const codeE = el("input", { type: "text", value: ex ? (ex.codes || {}).enseignement || "" : "" }), codeB = el("input", { type: "text", value: ex ? (ex.codes || {}).bloc || "" : "" });
   const abB = el("input", { type: "text", value: ex ? (ex.abreges || {}).bloc || "" : "" }), abC = el("input", { type: "text", value: ex ? (ex.abreges || {}).cours || "" : "" });
   const libP = el("span", {}), libE = el("span", {}), libB = el("span", {}), libAB = el("span", {}), libAC = el("span", {});
@@ -786,7 +787,7 @@ function formulaireDeclinaison(nomCours, c, infos, apres, ex) {
     el("div", { class: "grille2" }, champ("Formation", formation), champ("Niveau", niveau)),
     el("div", { class: "grille2" }, modaliteL, champ("RNCP", rncp)),
     zoneAbreges, el("div", { class: "grille2" }, el("label", {}, libB, " ", codeB), el("label", {}, libE, " ", codeE)),
-    champ("Variante des capsules (ce qui ne vaut que pour ce public)", varianteD),
+    champ("Variantes des capsules, séparées par des virgules (école, parcours… : ce qui ne vaut que pour ce public)", varianteD),
     el("div", { class: "grille2" }, champ("Cours Moodle", mCours), champ("Catégorie Moodle des questions (racine)", mCat)),
     el("label", {}, "Langues d'enseignement", el("div", { class: "actions" }, langues)),
     champ(ex ? "Nom court (nom des dossiers, ne change pas)" : "Nom court de la déclinaison", nom)],
@@ -794,7 +795,7 @@ function formulaireDeclinaison(nomCours, c, infos, apres, ex) {
       const coches = [...campusZone.querySelectorAll("input:checked")].map(b => b.value), rf = (reg().formations || []).find(f => f.code === formation.value);
       const decl = { nom: nom.value, ecole: ecole.value === "_autre" ? autre.value : ecole.value, campus: coches.length ? coches : campusTexte.value,
         parcours: parcours.value, niveau: niveau.value, formation: formation.value, modalite: modalite.value, rncp: rf && rf.rncp === rncp.value.trim() ? "" : rncp.value,
-        codes: { enseignement: codeE.value, bloc: codeB.value }, abreges: { bloc: abB.value, cours: abC.value }, variante: varianteD.value, moodle: { cours: mCours.value, categorie: mCat.value }, langues: langues.map(l => l.firstChild).filter(b => b.checked).map(b => b.value) };
+        codes: { enseignement: codeE.value, bloc: codeB.value }, abreges: { bloc: abB.value, cours: abC.value }, variantes: varianteD.value, moodle: { cours: mCours.value, categorie: mCat.value }, langues: langues.map(l => l.firstChild).filter(b => b.checked).map(b => b.value) };
       const r = await actionCours(ex ? { action: "declinaison_modifier", nom: nomCours, declinaison_nom: ex.nom, declinaison: decl } : { action: "declinaison", nom: nomCours, declinaison: decl },
         ex ? "Déclinaison enregistrée." : "Déclinaison créée.");
       if (!r) return false; apres(); });
@@ -815,17 +816,18 @@ function formulaireEdition(nomCours, dc, apres, ex) {
   seances.value = ex ? (ex.seances || []).map(s => [s.n, s.date || "", s.titre || ""].join(" ; ")).join("\n") : "";
   const enseignant = el("input", { type: "text", value: prec ? prec.enseignant || "" : "", placeholder: "nom affiché sur l'écran d'accueil des capsules (facultatif)" });
   const filigrane = el("input", { type: "checkbox" }); filigrane.checked = !!(prec && prec.filigrane);
-  const varianteE = el("input", { type: "text", value: prec ? prec.variante || "" : "", placeholder: dc.variante ? `celle de la déclinaison : ${dc.variante}` : "aucune : capsules nues" });
+  const vD = [].concat(dc.variantes || dc.variante || []).join(", ");
+  const varianteE = el("input", { type: "text", value: prec ? [].concat(prec.variantes || prec.variante || []).join(", ") : "", placeholder: vD ? `en plus de celles de la déclinaison (${vD}), ex. 2026` : "ex. 2026, groupe-fr" });
   dialogue(ex ? `Édition ${ex.nom} de « ${libelle} »` : `Nouvelle édition de « ${libelle} »`, [
     el("p", { class: "sous" }, ex ? "Promo, groupes, effectif et séances ; l'année (nom des dossiers) ne change pas." : prec ? `Copie de l'édition ${prec.nom} (séances décalées d'un an) ; les exports et les bilans auront leurs propres dossiers.` : "Première édition : les séances se rempliront avec le plan de séance."),
     champ("Année ou nom court", nom), champ("Promo", promo),
     champ(`Groupes, séparés par des virgules : groupe:campus${lgs.length > 1 ? ":langue (" + lgs.join(" ou ") + ")" : ""}`, groupes),
     champ("Effectif (pour le plan du quiz de séance)", effectif), champ("Enseignant", enseignant),
     el("label", { class: "case" }, filigrane, "Filigrane de l'édition sur les images des capsules (texte du profil de l'école)"),
-    champ("Variante des capsules pour cette édition (vide : celle de la déclinaison)", varianteE),
+    champ("Variantes des capsules propres à cette édition (ajoutées à celles de la déclinaison)", varianteE),
     champ(ex || !prec ? "Séances : une par ligne, « n ; date ; titre »" : `Séances (vide : celles de ${prec.nom}, décalées d'un an) : « n ; date ; titre »`, seances)],
     ex ? "Enregistrer" : "Créer l'édition", async () => {
-      const edition = { nom: nom.value, promo: promo.value, groupes: groupes.value, effectif: effectif.value, enseignant: enseignant.value, filigrane: filigrane.checked, variante: varianteE.value };
+      const edition = { nom: nom.value, promo: promo.value, groupes: groupes.value, effectif: effectif.value, enseignant: enseignant.value, filigrane: filigrane.checked, variantes: varianteE.value };
       if (ex || seances.value.trim()) edition.seances = seances.value;
       const r = await actionCours(ex ? { action: "edition_modifier", nom: nomCours, declinaison: dc.nom, edition_nom: String(ex.nom), edition } : { action: "edition", nom: nomCours, declinaison: dc.nom, edition },
         ex ? "Édition enregistrée." : "Édition créée.");

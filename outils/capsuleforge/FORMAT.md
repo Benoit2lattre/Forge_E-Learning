@@ -126,7 +126,7 @@ Un pas de didacticiel porte en plus les gestes attendus et les retours :
 
 Un texte (titre, narration, bulle, retour) est une chaîne dans la langue source, ou un dictionnaire par langue.
 
-**Variantes** : une capsule reste nue (aucun établissement nommé) ; ce qui ne vaut que pour un public (une école, un client) le dit, et la construction le retient ou non selon la variante (`construire --variante psa`, ou celle de la déclinaison du cours avec `--cours`) :
+**Variantes** : une capsule reste nue (aucun établissement nommé) ; ce qui ne vaut que pour un public (une école, un client) le dit, et la construction le retient ou non selon les variantes actives : `construire --variante ecole1,aero`, ou avec `--cours` celles de la déclinaison (école, parcours) et de l'édition (année, groupe). Plusieurs variantes sont actives ensemble : un élément « seulement pour » est gardé si l'une d'elles est active, un élément « retiré pour » disparaît si l'une d'elles l'est, un remplacement vient de la première variante active qui en a un.
 
 | Clé | Sur | Effet |
 | --- | --- | --- |

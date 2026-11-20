@@ -42,7 +42,7 @@ Un cours désigne ses **sources** (classeurs, fiches, capsules, diaporamas, doss
 | `rncp` | numéro au RNCP, quand il diffère de celui de la formation |
 | `codes` | `enseignement`, `bloc` : codes de l'enseignement et de son bloc, ajoutés aux étiquettes des questions |
 | `abreges` | `bloc`, `cours` : abrégés d'où l'atelier tire les codes quand le profil de l'école donne leurs gabarits |
-| `variante` | variante des capsules pour ce public (`psa`, `ecole1`) : ce qui ne vaut que pour lui ; absente, capsules nues |
+| `variantes` | variantes des capsules pour ce public (`[ecole1, aero]` : école, parcours…) : ce qui ne vaut que pour lui ; absentes, capsules nues |
 | `langues` | une ou plusieurs : une déclinaison bilingue garde ses groupes français et anglais ensemble |
 | `moodle` | `cours` (nom ou adresse) et `categorie` (racine des catégories de questions) |
 | `sources` | sources propres à la déclinaison (version anglaise, TD et TP de l'école) |
@@ -55,7 +55,7 @@ Un cours désigne ses **sources** (classeurs, fiches, capsules, diaporamas, doss
 | `nom` | l'année (`2026`) ou un nom court : nom du dossier, ne change pas |
 | `promo`, `effectif` | promotion (proposée d'après le gabarit `promo` du profil) ; nombre d'étudiants (plan du quiz de séance) |
 | `enseignant`, `filigrane` | nom affiché sur l'écran d'accueil des capsules ; `true` pour poser le filigrane de l'école sur leurs images |
-| `variante` | variante des capsules pour cette édition, si elle diffère de celle de la déclinaison |
+| `variantes` | variantes des capsules propres à cette édition (`[2026]`, un groupe…), ajoutées à celles de la déclinaison |
 | `groupes` | `nom`, `campus`, `langue` de chaque groupe |
 | `seances` | `n`, `date` (AAAA-MM-JJ), `titre` : la prochaine séance est proposée pour le plan du quiz |
 | `exports`, `bilans` | dossiers `data/cours/<cours>/<déclinaison>/<année>/exports` et `bilans` |
