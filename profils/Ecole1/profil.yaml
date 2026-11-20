@@ -33,6 +33,19 @@ codes:                            # gabarits des codes : {bloc} et {cours} sont 
   enseignement: "{bloc}-{niveau}-{cours}"  # MEC-L3-TR
 promo: "P{diplomation}"           # P2029 ; une école qui nomme par l'année d'entrée : "X{entree:aa}"
 
+# Habillage des capsules CapsuleForge construites pour une édition (construire --cours) : tout est facultatif.
+# Champs des textes : {cours} {code} {bloc} {promo} {annee} {ecole} {declinaison} {edition} {enseignant} {capsule}
+habillage:
+  logo: logo.png                          # dans ce dossier : bandeau du lecteur et écran d'accueil
+  cadre: principal                        # bandes autour des images (rôle ou couleur de la charte)
+  pied: "{code} · {promo} · {ecole}"      # sous l'image
+  filigrane:                              # posé sur les images si l'édition le demande (filigrane: true)
+    texte: "{ecole} · {promo}"
+    position: bas-droite                  # bas-droite, bas-gauche, haut-droite, haut-gauche, centre
+    opacite: 0.35
+  mentions: "Document réservé aux étudiants de {ecole} ({annee})"
+  licence: "CC BY-NC-SA 4.0"
+
 # Racine de catégorie Moodle par défaut (vide : <classeur>/<onglet>)
 categorie: ""
 

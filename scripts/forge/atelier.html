@@ -389,8 +389,10 @@ async function detailCapsule(zone, nom) {
     el("label", {}, "Paquets SCORM ", choix("scorm", [["", "aucun (lecteur seul)"], ["chapitre", "un pour la capsule"], ["parties", "un par partie"], ["tout", "les deux"]], "")),
     el("label", {}, "Format ", choix("version", [["1.2", "SCORM 1.2 (conseillé, Moodle)"], ["2004", "SCORM 2004"]], "1.2")),
     d.cameo && d.cameo.pas ? reglageCameo(d.cameo, lancer) : null,
+    coursChoisi() ? el("div", { class: "sous" }, "Cours choisi : capsule habillée pour l'édition et rangée comme version (registre).") : null,
     el("div", { class: "actions" }, el("button", { class: "btn second", type: "button", onclick: () => lancer("capsule.verifier", {}) }, "Vérifier"),
-      el("button", { class: "btn", type: "button", onclick: () => lancer("capsule.construire", { scorm: opt("scorm", ""), version: opt("version", "1.2") }) }, "Construire")),
+      el("button", { class: "btn", type: "button", onclick: () => lancer("capsule.construire", { scorm: opt("scorm", ""), version: opt("version", "1.2") }) }, "Construire"),
+      coursChoisi() ? el("button", { class: "btn second", type: "button", onclick: () => registreDialog({ capsule: d.nom }, d.titre || d.nom) }, "Registre") : null),
     d.paquets.length ? el("div", { class: "paquets" }, el("div", { class: "sous" }, "Paquets construits :"), d.paquets.map(z => el("div", { class: "paquet", title: z.fichier },
       el("span", {}, el("b", {}, z.libelle), el("span", { class: "sous" }, `${z.version} · ${quand(z.date)}`)),
       el("button", { class: "btn second petit", type: "button", onclick: e => montrer(z.chemin, e.currentTarget) }, "Montrer")))) : null);
@@ -579,6 +581,7 @@ $("cours-actif").onchange = async e => {
   if (!r.ok) return message(r.message || "Choix impossible.", true);
   COURS.actif = r.actif; RCOURS = undefined; delete OPT.profil; garder("q_categorie", ""); aller(ECRAN);
 };
+const coursChoisi = () => !!(COURS.actif && COURS.actif.cours && COURS.actif.cours !== "_sans");
 function libelleActif() {
   const a = COURS.actif || {}; if (!a.cours) return null; if (a.cours === "_sans") return "Sans cours";
   const x = COURS.choix.find(c => cleChoix(c) === cleChoix(a)); return x ? x.libelle.trim() : a.cours;
@@ -808,14 +811,17 @@ function formulaireEdition(nomCours, dc, apres, ex) {
   const effectif = el("input", { type: "number", min: "1", value: prec && prec.effectif ? prec.effectif : "", placeholder: "nombre d'étudiants" });
   const seances = el("textarea", { rows: 6, placeholder: "1 ; 2026-09-15 ; Introduction\n2 ; 22/09/2026 ; Estimation" });
   seances.value = ex ? (ex.seances || []).map(s => [s.n, s.date || "", s.titre || ""].join(" ; ")).join("\n") : "";
+  const enseignant = el("input", { type: "text", value: prec ? prec.enseignant || "" : "", placeholder: "nom affiché sur l'écran d'accueil des capsules (facultatif)" });
+  const filigrane = el("input", { type: "checkbox" }); filigrane.checked = !!(prec && prec.filigrane);
   dialogue(ex ? `Édition ${ex.nom} de « ${libelle} »` : `Nouvelle édition de « ${libelle} »`, [
     el("p", { class: "sous" }, ex ? "Promo, groupes, effectif et séances ; l'année (nom des dossiers) ne change pas." : prec ? `Copie de l'édition ${prec.nom} (séances décalées d'un an) ; les exports et les bilans auront leurs propres dossiers.` : "Première édition : les séances se rempliront avec le plan de séance."),
     champ("Année ou nom court", nom), champ("Promo", promo),
     champ(`Groupes, séparés par des virgules : groupe:campus${lgs.length > 1 ? ":langue (" + lgs.join(" ou ") + ")" : ""}`, groupes),
-    champ("Effectif (pour le plan du quiz de séance)", effectif),
+    champ("Effectif (pour le plan du quiz de séance)", effectif), champ("Enseignant", enseignant),
+    el("label", { class: "case" }, filigrane, "Filigrane de l'édition sur les images des capsules (texte du profil de l'école)"),
     champ(ex || !prec ? "Séances : une par ligne, « n ; date ; titre »" : `Séances (vide : celles de ${prec.nom}, décalées d'un an) : « n ; date ; titre »`, seances)],
     ex ? "Enregistrer" : "Créer l'édition", async () => {
-      const edition = { nom: nom.value, promo: promo.value, groupes: groupes.value, effectif: effectif.value };
+      const edition = { nom: nom.value, promo: promo.value, groupes: groupes.value, effectif: effectif.value, enseignant: enseignant.value, filigrane: filigrane.checked };
       if (ex || seances.value.trim()) edition.seances = seances.value;
       const r = await actionCours(ex ? { action: "edition_modifier", nom: nomCours, declinaison: dc.nom, edition_nom: String(ex.nom), edition } : { action: "edition", nom: nomCours, declinaison: dc.nom, edition },
         ex ? "Édition enregistrée." : "Édition créée.");
@@ -837,7 +843,7 @@ async function sansCours() {
 
 /* registre des versions de quiz (conversions d'un cours ou d'une édition) */
 const ETATS_V = { convertie: "convertie", importee: "importée dans Moodle", passee: "passée", bilan: "bilan fait", abandonnee: "abandonnée" };
-const etatV = (e, genre) => e === "convertie" && genre === "exercice" ? "construit" : ETATS_V[e] || e;
+const etatV = (e, genre) => e === "convertie" && genre !== "quiz" && genre ? "construit" : ETATS_V[e] || e;
 async function registreDialog(q, titre) {
   const d = await api("/api/registre?" + new URLSearchParams(Object.entries(q).filter(([, v]) => v)).toString());
   if (!d.ok) return message(d.message || "Registre illisible.", true);
@@ -845,13 +851,13 @@ async function registreDialog(q, titre) {
   const contenu = blocs.length ? blocs.map(r => el("div", { class: "bloc-registre" }, el("h4", {}, r.titre), el("table", { class: "compact" },
     el("thead", {}, el("tr", {}, el("th", {}, "Version"), el("th", {}, "État"), el("th", {}, "Test Moodle et remarques"), el("th", {}, ""))),
     el("tbody", {}, r.versions.map(v => {
-      const ex = v.genre === "exercice";
+      const ex = v.genre === "exercice", cap = v.genre === "capsule";
       const etat = el("select", {}, Object.entries(d.etats).map(([k, l]) => el("option", { value: k }, etatV(k, v.genre) === "construit" ? "construit" : l))); etat.value = v.etat;
       const test = el("input", { type: "text", value: v.test_moodle || "", placeholder: "nom du test dans Moodle" });
       const rem = el("input", { type: "text", value: v.remarques || "", placeholder: "remarques" });
       const util = r.commun ? d.editions.map(e => { const b = el("input", { type: "checkbox", value: e }); b.checked = (v.utilisee_par || []).includes(e); return el("label", { class: "case" }, b, e); }) : [];
       const dates = Object.keys(ETATS_V).filter(k => (v.dates || {})[k]).map(k => `${etatV(k, v.genre)} ${v.dates[k]}`).join(" · ");
-      return el("tr", {}, el("td", {}, el("b", {}, v.id), el("span", { class: "sous" }, ex ? "exercice (paquet SCORM)" : `quiz · ${v.questions} questions${v.seance ? " · séance " + v.seance : ""}`), el("span", { class: "sous" }, dates)),
+      return el("tr", {}, el("td", {}, el("b", {}, v.id), el("span", { class: "sous" }, cap ? "capsule (paquets SCORM)" : ex ? "exercice (paquet SCORM)" : `quiz · ${v.questions} questions${v.seance ? " · séance " + v.seance : ""}`), el("span", { class: "sous" }, dates)),
         el("td", {}, etat), el("td", {}, test, rem, util.length ? el("div", { class: "actions" }, el("span", { class: "sous" }, "utilisée par :"), util) : null,
           (v.bilans || []).map(b => el("div", {}, el("button", { class: "btn second petit", type: "button", disabled: !b.fiche, onclick: e => ouvrir(b.fiche, e.currentTarget) }, "Fiche du bilan " + b.date)))),
         el("td", {}, el("div", { class: "actions" }, el("button", { class: "btn petit", type: "button", onclick: async () => {
@@ -862,7 +868,7 @@ async function registreDialog(q, titre) {
           if (!res.ok) return message(res.message || "Enregistrement impossible.", true);
           v.etat = res.version.etat; message(`Version ${v.id} : ${etatV(v.etat, v.genre)}.`); } }, "Enregistrer"),
           el("button", { class: "btn second petit", type: "button", onclick: e => montrer(v.dossier, e.currentTarget) }, "Dossier"))));
-    }))))) : [el("p", {}, "Aucune version : avec ce cours choisi en haut de la page, chaque « Convertir… » (Questions) et chaque « Construire » (Exercices) en crée une.")];
+    }))))) : [el("p", {}, "Aucune version : avec ce cours choisi en haut de la page, chaque « Convertir… » (Questions) et chaque « Construire » (Exercices, Capsules) en crée une.")];
   const dlg = dialogue(`Registre — ${titre}`, contenu, "Fermer", () => true);
   dlg.classList.add("large");
 }

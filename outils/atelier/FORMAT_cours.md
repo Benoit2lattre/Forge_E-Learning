@@ -53,6 +53,7 @@ Un cours désigne ses **sources** (classeurs, fiches, capsules, diaporamas, doss
 | --- | --- |
 | `nom` | l'année (`2026`) ou un nom court : nom du dossier, ne change pas |
 | `promo`, `effectif` | promotion (proposée d'après le gabarit `promo` du profil) ; nombre d'étudiants (plan du quiz de séance) |
+| `enseignant`, `filigrane` | nom affiché sur l'écran d'accueil des capsules ; `true` pour poser le filigrane de l'école sur leurs images |
 | `groupes` | `nom`, `campus`, `langue` de chaque groupe |
 | `seances` | `n`, `date` (AAAA-MM-JJ), `titre` : la prochaine séance est proposée pour le plan du quiz |
 | `exports`, `bilans` | dossiers `data/cours/<cours>/<déclinaison>/<année>/exports` et `bilans` |

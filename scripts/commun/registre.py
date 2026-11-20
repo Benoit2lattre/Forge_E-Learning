@@ -69,7 +69,7 @@ def lire(b: Path) -> dict:
 def ecrire(b: Path, reg: dict):
     f = Path(b) / FICHIER
     f.parent.mkdir(parents=True, exist_ok=True)
-    tete = ("# Registre des versions (Forge) : une ligne par conversion de quiz ou paquet d'exercice, complétée par l'Atelier Forge et "
+    tete = ("# Registre des versions (Forge) : une ligne par conversion de quiz, paquet d'exercice ou capsule, complétée par AtelierForge et "
             "DiagForge ;\n# modifiable à la main (etat : convertie, importee, passee, bilan, abandonnee).\n")
     f.write_text(tete + _yaml().safe_dump(reg, allow_unicode=True, sort_keys=False, width=110), encoding="utf-8",
                  newline="\n")
@@ -94,7 +94,7 @@ def empreinte(f: Path, reglages: dict) -> str:
                                                           default=str)).encode("utf-8")).hexdigest()[:16]
 
 
-DOSSIERS = {"quiz": "quiz", "exercice": "exercices"}
+DOSSIERS = {"quiz": "quiz", "exercice": "exercices", "capsule": "capsules"}
 
 
 def genre(v: dict) -> str:
@@ -102,7 +102,7 @@ def genre(v: dict) -> str:
 
 
 def nom_source(v: dict) -> str:
-    """Nom de ce qui est versionné : classeur (quiz) ou identifiant de la fiche (exercice)."""
+    """Nom de ce qui est versionné : classeur (quiz), identifiant de la fiche (exercice) ou dossier de la capsule."""
     return v.get("nom") or Path(v.get("classeur") or v.get("source") or "").stem
 
 
@@ -123,17 +123,18 @@ def preparer(b: Path, classeur: Path, seance, emp: str, genre_: str = "quiz", no
     return {"identique": None, "version": n, "label": label, "dossier": d, "id": f"{stem}/{label}", "nom": stem}
 
 
-def enregistrer_exercice(b: Path, v: dict, fiche: Path, reglages: dict, emp: str, cours: str):
-    """Fiche ``version.yaml`` et ligne du registre pour un paquet ExoForge copié dans le dossier de la version."""
+def enregistrer_exercice(b: Path, v: dict, fiche: Path, reglages: dict, emp: str, cours: str, genre_: str = "exercice"):
+    """Fiche ``version.yaml`` et ligne du registre pour un paquet ExoForge (ou les paquets d'une capsule,
+    ``genre_="capsule"``) copié dans le dossier de la version."""
     d = Path(v["dossier"])
     date = maintenant()
-    infos = {"id": v["id"], "genre": "exercice", "version": v["version"], "date": date, "cours": cours,
+    infos = {"id": v["id"], "genre": genre_, "version": v["version"], "date": date, "cours": cours,
              "source": rel(fiche), "empreinte": emp, "reglages": reglages,
              "fichiers": sorted(x.name for x in d.iterdir() if x.is_file() and x.name != "version.yaml")}
     (d / "version.yaml").write_text(_yaml().safe_dump(infos, allow_unicode=True, sort_keys=False, width=110),
                                     encoding="utf-8", newline="\n")
     reg = lire(b)
-    reg["versions"].append({"id": v["id"], "genre": "exercice", "nom": v["nom"], "source": rel(fiche),
+    reg["versions"].append({"id": v["id"], "genre": genre_, "nom": v["nom"], "source": rel(fiche),
                             "version": v["version"], "dossier": rel(d), "date": date, "empreinte": emp,
                             "etat": "convertie", "dates": {"convertie": date}, "test_moodle": "", "bilans": [],
                             "utilisee_par": [], "remarques": ""})

@@ -60,8 +60,14 @@ nav .renvoi button{background:none;border:0;color:var(--navy2);text-decoration:u
 #tete .nom{font-size:13px;color:var(--texte2);font-variant-numeric:tabular-nums}
 #tete h2{font-size:18px;margin:0;color:var(--navy)}
 #cadre-scene{width:100%;max-width:1100px}
-#scene{position:relative;background:#000;border-radius:8px;overflow:hidden;width:100%;box-shadow:0 2px 10px rgba(20,33,61,.18)}
+#scene{position:relative;background:var(--cadre,var(--navy));border-radius:8px;overflow:hidden;width:100%;box-shadow:0 2px 10px rgba(20,33,61,.18)}
+#toile{position:absolute;left:0;top:0;width:100%;height:100%;background:#000}
 #scene img{display:block;width:100%;height:100%;object-fit:contain}
+#pied{width:100%;max-width:1100px;margin:4px auto 0;font-size:12px;color:var(--texte2);text-align:right}
+#pied[hidden]{display:none}
+header img.logo{height:28px;flex:none;background:#fff;border-radius:4px;padding:2px 6px}
+#voile .logo-accueil{max-height:64px;max-width:40%;background:#fff;border-radius:8px;padding:6px 12px}
+#voile .petit{font-size:13px;opacity:.85}
 #didac{position:absolute;inset:0;pointer-events:none;container-type:inline-size;overflow:hidden}
 #scene.avous{cursor:crosshair}
 .d-cadre{position:absolute;border:3px solid var(--sand);border-radius:4px;box-shadow:0 0 0 2000px rgba(0,0,0,.18);opacity:0;transition:opacity .2s}
@@ -175,15 +181,18 @@ nav .exo-score{color:var(--navy2);white-space:nowrap}
     <div id="tete"><span class="nom" id="s-nom"></span><h2 id="s-titre"></h2></div>
     <div id="cadre-scene">
       <div id="scene">
+        <div id="toile">
         <img id="image" alt="">
         <video id="film" muted playsinline preload="auto" hidden></video>
         <div id="calque"></div>
         <video id="cameo" muted playsinline preload="auto" hidden aria-hidden="true"></video>
         <div id="didac"><div id="d-cadre" class="d-cadre"></div><div id="d-bulle" class="d-bulle" role="status"></div>
           <svg id="souris" viewBox="0 0 24 36" aria-hidden="true" style="display:none"><path d="M1 1 L1 29 L8 22 L13 34 L18 32 L13 20 L23 20 Z" fill="#fff" stroke="#000" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+        </div>
         <div id="st" aria-hidden="true"></div>
         <div id="voile"></div>
       </div>
+      <div id="pied" hidden></div>
     </div>
     <div id="barre" role="group" aria-label="Lecture">
       <button id="jouer" title="Lire ou mettre en pause (Espace)">▶ Lire</button>
@@ -718,7 +727,7 @@ function finSection(resultats) {
   const b = document.createElement("div"); b.className = "boutons"; v.appendChild(b);
   const bt = (txt, f, principal) => { const e = document.createElement("button"); e.textContent = txt; if (principal) e.className = "principal"; e.onclick = f; b.appendChild(e); return e; };
   let premier = null; const pr = prochaine();
-  if (pr) premier = bt(pr[0], pr[1], true); else { const p = document.createElement("p"); p.textContent = T("Vous êtes au bout de ce qui est disponible sur ce parcours."); v.insertBefore(p, b); }
+  if (pr) premier = bt(pr[0], pr[1], true); else { const p = document.createElement("p"); p.textContent = T("Vous êtes au bout de ce qui est disponible sur ce parcours."); v.insertBefore(p, b); credits(v); }
   if ((parcours ? parcours.annexes : "a_la_demande") === "a_la_demande" && S.p.type === "tronc") for (const a of S.s.annexes) { const pa = partie(a), s1 = pa && visibleDans(pa, parcours) && pa.sections.find(jouable); if (s1) bt((pa.type === "exercice" ? T("S'exercer : ") : T("Pour aller plus loin : ")) + pa.titre, () => { retour = { p: S.p, s: S.s }; ouvrir(pa, s1, 0, true); }); }
   if (S.s.questions && (parcours ? parcours.questions : "proposees") !== "aucune") bt(toutesFaites(S.p, S.s) ? T("Refaire les questions") : T("Répondre aux questions"), () => questions(true));
   bt(T("Revoir la section"), () => ouvrir(S.p, S.s, 0, true, true));
@@ -942,7 +951,7 @@ function avEchec(x, y) {
 }
 const gestesAV = d => [{ action: d.action, cadre: d.cadre, touches: d.touches }, ...(d.ou || [])];
 const EVT = { clic: "click", double_clic: "dblclick", clic_droit: "contextmenu", clic_milieu: "auxclick", molette: "wheel" };
-function coordsScene(ev) { const r = $("scene").getBoundingClientRect(); return [(ev.clientX - r.left) * L / r.width, (ev.clientY - r.top) * H / r.height]; }
+function coordsScene(ev) { const r = $("toile").getBoundingClientRect(); return [(ev.clientX - r.left) * L / r.width, (ev.clientY - r.top) * H / r.height]; }
 function dansZone(c, x, y) { const m = Math.max(6, L * 0.004); return x >= c[0] - m && x <= c[0] + c[2] + m && y >= c[1] - m && y <= c[1] + c[3] + m; }
 function actionAttendue(type, ev) {
   if (!modeAV || !AV || AV.valide || !$("voile").hidden) return; const d = AV.q.didac; if (aObserver(d)) return;
@@ -1034,7 +1043,11 @@ document.addEventListener("keydown", e => {
 function taille() { const sc = $("scene"), plein = !!document.fullscreenElement, z = $("zone");
   if (enExo) { const f = $("exo-cadre"); const haut = f.getBoundingClientRect().top - z.getBoundingClientRect().top + z.scrollTop; f.style.height = Math.max(420, z.clientHeight - haut - 22) + "px"; return; }
   const lMax = plein ? innerWidth : Math.min(1100, z.clientWidth - 32), hMax = plein ? innerHeight : Math.max(240, innerHeight - ($("texte").hidden ? 200 : 200 + Math.min(innerHeight * 0.3, 240)));
-  const l = Math.min(lMax, hMax * L / H); sc.style.width = l + "px"; sc.style.height = l * H / L + "px"; sc.style.margin = "0 auto"; sc.style.setProperty("--st", Math.max(12, Math.min(26, l * 0.021)) + "px"); }
+  const A = C.affichage && C.affichage[1] ? C.affichage[0] / C.affichage[1] : L / H;          /* format d'affichage (16:9 par défaut) */
+  const l = Math.min(lMax, hMax * A), h = l / A; sc.style.width = l + "px"; sc.style.height = h + "px"; sc.style.margin = "0 auto"; sc.style.setProperty("--st", Math.max(12, Math.min(26, l * 0.021)) + "px");
+  /* la toile garde les proportions de l'écran enregistré, centrée ; les bords prennent la couleur du cadre */
+  const to = $("toile"), lt = Math.min(l, h * L / H), ht = lt * H / L;
+  to.style.width = lt + "px"; to.style.height = ht + "px"; to.style.left = (l - lt) / 2 + "px"; to.style.top = (h - ht) / 2 + "px"; }
 addEventListener("resize", taille); document.addEventListener("fullscreenchange", taille);
 
 /* ---------- démarrage ---------- */
@@ -1071,6 +1084,32 @@ function libelles() {
 }
 appliquerLangues();
 $("titre").textContent = typo(C.titre); typoDom(document.querySelector(".aide"));
+/* ---------- habillage de l'édition (construire --cours) : charte, logo, pied, accueil, crédits ---------- */
+const HAB = C.habillage || null;
+if (HAB) {
+  const r = document.documentElement.style;
+  for (const [k, v] of Object.entries(HAB.couleurs || {})) r.setProperty("--" + k, v);
+  if (HAB.cadre) r.setProperty("--cadre", HAB.cadre);
+  if (HAB.polices_url) { const l = document.createElement("link"); l.rel = "stylesheet"; l.href = HAB.polices_url; document.head.appendChild(l); }
+  if (HAB.police_texte) document.body.style.fontFamily = `"${HAB.police_texte}",system-ui,"Segoe UI",sans-serif`;
+  if (HAB.logo) { const i = document.createElement("img"); i.className = "logo"; i.src = HAB.logo; i.alt = ""; $("b-plan").after(i); }
+  if (HAB.pied) { $("pied").textContent = HAB.pied; $("pied").hidden = false; }
+}
+function voileAccueil(ensuite) {
+  const v = $("voile"); v.textContent = ""; v.hidden = false; v.classList.remove("quiz");
+  if (HAB.logo) { const i = document.createElement("img"); i.className = "logo-accueil"; i.src = HAB.logo; i.alt = ""; v.appendChild(i); }
+  const h = document.createElement("h3"); h.textContent = C.titre; v.appendChild(h);
+  for (const t of [HAB.cours, HAB.ligne, HAB.enseignant]) if (t) { const p = document.createElement("p"); p.textContent = t; v.appendChild(p); }
+  if (HAB.mentions) { const p = document.createElement("p"); p.className = "petit"; p.textContent = HAB.mentions; v.appendChild(p); }
+  const b = document.createElement("div"); b.className = "boutons"; v.appendChild(b);
+  const e = document.createElement("button"); e.className = "principal"; e.textContent = T("▶ Commencer"); e.onclick = ensuite; b.appendChild(e);
+  typoDom(v); e.focus();
+}
+function credits(v) {
+  if (!HAB || !(HAB.licence || HAB.mentions || HAB.enseignant)) return;
+  const p = document.createElement("p"); p.className = "petit";
+  p.textContent = [HAB.cours, HAB.enseignant, HAB.licence, HAB.mentions].filter(Boolean).join(" · "); v.appendChild(p);
+}
 if (C.parcours.length > 1) { const s = $("parcours"); C.parcours.forEach(p => { const o = document.createElement("option"); o.value = p.id; o.textContent = p.titre; s.appendChild(o); });
   s.value = memo.lire("parcours", C.parcours[0].id); if (!s.value) s.value = C.parcours[0].id; parcours = C.parcours.find(p => p.id === s.value);
   s.onchange = () => { parcours = C.parcours.find(p => p.id === s.value); memo.ecrire("parcours", s.value); plan(); };
@@ -1082,7 +1121,7 @@ if (memo.lire("texte", false) === true) { $("b-texte").setAttribute("aria-presse
 libelles(); plan(); taille();
 (function () { const ici = memo.lire("ici", null); let d = ici && suite.concat(C.parties.flatMap(p => p.sections.map(s => ({ p, s })))).find(x => x.p.id === ici.p && x.s.id === ici.s && jouable(x.s));
   if (!d) d = suite.find(x => jouable(x.s)) || C.parties.flatMap(p => p.sections.map(s => ({ p, s }))).find(x => jouable(x.s));
-  if (d) { ouvrir(d.p, d.s, 0, false); if (!d.s.exercice) voileDepart(); } else { const v = $("voile"); v.hidden = false; v.textContent = T("Ce chapitre n'a pas encore de section à lire."); } })();
+  if (d) { ouvrir(d.p, d.s, 0, false); if (HAB && !d.s.exercice) voileAccueil(voileDepart); else if (!d.s.exercice) voileDepart(); } else { const v = $("voile"); v.hidden = false; v.textContent = T("Ce chapitre n'a pas encore de section à lire."); } })();
 if (innerWidth <= 860) fermerPlan(true);
 majLMS();
 requestAnimationFrame(boucle);

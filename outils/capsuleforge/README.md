@@ -153,6 +153,25 @@ Réglages Moodle conseillés : méthode d'évaluation « Note la plus élevée �
 
 Une partie annexe appelée par aucune partie du tronc n'entre dans aucun paquet par partie (la construction le signale).
 
+#### Habiller la capsule pour une édition (`--cours`)
+
+```
+capsuleforge construire demo_traction --cours traction:ecole1-meca/2026
+```
+
+La capsule source reste nue : elle ne nomme aucun établissement. Avec `--cours`, la construction l'habille pour l'édition et la range comme version :
+
+- **charte et logo** de l'école (clés `charte` et `habillage` de son profil d'établissement) : couleurs du lecteur, police, logo dans le bandeau ;
+- **écran d'accueil** à la première ouverture : logo, titre de la capsule, cours, code, école, année, promo, enseignant, mentions ;
+- **pied de page** sous l'image (`MEC-L3-TR · P2029 · Ecole1`) et **crédits** (licence, mentions) en fin de parcours ;
+- **filigrane** sur les images (texte, place et opacité donnés par le profil) quand l'édition le demande (`filigrane: true`, case de l'édition dans AtelierForge) ;
+- **exercices ExoForge** construits avec la même charte ;
+- **paquets** au nom de l'édition (`demo_traction_ecole1-meca_2026_v1_scorm2004.zip`, un pour la capsule par défaut), titrés « capsule — cours — déclinaison — année ».
+
+Le lecteur va dans `dist/capsuleforge/<capsule>_<déclinaison>_<année>/` ; les paquets sont recopiés dans l'édition (`capsules/<capsule>/v1/`, avec `version.yaml`) et inscrits au registre, comme les versions de quiz et d'exercices ([Versions et registre](../atelier/FORMAT_registre.md)). Reconstruire sans rien changer (capsule, médias, habillage, options) ne crée pas de version.
+
+**Format d'affichage.** Le lecteur montre les images dans une zone de format fixe, `affichage` du chapitre (`16:9` par défaut) : une image d'un autre format y est centrée sans déformation, les bords prenant la couleur du cadre (celle de l'école, ou celle de Forge). Une capsule qui mêle des diapositives 4:3 et des captures 16:10 garde ainsi la même taille d'une section à l'autre.
+
 ### Traduire, sous-titrer, faire parler une voix de synthèse
 
 1. **Traduire** (fichier d'échange, puis import) :

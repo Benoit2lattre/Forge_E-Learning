@@ -432,6 +432,8 @@ class Atelier:
                 vs = [v for v in vs if R.genre(v) == "quiz" and R.nom_source(v) == Path(q["classeur"]).stem]
             if q.get("fiche"):
                 vs = [v for v in vs if R.genre(v) == "exercice" and R.nom_source(v) == q["fiche"]]
+            if q.get("capsule"):
+                vs = [v for v in vs if R.genre(v) == "capsule" and R.nom_source(v) == q["capsule"]]
             out.append({"base": R.rel(b), "titre": titre, "commun": b == bases[-1][0] and len(bases) == 2,
                         "versions": json.loads(json.dumps(vs[::-1], ensure_ascii=False, default=str))})
         return {"ok": True, "registres": out, "editions": editions, "etats": R.LIBELLES}
@@ -677,10 +679,18 @@ class Atelier:
         elif (d / "capsule.yaml").is_file() and (d / "chapitre.yaml").is_file():
             argv += ["--lecteur", "2"]                   # la capsule a été mise à jour : le lecteur actuel
         nom = d.name
+        cours = self.option_cours() if (d / "chapitre.yaml").is_file() and p.get("lecteur") != "1" else []
+        if cours and not scorm:                          # une version d'édition se range avec ses paquets
+            argv += ["--scorm", "chapitre", "--scorm-version", p.get("version") if p.get("version") in ("2004", "1.2") else "1.2"]
+        argv += cours                                    # édition choisie : capsule habillée, rangée comme version
 
         def liens(tache):
             out = {}
-            if (C.SORTIES / nom / "index.html").is_file():
+            habillees = sorted((x for x in C.SORTIES.glob(f"{nom}_*/index.html") if x.stat().st_mtime >= tache.debut - 1),
+                               key=lambda x: x.stat().st_mtime)
+            if cours and habillees:
+                out["lecteur"] = "/dist/capsuleforge/" + habillees[-1].parent.name + "/index.html"
+            elif (C.SORTIES / nom / "index.html").is_file():
                 out["lecteur"] = f"/dist/capsuleforge/{nom}/index.html"
             neufs = [z for z in C.SORTIES.glob(f"{nom}_*.zip") if z.stat().st_mtime >= tache.debut - 1]
             if neufs:

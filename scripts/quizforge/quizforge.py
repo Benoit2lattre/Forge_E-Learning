@@ -1906,7 +1906,7 @@ def cmd_modele(a):
 
 CLES_PROFIL = set(PROFIL_DEFAUT) | {"nom", "description", "alias", "defaut", "charte", "categorie", "campus",
                                     "vocabulaire", "parcours", "structure", "formations",
-                                    "codes", "promo"}
+                                    "codes", "promo", "habillage"}
 
 
 def valider_profil(f: Path) -> list:

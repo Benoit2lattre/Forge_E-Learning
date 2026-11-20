@@ -193,13 +193,14 @@ def sans_prefixe_exercice(titre: str) -> str:
 
 
 def exercices_partie(p: dict, dossier: Path, sortie: Path, journal=print, trad_ext: dict | None = None,
-                     perimees: list | None = None) -> list[dict]:
+                     perimees: list | None = None, profil: str | None = None) -> list[dict]:
     """Renvoie les exercices ExoForge d'une partie sous forme de sections « exercice » du lecteur (HTML de l'exercice inclus).
 
     Chaque fiche est construite si besoin (``scripts/exoforge/build.py``) et ses fichiers sont recopiés dans
     ``<sortie>/exercices/<id>/`` ; une fiche introuvable ou qui ne se construit pas est signalée et ignorée.
     ``trad_ext`` (langue → éléments ``exercice/…`` des fichiers de traduction) ajoute une page traduite par langue
-    (``html_tr``) et le titre traduit de la section (``tr``).
+    (``html_tr``) et le titre traduit de la section (``tr``). ``profil`` : charte de l'école de l'édition (habillage),
+    appliquée à l'exercice comme au lecteur ; l'exercice est reconstruit quand le profil change.
     """
     import yaml
     refs = p.get("exercice") or []
@@ -220,14 +221,18 @@ def exercices_partie(p: dict, dossier: Path, sortie: Path, journal=print, trad_e
         construit = depot / "dist" / "exoforge" / ident
         page = construit / "index.html"
         sources = [fiche] + ([moteur] if moteur.is_file() else [])
-        if not page.is_file() or page.stat().st_mtime < max(f.stat().st_mtime for f in sources):
-            journal(f"  exercice {ident} : construction ExoForge…")
-            r = subprocess.run([sys.executable, str(depot / "scripts" / "exoforge" / "build.py"), str(fiche)],
+        temoin = construit / ".profil_capsule"
+        meme_profil = (temoin.read_text(encoding="utf-8") if temoin.is_file() else "") == (profil or "")
+        if not page.is_file() or not meme_profil or page.stat().st_mtime < max(f.stat().st_mtime for f in sources):
+            journal(f"  exercice {ident} : construction ExoForge" + (f" (profil {profil})" if profil else "") + "…")
+            r = subprocess.run([sys.executable, str(depot / "scripts" / "exoforge" / "build.py"), str(fiche)]
+                               + (["--profil", profil] if profil else []),
                                cwd=str(depot), capture_output=True, text=True, encoding="utf-8", errors="replace")
             if r.returncode or not page.is_file():
                 journal(f"  exercice {ident} : construction impossible (exercice ignoré)\n"
                         + "\n".join("    " + l for l in (r.stdout + r.stderr).strip().splitlines()[-8:]))
                 continue
+            temoin.write_text(profil or "", encoding="utf-8")
         cible = sortie / "exercices" / ident
         for f in construit.rglob("*"):                   # mathjax.js, médias ; la page est incluse dans le lecteur
             if f.is_file() and f.name not in ("index.html", "imsmanifest.xml"):
@@ -341,6 +346,38 @@ def _medias(parties: list[dict], sortie: Path) -> list[str]:
         if r and r not in vus and (sortie / r).is_file():
             vus.add(r); res.append(r)
     return res
+
+
+def affichage(chap: dict) -> list[int]:
+    """Format d'affichage du lecteur (clé ``affichage`` du chapitre, « 16:9 » par défaut) : les fonds y sont calés sans
+    déformation, les bords remplis de la couleur du cadre."""
+    a = str(chap.get("affichage") or "16:9")
+    m = re.fullmatch(r"\s*(\d+(?:\.\d+)?)\s*[:/x×]\s*(\d+(?:\.\d+)?)\s*", a)
+    return [float(m.group(1)), float(m.group(2))] if m and float(m.group(2)) else [16, 9]
+
+
+def habiller(h: dict | None, sortie: Path) -> dict | None:
+    """Données d'habillage pour le lecteur ; recopie le logo dans ``<sortie>/habillage/``."""
+    if not h:
+        return None
+    logo = None
+    if h.get("logo"):
+        d = sortie / "habillage"
+        d.mkdir(parents=True, exist_ok=True)
+        dst = d / ("logo" + Path(h["logo"]).suffix.lower())
+        shutil.copy2(h["logo"], dst)
+        logo = f"habillage/{dst.name}"
+    ch = h.get("champs") or {}
+    return {"logo": logo, "couleurs": h.get("couleurs") or {}, "cadre": h.get("cadre"), "pied": h.get("pied") or "",
+            "cours": ch.get("cours") or "", "ligne": " · ".join(x for x in (ch.get("code"), ch.get("ecole"), ch.get("annee"),
+                                                                                 ch.get("promo")) if x),
+            "enseignant": ch.get("enseignant") or "", "mentions": h.get("mentions") or "", "licence": h.get("licence") or "",
+            "police_texte": h.get("police_texte"), "police_titres": h.get("police_titres"), "polices_url": h.get("polices_url")}
+
+
+def _medias_habillage(donnees: dict) -> list[str]:
+    h = donnees.get("habillage") or {}
+    return [h["logo"]] if h.get("logo") else []
 
 
 def _paquet(zip_: Path, ident: str, titre: str, page: str, sortie: Path, rels: list[str], version: str = "2004") -> Path:
@@ -502,13 +539,16 @@ def didacticiel(q: dict, chap: dict) -> dict | None:
 
 
 def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fmt: str = "webp",
-               audio: str = "mp3", journal=print, scorm: str | None = None, scorm_version: str = "2004") -> Path:
+               audio: str = "mp3", journal=print, scorm: str | None = None, scorm_version: str = "2004",
+               habillage: dict | None = None, nom_paquets: str | None = None, paquets: list | None = None) -> Path:
     """Construit le lecteur d'un chapitre et renvoie le chemin de ``<sortie>/index.html``.
 
     ``largeur`` : largeur maximale des images (réduction seulement) ; ``fmt`` : ``webp`` ou ``png`` ;
     ``audio`` : ``mp3`` pour convertir les sons (sinon recopiés) ; ``scorm`` : ``chapitre``, ``parties`` ou
     ``tout`` pour écrire aussi les paquets SCORM ; ``scorm_version`` : ``2004`` (défaut) ou ``1.2``. Arrête le programme (``SystemExit``) si le chapitre
-    contient des erreurs bloquantes.
+    contient des erreurs bloquantes. ``habillage`` (``habillage.pour_cours``) : charte, logo, accueil, pied, crédits et
+    filigrane d'une édition ; ``nom_paquets`` : nom de base des paquets (sinon le dossier de sortie) ; ``paquets`` :
+    liste complétée par les paquets écrits.
     """
     from PIL import Image
     chapitre_yaml = Path(chapitre_yaml)
@@ -525,7 +565,8 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
     echelle = min(1.0, largeur / W) if largeur else 1.0
     fmt = (fmt or "webp").lower().lstrip(".")
     masques = chap.get("masques") or []
-    reglages = json.dumps([largeur, fmt, audio, masques], sort_keys=True)
+    filigrane = (habillage or {}).get("filigrane")
+    reglages = json.dumps([largeur, fmt, audio, masques, filigrane], sort_keys=True)
     temoin = sortie / "_reglages.json"
     memes = temoin.is_file() and temoin.read_text(encoding="utf-8") == reglages
     temoin.write_text(reglages, encoding="utf-8")
@@ -552,6 +593,9 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                     im = C1.masquer(im, masques, im.width / W)
                 if echelle < 1:
                     im = im.resize((round(im.width * echelle), round(im.height * echelle)), Image.LANCZOS)
+                if filigrane:                                # marquage de l'édition (habillage)
+                    import habillage as HB
+                    im = HB.filigraner(im, filigrane)
                 if fmt == "webp":
                     im.save(dst, "WEBP", quality=86, method=5)
                 else:
@@ -705,7 +749,7 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                              "questions": sum(l["nombre"] for l in lots), "lots": lots,
                              "duree_s": round(duree, 1) if duree else None, "pas": pas})
         nom_p = N.get(("partie", p.get("id")), "")
-        exos = exercices_partie(p, dossier, sortie, journal, trad_ext, perimees)
+        exos = exercices_partie(p, dossier, sortie, journal, trad_ext, perimees, (habillage or {}).get("profil"))
         for k, x in enumerate(exos):
             x["nom"] = nom_p + "-Ex" + (str(k + 1) if len(exos) > 1 else "")
         sections += exos
@@ -715,7 +759,8 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
     noms_l = {"fr": "Français", "en": "English", "es": "Español", "de": "Deutsch", "it": "Italiano", "pt": "Português",
               "zh": "中文", "ar": "العربية"}
     reg = chap.get("reglages") or {}
-    donnees = {"titre": F.texte(chap.get("titre"), src), "tr": tr(chap, ("titre",)), "cle": dossier.name,
+    cle = dossier.name + (f"@{habillage.get('declinaison') or habillage['cours']}/{habillage.get('edition') or ''}" if habillage else "")
+    donnees = {"titre": F.texte(chap.get("titre"), src), "tr": tr(chap, ("titre",)), "cle": cle,
                "didac": {"modes": reg.get("modes") or ["regarder", "a_vous"], "essais": reg.get("essais") or 3,
                          "juste": F.texte((reg.get("retours") or {}).get("juste")) or "Oui.",
                          "faux": F.texte((reg.get("retours") or {}).get("faux")) or "Pas tout à fait.",
@@ -726,7 +771,7 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                "cameo": {"position": (chap.get("cameo") or {}).get("position", "bas-droite"),
                          "taille": float((chap.get("cameo") or {}).get("taille", 0.22)),
                          "forme": (chap.get("cameo") or {}).get("forme", "rond")},
-               "parties": parties}
+               "parties": parties, "affichage": affichage(chap), "habillage": habiller(habillage, sortie)}
     gabarit = (ICI / "lecteur_chapitre.html").read_text(encoding="utf-8")
     langue = html.escape((chap.get("langues") or {}).get("source", "fr"))
 
@@ -752,12 +797,13 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
     journal(f"  {n_sec} section(s) jouable(s), {minutes:.1f} min, {len(images)} images, {len(sons)} sons, {taille / 1e6:.1f} Mo"
             + (f" ({taille / 1e6 / minutes:.1f} Mo/min)" if minutes else ""))
     if scorm:
-        paquets = []
-        nom = sortie.name
+        paquets = paquets if paquets is not None else []
+        nom = nom_paquets or sortie.name
         suffixe = "scorm12" if scorm_version == "1.2" else "scorm2004"
         if scorm in ("chapitre", "tout"):
-            paquets.append(_paquet(sortie.parent / f"{nom}_{suffixe}.zip", nom, donnees["titre"] or nom, page, sortie,
-                                   _medias(parties, sortie), scorm_version))
+            titre_p = (donnees["titre"] or nom) + (f" — {habillage['libelle']}" if habillage else "")
+            paquets.append(_paquet(sortie.parent / f"{nom}_{suffixe}.zip", nom, titre_p, page, sortie,
+                                   _medias(parties, sortie) + _medias_habillage(donnees), scorm_version))
         if scorm in ("parties", "tout"):
             jouable = lambda p: any(s["pas"] or s.get("exercice") for s in p["sections"])
             for p in parties:
@@ -769,8 +815,9 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                     continue
                 d = dict(donnees, parties=sous, cle=f"{donnees['cle']}-{p['id']}", titre=f"{donnees['titre']} — {p['titre']}")
                 ident = f"{nom}_{p['nom']}_{p['id']}"
-                paquets.append(_paquet(sortie.parent / f"{ident}_{suffixe}.zip", ident, d["titre"], rendre(d), sortie,
-                                       _medias(sous, sortie), scorm_version))
+                paquets.append(_paquet(sortie.parent / f"{ident}_{suffixe}.zip", ident,
+                                       d["titre"] + (f" — {habillage['libelle']}" if habillage else ""), rendre(d), sortie,
+                                       _medias(sous, sortie) + _medias_habillage(donnees), scorm_version))
             seules = [p["id"] for p in parties if p["type"] != "tronc" and jouable(p)
                       and not any(p["id"] in s["annexes"] for x in parties if x["type"] == "tronc" for s in x["sections"])]
             if seules:

@@ -34,6 +34,22 @@ Un profil que vous ne voulez pas publier se range dans `data/profils/<nom>/` (do
 
 `index_profils.json` est régénéré par QuizForge (valeurs acceptées de chaque réglage) ; il n'est pas suivi.
 
+## Habillage des capsules
+
+La clé `habillage` (facultative) donne ce que CapsuleForge pose sur une capsule construite pour une édition (`construire --cours`, ou « Construire » dans AtelierForge avec un cours choisi) ; les couleurs et polices viennent de `charte`.
+
+```yaml
+habillage:
+  logo: logo.png                          # dans le dossier du profil : bandeau du lecteur, écran d'accueil
+  cadre: principal                        # bandes autour des images (rôle ou couleur de la charte)
+  pied: "{code} · {promo} · {ecole}"      # sous l'image
+  filigrane: {texte: "{ecole} · {promo}", position: bas-droite, opacite: 0.35}   # si l'édition le demande
+  mentions: "Document réservé aux étudiants de {ecole} ({annee})"
+  licence: "CC BY-NC-SA 4.0"
+```
+
+Champs des textes : `{cours}` (titre du cours), `{code}` (code de l'enseignement), `{bloc}`, `{promo}`, `{annee}` (2026-2027), `{ecole}`, `{declinaison}`, `{edition}`, `{enseignant}`, `{capsule}`. Le profil `Ecole1` en donne un exemple, avec un logo fictif.
+
 ## Formations, codes et promotions
 
 Chaque école découpe ses formations, nomme ses niveaux, code ses enseignements et nomme ses promotions à sa façon. Le profil le décrit par des clés facultatives, lues par AtelierForge pour les déclinaisons d'un cours (écran Cours). Sans elles, les mots et les listes génériques s'appliquent et les codes restent libres. Le profil `Ecole1` les montre toutes.

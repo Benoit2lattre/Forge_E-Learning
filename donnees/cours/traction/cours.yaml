@@ -23,10 +23,13 @@ documents:
 sources:
   questions:
   - outils/quizforge/exemples/classeurs/modele_QuizForge.xlsx
+  - data/capsuleforge/demo_traction/sources/Questions_TS.xlsx
   exercices:
   - outils/exoforge/exemples/premier_exercice.yaml
   exports:
   - donnees/diagforge/promotion_groupes
+  capsules:
+  - data/capsuleforge/demo_traction
 erreurs: null
 etiquettes:
 - TRACTION
@@ -55,6 +58,7 @@ declinaisons:
   editions:
   - nom: '2026'
     promo: P2029
+    filigrane: true
     groupes:
     - nom: G1
       campus: Nord

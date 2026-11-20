@@ -1,0 +1,11 @@
+id: premier_exercice/v1
+genre: exercice
+version: 1
+date: 2026-11-20 18:14
+cours: traction
+source: outils/exoforge/exemples/premier_exercice.yaml
+empreinte: 14f34289b739d9f5
+reglages:
+  profil: Ecole1
+fichiers:
+- premier_exercice_v1_scorm12.zip

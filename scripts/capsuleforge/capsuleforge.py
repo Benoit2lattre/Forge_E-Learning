@@ -15,6 +15,9 @@ Commandes (abréviations acceptées : « en », « ed », « cons », « conv »
         apparitions, spots, pointeurs), images en WebP et sons en MP3.
     python capsuleforge.py construire fiabilite --scorm chapitre|parties|tout [--scorm-version 1.2]
         En plus : paquets SCORM 2004 pour Moodle (un pour le chapitre, un par partie du tronc, ou les deux).
+    python capsuleforge.py construire demo_traction --cours traction[:ecole1-meca[/2026]]
+        Capsule habillée pour l'édition (charte, logo et textes du profil de l'école, titre, codes, promo ; filigrane si
+        l'édition le demande), rangée comme version de l'édition (capsules/<capsule>/v1/) et inscrite au registre.
     python capsuleforge.py traduire fiabilite --langue en [--moteur aucun|argos|deepl]
         Écrit ou complète data/capsuleforge/fiabilite/traductions/en.yaml (source, cible, relu) ; le moteur pré-remplit.
     python capsuleforge.py traduire fiabilite --langue en --importer
@@ -68,6 +71,8 @@ sys.path.insert(0, str(ICI))
 sys.path.insert(0, str(ICI.parent / "commun"))
 import chemins  # noqa: E402
 import assemblage as A  # noqa: E402
+import format_chapitre as F  # noqa: E402
+import shutil  # noqa: E402
 
 VERSION = "0.9"
 DOSSIER = chemins.DATA / "capsuleforge"
@@ -182,6 +187,8 @@ def cmd_construire(a):
     if chapitre:                                                               # chapitre au format 2 (cours)
         import construire_chapitre
         y2 = y if y.name != "capsule.yaml" and y.is_file() else y2
+        if getattr(a, "cours", None):
+            return construire_pour_cours(a, y2)
         sortie = Path(a.sortie) if a.sortie else chemins.SORTIES / "capsuleforge" / y2.parent.name
         construire_chapitre.construire(y2, sortie, largeur=a.largeur, fmt=a.format or "webp", audio=a.audio,
                                        scorm=getattr(a, "scorm", None), scorm_version=getattr(a, "scorm_version", None) or "2004")
@@ -189,6 +196,78 @@ def cmd_construire(a):
     import construire
     sortie = Path(a.sortie) if a.sortie else chemins.SORTIES / "capsuleforge" / y.parent.name
     construire.construire(y, sortie, largeur=a.largeur, fmt=a.format or "png")
+
+
+def empreinte_capsule(y: Path, reglages: dict) -> str:
+    """Empreinte d'une construction : chapitre, médias du dossier (contenu ; taille et date au-delà de 4 Mo ou pour un
+    fichier verrouillé), fiches d'exercices, réglages. Les dossiers de travail (``sources``, ``sauvegardes``,
+    ``enregistrements``) et les verrous d'Office (``~$…``) ne comptent pas."""
+    import hashlib
+    import registre
+    import construire_chapitre as CC
+    d = y.parent
+    h = hashlib.md5()
+    for f in sorted(d.rglob("*")):
+        r = f.relative_to(d)
+        if (not f.is_file() or r.parts[0] in ("sauvegardes", "enregistrements", "sources", "_controle") or r.parts[0].startswith("_")
+                or f.name.startswith("~$")):            # ~$… : fichier de verrou d'Office (diaporama ou classeur ouvert)
+            continue
+        st = f.stat()                                   # contenu des petits fichiers, taille et date des vidéos
+        try:
+            sig = hashlib.md5(f.read_bytes()).hexdigest() if st.st_size < 4_000_000 else f"{st.st_size}|{int(st.st_mtime)}"
+        except OSError:                                 # fichier ouvert et verrouillé par un autre programme
+            sig = f"{st.st_size}|{int(st.st_mtime)}"
+        h.update(f"{r.as_posix()}|{sig}\n".encode("utf-8"))
+    chap = F.lire(y)
+    for p in chap.get("parties") or []:
+        refs = p.get("exercice") or []
+        for ref in [refs] if isinstance(refs, dict) else refs:
+            fiche = CC.fiche_exoforge(ref.get("fiche"), d) if isinstance(ref, dict) and ref.get("fiche") else None
+            if fiche:
+                h.update(fiche.read_bytes())
+    lecteur = hashlib.md5(b"".join((ICI / n).read_bytes() for n in ("lecteur_chapitre.html", "construire_chapitre.py",
+                                                                  "habillage.py"))).hexdigest()
+    return registre.empreinte(y, {**reglages, "medias": h.hexdigest(), "lecteur": lecteur})
+
+
+def construire_pour_cours(a, y: Path) -> int:
+    """``construire --cours`` : capsule habillée pour l'édition, rangée comme version (``capsules/<nom>/v1/``) et
+    inscrite au registre ; une construction identique (même capsule, mêmes médias, même habillage) n'en crée pas."""
+    import construire_chapitre
+    import habillage as HB
+    import registre
+    nom = y.parent.name
+    chap = F.lire(y)
+    h = HB.pour_cours(a.cours, F.texte(chap.get("titre")))
+    print(f"Cours : {h['libelle']}" + (f" (profil {h['profil']})" if h["profil"] else " (aucun profil d'école : charte de Forge)"))
+    scorm = getattr(a, "scorm", None) or "chapitre"
+    version = getattr(a, "scorm_version", None) or "2004"
+    reglages = {"habillage": HB.resume(h), "scorm": scorm, "scorm_version": version, "largeur": a.largeur,
+                "format": a.format or "webp", "audio": a.audio}
+    emp = empreinte_capsule(y, reglages)
+    b = registre.base({"cours": h["cours"], "declinaison": h["declinaison"], "edition": h["edition"]})
+    v = registre.preparer(b, y, None, emp, "capsule", nom)
+    if v["identique"]:
+        print(f"Identique à la version {v['identique']['id']} (même capsule, mêmes médias, même habillage) : rien de construit")
+        print(f"Version : {v['identique']['dossier']}")
+        return 0
+    sortie = Path(a.sortie) if a.sortie else chemins.SORTIES / "capsuleforge" / HB.nom_paquet(h, nom)
+    paquets: list = []
+    construire_chapitre.construire(y, sortie, largeur=a.largeur, fmt=a.format or "webp", audio=a.audio, scorm=scorm,
+                                   scorm_version=version, habillage=h, nom_paquets=HB.nom_paquet(h, nom, v["label"]),
+                                   paquets=paquets)
+    if not paquets:
+        print("Aucun paquet SCORM écrit : rien de rangé")
+        return 1
+    d = Path(v["dossier"])
+    d.mkdir(parents=True, exist_ok=True)
+    for z in paquets:
+        shutil.copy2(z, d / z.name)
+    registre.enregistrer_exercice(b, v, y, {k: x for k, x in reglages.items() if k != "habillage"}
+                                  | {"profil": h["profil"], "filigrane": bool(h["filigrane"])}, emp, h["cours"], "capsule")
+    print(f"Version {v['id']} inscrite au registre de {registre.rel(b)}")
+    print(f"Version : {registre.rel(d)}")
+    return 0
 
 
 def cmd_editer(a):
@@ -556,6 +635,8 @@ def main(argv=None):
     c.add_argument("--audio", default="mp3", choices=["mp3", "origine"], help="chapitre : sons convertis en MP3 mono (défaut) ou recopiés")
     c.add_argument("--scorm", choices=["chapitre", "parties", "tout"], help="chapitre : paquets SCORM (Moodle) en plus du lecteur")
     c.add_argument("--scorm-version", choices=["2004", "1.2"], default="2004", help="format des paquets : 2004 (défaut) ou 1.2 (seul format officiellement pris en charge par Moodle)")
+    c.add_argument("--cours", help="cours[:déclinaison[/édition]] : capsule habillée pour l'édition (profil de l'école, "
+                   "titre, codes, promo), rangée comme version de l'édition et inscrite au registre")
     c.add_argument("--lecteur", choices=["1", "2"], help="dossier qui a capsule.yaml et chapitre.yaml : format à construire (défaut : le plus récent)")
     ed = sp.add_parser("editer", help="ouvrir l'éditeur visuel (navigateur)"); ed.add_argument("capsule")
     ed.add_argument("--port", type=int, default=8765); ed.add_argument("--sans-navigateur", action="store_true")

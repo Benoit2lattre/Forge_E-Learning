@@ -104,7 +104,7 @@ Un pas de didacticiel porte en plus les gestes attendus et les retours :
 
 ## Référence des champs
 
-**Chapitre** : `format`, `titre`, `langues` (`source`, `autres`), `ecran` (`largeur`, `hauteur`, `echelle`), `vue`, `source`, `reglages` (`modes`, `essais`, `trajectoire`, `retours`), `masques`, `parcours`, `variantes`, `parties`, `image_finale`, `cameo` (`position` : `bas-droite` par défaut, `bas-gauche`, `haut-droite`, `haut-gauche`, ou `aucune` : webcam gardée mais non montrée ; `taille` : part de la largeur de l'image, 0,22 par défaut ; `forme` : `rond` ou `rectangle` ; écrit par `capsuleforge cameo`).
+**Chapitre** : `format`, `titre`, `langues` (`source`, `autres`), `ecran` (`largeur`, `hauteur`, `echelle`), `vue`, `source`, `reglages` (`modes`, `essais`, `trajectoire`, `retours`), `masques`, `affichage` (format de la zone d'image du lecteur, `16:9` par défaut ; les fonds y sont calés sans déformation), `parcours`, `variantes`, `parties`, `image_finale`, `cameo` (`position` : `bas-droite` par défaut, `bas-gauche`, `haut-droite`, `haut-gauche`, ou `aucune` : webcam gardée mais non montrée ; `taille` : part de la largeur de l'image, 0,22 par défaut ; `forme` : `rond` ou `rectangle` ; écrit par `capsuleforge cameo`).
 
 **Parcours** : `id`, `titre`, `annexes` (`aucune`, `a_la_demande`, `integrees`), `questions` (`aucune`, `proposees`, `obligatoires`), `exercices`.
 

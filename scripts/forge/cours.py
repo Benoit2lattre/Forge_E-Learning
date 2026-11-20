@@ -449,6 +449,17 @@ def _champs_edition(x: dict, e: dict):
             x.pop("effectif", None)
     if e.get("seances") is not None:
         x["seances"] = _seances(e["seances"])
+    if e.get("enseignant") is not None:
+        t = texte_valide(e["enseignant"], 80)
+        if t:
+            x["enseignant"] = t
+        else:
+            x.pop("enseignant", None)
+    if e.get("filigrane") is not None:              # filigrane d'édition sur les images des capsules (habillage)
+        if e["filigrane"] in (True, "true", "1", 1):
+            x["filigrane"] = True
+        else:
+            x.pop("filigrane", None)
 
 
 def _seances(v) -> list[dict]:
