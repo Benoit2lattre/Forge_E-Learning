@@ -33,18 +33,3 @@ versions:
   bilans: []
   utilisee_par: []
   remarques: ''
-- id: essai_habillage/v3
-  genre: capsule
-  nom: essai_habillage
-  source: data/capsuleforge/essai_habillage/chapitre.yaml
-  version: 3
-  dossier: donnees/cours/traction/ecole1-meca/2026/capsules/essai_habillage/v3
-  date: 2026-11-21 16:22
-  empreinte: 1a2e4f8f4053167d
-  etat: convertie
-  dates:
-    convertie: 2026-11-21 16:22
-  test_moodle: ''
-  bilans: []
-  utilisee_par: []
-  remarques: ''
