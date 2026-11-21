@@ -8,7 +8,7 @@
    recopie les cibles dans ``chapitre.yaml`` : le texte devient ``{fr: …, en: …}``. Une cible dont la source a changé
    depuis (phrase corrigée dans la relecture) est signalée et laissée de côté.
 
-Textes traduits : titre du chapitre, titres des parties, titre / objectif / ouverture des sections, phrases dites
+Textes traduits : titre du chapitre, titres des parties, titre / objectif / ouverture des sections, texte des diapositives, phrases dites
 (sous-titres et voix de synthèse), narration d'un pas sans phrases, texte des bulles et textes posés sur l'image ;
 textes des questions QuizForge posées en fin de section (énoncé, options, rétroactions, indices, unité) et textes
 affichés des exercices ExoForge du chapitre. Ces deux dernières traductions restent dans ``traductions/<langue>.yaml``
@@ -43,6 +43,11 @@ def _source(valeur, langue: str) -> str:
     return str(valeur or "")
 
 
+def _brut(valeur) -> str:
+    """Texte d'un champ, quelle que soit sa forme (chaîne, ou dictionnaire par langue : sa première valeur)."""
+    return str(next(iter(valeur.values()), "") if isinstance(valeur, dict) else valeur or "")
+
+
 def elements(chap: dict):
     """Produit le triplet ``(clé, objet parent, champ)`` de chaque texte traduisible du chapitre, dans l'ordre du fichier."""
     yield "chapitre/titre", chap, "titre"
@@ -65,6 +70,13 @@ def elements(chap: dict):
                 for o in q.get("objets") or []:
                     if o.get("type") in ("bulle", "texte") and o.get("texte"):
                         yield f"objet/{q.get('id')}/{o.get('id')}/texte", o, "texte"
+                for k, b in enumerate(q.get("texte_diapo") or []):     # texte de la diapositive (volet Texte)
+                    if b.get("texte") and _a_traduire(_brut(b["texte"])):
+                        yield f"diapo/{q.get('id')}/{k}", b, "texte"
+                    for i, l in enumerate(b.get("cellules") or []):
+                        for j, c in enumerate(l):
+                            if c.get("texte") and _a_traduire(_brut(c["texte"])):
+                                yield f"diapo/{q.get('id')}/{k}/{i}/{j}", c, "texte"
 
 
 def _a_traduire(texte) -> bool:
@@ -131,7 +143,7 @@ def elements_exercices(chap: dict, dossier: Path):
 
 
 def _pas_de(cle: str) -> str | None:
-    return cle.split("/")[1] if cle.startswith(("pas/", "objet/")) else None
+    return cle.split("/")[1] if cle.startswith(("pas/", "objet/", "diapo/")) else None
 
 
 # --------------------------------------------------------------------------- moteurs
@@ -313,6 +325,13 @@ def _contextes(chap: dict, langue: str, dossier: Path | None = None) -> dict:
                 ctx[f"pas/{q.get('id')}/narration"] = {"groupe": gs, "quoi": "narration du pas", "image": q.get("fond")}
                 for o in objets:
                     ctx[f"objet/{q.get('id')}/{o.get('id')}/texte"] = {"groupe": gs, "quoi": f"texte de l'objet {o.get('id')}", "image": q.get("fond")}
+                nom_q = N.get(("pas", q.get("id")), q.get("id"))
+                for k, b in enumerate(q.get("texte_diapo") or []):
+                    quoi = f"{nom_q} · {'titre' if b.get('titre') else 'texte'} de la diapositive"
+                    ctx[f"diapo/{q.get('id')}/{k}"] = {"groupe": gs, "quoi": quoi, "image": q.get("fond")}
+                    for i, l in enumerate(b.get("cellules") or []):
+                        for j, _ in enumerate(l):
+                            ctx[f"diapo/{q.get('id')}/{k}/{i}/{j}"] = {"groupe": gs, "quoi": f"{nom_q} · tableau de la diapositive, ligne {i + 1}", "image": q.get("fond")}
     if dossier is not None:
         for cle, _, c in list(elements_questions(chap, dossier)) + list(elements_exercices(chap, dossier)):
             ctx[cle] = c

@@ -152,6 +152,19 @@ nav .duree .q{color:var(--navy2);white-space:nowrap}
 #texte .ph:hover{background:var(--slate-l)}
 #texte .ph.ici{background:#FBE9CF}
 #texte .pas{margin:0 0 8px}
+#texte{font-size:calc(1.05rem * var(--taille-texte, 1))}
+#texte h3{display:flex;align-items:center;gap:8px}
+#texte h3 .esp{flex:1}
+#texte h3 button{font-size:12px;padding:2px 8px;min-height:0}
+#texte .diapo{margin:6px 0 6px;padding:4px 10px;border-left:3px solid var(--slate-l)}
+#texte .diapo .dt{font-weight:700;margin:2px 0}
+#texte .diapo .dp{margin:2px 0}
+#texte .diapo .df{margin:4px 0;overflow-x:auto}
+#texte .diapo table{border-collapse:collapse;margin:4px 0}
+#texte .diapo td{border:1px solid var(--bord);padding:2px 8px}
+#texte .diapo .plus-tard{opacity:.35}
+/* texte aéré : police sans empattement courante, lettres et mots plus espacés (l'espacement aide, pas une police « dyslexie ») */
+#texte.aere, #st.aere span{font-family:Verdana, Arial, sans-serif !important;letter-spacing:.07em;word-spacing:.16em;line-height:1.8}
 .aide{font-size:12px;color:var(--texte2);margin-top:8px;max-width:1100px;width:100%}
 kbd{border:1px solid var(--bord);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:#fff;font:12px ui-monospace,Consolas,monospace}
 #cadre-scene[hidden],#barre[hidden],#exo[hidden],.aide[hidden]{display:none}
@@ -339,6 +352,7 @@ const tousPas = () => C.parties.flatMap(p => p.sections.flatMap(s => s.pas));
 const voixDispo = [LG.source].concat((LG.autres || []).filter(l => tousPas().some(q => q.voix && q.voix[l])));
 const toutesQuestions = () => C.parties.flatMap(p => p.sections.flatMap(s => (s.lots || []).flatMap(l => l.questions)));
 const stDispo = [LG.source].concat((LG.autres || []).filter(l => tousPas().some(q => q.trad && q.trad[l]) || C.parties.some(p => p.tr && p.tr[l])
+  || tousPas().some(q => (q.diapo || []).some(b => b.tr && b.tr[l]))
   || toutesQuestions().some(q => q.tr && q.tr[l]) || C.parties.some(p => p.sections.some(s => s.exercice && s.exercice.html_tr && s.exercice.html_tr[l]))));
 /* questions : textes d'origine gardés une fois, traduction prise dans q.tr[langue][chemin] (chemins : construire_chapitre.textes_question) */
 function traduireQuestion(q) {
@@ -388,7 +402,8 @@ const UI = { en: {
   "Revoir la section": "Watch the section again", "Exercice terminé : {0}/100": "Exercise finished: {0}/100", " (meilleur score {0}/100)": " (best score {0}/100)",
   "Déjà fait : meilleur score {0}/100.": "Already done: best score {0}/100.", "Faites l'exercice jusqu'au bout pour l'enregistrer.": "Complete the exercise to record it.",
   "Recommencer l'exercice": "Restart the exercise", "Section déjà vue": "Section already viewed", ", questions faites.": ", questions done.", ", questions à faire.": ", questions to do.",
-  "▶ Revoir la section": "▶ Watch again", "▶ Reprendre": "▶ Resume", "▶ Commencer": "▶ Start", "{0} sur {1}": "{0} of {1}", "Texte de la section": "Section text",
+  "▶ Revoir la section": "▶ Watch again", "▶ Reprendre": "▶ Resume", "▶ Commencer": "▶ Start", "{0} sur {1}": "{0} of {1}", "Texte de la section": "Section text", "Aéré": "Spaced", "Texte plus petit": "Smaller text", "Texte plus grand": "Larger text",
+  "Lettres et mots plus espacés (texte et sous-titres)": "Wider letter and word spacing (text and subtitles)",
   "Le son de ce passage est introuvable ou illisible ({0}).": "The audio for this passage is missing or unreadable ({0}).", "🔊 Son": "🔊 Sound", "🔇 Muet": "🔇 Muted", "👤 Caméo": "👤 Cameo", "👤 Sans caméo": "👤 No cameo", "Médaillon vidéo de l'enseignant (V)": "Teacher video inset (V)",
   "Ce chapitre n'a pas encore de section à lire.": "This chapter has no section to play yet.", " (synthèse)": " (synthetic)",
   "☰ Plan": "☰ Outline", "Afficher ou masquer le plan": "Show or hide the outline", "Plan du chapitre": "Chapter outline", "Parcours": "Path", "Voix": "Voice", "Sous-titres": "Subtitles",
@@ -820,7 +835,7 @@ function surTrajet(o, t) { const p = o.trajet; if (!p || p.length < 2) return o.
   return p[p.length - 1]; }
 let signature = "", iPhrase = -2;
 function dessiner(force) {
-  const q = S.s.pas[iPas], t = tPas;
+  const q = S.s.pas[iPas], t = tPas; majDiapo(force);
   let f = q.fond; for (const a of q.apparitions) if (a[0] <= t) f = a[1];
   const im = $("image"); if (im.dataset.f !== f) { im.dataset.f = f; im.src = f; }
   const vus = q.objets.map((o, i) => [o, i]).filter(x => t >= x[0].debut_s && t < x[0].debut_s + x[0].duree_s);
@@ -992,13 +1007,57 @@ document.addEventListener("keydown", ev => {                 // touches attendue
 }, true);
 $("b-mode").onclick = () => { modeAV = !modeAV; memo.ecrire("mode", modeAV); avEffacer(); majMode(); if (S) ouvrir(S.p, S.s, 0, true, true); };
 
+/* texte de la diapositive (titres, paragraphes, formules, tableaux), lisible et traduit ; ce qui apparaît plus tard
+   dans le pas en cours est estompé jusqu'à son apparition */
+function blocsDiapo(q, i) {
+  const d = document.createElement("div"); d.className = "diapo"; d.dataset.i = i;
+  for (const b of q.diapo) { const x = (stL !== LG.source && b.tr && b.tr[stL]) || b.x; let e;
+    if (b.k === "f") { e = document.createElement("div"); e.className = "df"; e.textContent = "\\[" + b.x + "\\]"; }
+    else if (b.k === "c") { e = document.createElement("table"); for (const l of x) { const tr = e.insertRow(); for (const c of l) tr.insertCell().textContent = typo(c); } }
+    else { e = document.createElement("div"); e.className = b.k === "t" ? "dt" : "dp"; e.textContent = typo(x);
+      if (b.n) e.style.marginLeft = (1.2 * b.n) + "em"; }
+    e.dataset.e = b.e || 0; d.appendChild(e); }
+  return d;
+}
+let etatDiapo = "";
+function majDiapo(force) {
+  if (!S || !S.s.pas[iPas]) return; const q = S.s.pas[iPas]; let k = 0; for (const a of q.apparitions) if (a[0] <= tPas) k++;
+  const cle = iPas + ":" + k; if (cle === etatDiapo && !force) return; etatDiapo = cle;
+  document.querySelectorAll("#texte .diapo").forEach(d => { const ici = +d.dataset.i === iPas;
+    d.querySelectorAll("[data-e]").forEach(e => e.classList.toggle("plus-tard", ici && +e.dataset.e > k)); });
+}
+const MATH = { charge: false };
+function formules(z) {
+  if (!C.latex_macros || !z.querySelector(".df")) return;
+  if (!MATH.charge) { MATH.charge = true; const c = C.latex_couleurs || {};
+    window.MathJax = { tex: { packages: { "[+]": ["ams", "color"] }, macros: C.latex_macros || {} }, svg: { fontCache: "global" },
+      startup: { typeset: false, ready() { MathJax.startup.defaultReady();
+        const defs = Object.entries(c).map(([n, h]) => `\\definecolor{${n}}{RGB}{${parseInt(h.slice(1, 3), 16)},${parseInt(h.slice(3, 5), 16)},${parseInt(h.slice(5, 7), 16)}}`).join("");
+        if (defs) MathJax.tex2svg(defs); MathJax.startup.promise.then(() => formules($("texte"))); } } };
+    const sc = document.createElement("script"); sc.src = "lecteur/mathjax.js"; sc.async = true; document.head.appendChild(sc); return; }
+  if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([z]).catch(e => console.warn(e));
+}
+function reglerTexte(taille, aere) {
+  if (taille != null) { taille = Math.max(0.8, Math.min(1.8, Math.round(taille * 10) / 10)); document.documentElement.style.setProperty("--taille-texte", taille); memo.ecrire("taille_texte", taille); }
+  if (aere != null) { for (const id of ["texte", "st"]) $(id).classList.toggle("aere", aere); memo.ecrire("aere", aere);
+    const b = $("b-aere"); if (b) b.setAttribute("aria-pressed", aere); }
+}
 function texte() {
-  const z = $("texte"); z.textContent = ""; const h = document.createElement("h3"); h.textContent = T("Texte de la section"); z.appendChild(h);
+  const z = $("texte"); z.textContent = ""; const h = document.createElement("h3");
+  const ht = document.createElement("span"); ht.textContent = T("Texte de la section"); h.appendChild(ht);
+  const esp = document.createElement("span"); esp.className = "esp"; h.appendChild(esp);
+  const bouton = (txt, titre, f, id) => { const b = document.createElement("button"); b.textContent = txt; b.title = T(titre); b.setAttribute("aria-label", T(titre)); if (id) b.id = id; b.onclick = f; h.appendChild(b); return b; };
+  bouton("A−", "Texte plus petit", () => reglerTexte(+(memo.lire("taille_texte", 1)) - 0.1, null));
+  bouton("A+", "Texte plus grand", () => reglerTexte(+(memo.lire("taille_texte", 1)) + 0.1, null));
+  bouton(T("Aéré"), "Lettres et mots plus espacés (texte et sous-titres)", () => reglerTexte(null, !$("texte").classList.contains("aere")), "b-aere")
+    .setAttribute("aria-pressed", $("texte").classList.contains("aere"));
+  z.appendChild(h);
   if (S.s.narration) { const n = document.createElement("p"); n.className = "pas"; n.innerHTML = md(S.s.narration); z.appendChild(n); }
-  S.s.pas.forEach((q, i) => { const p = document.createElement("p"); p.className = "pas";
+  S.s.pas.forEach((q, i) => { if (q.diapo && q.diapo.length) z.appendChild(blocsDiapo(q, i));
+    const p = document.createElement("p"); p.className = "pas";
     if (q.phrases.length) q.phrases.forEach((ph, k) => { const s = document.createElement("span"); s.className = "ph"; s.dataset.k = i + "." + k; s.textContent = ph[2] + " "; s.onclick = () => aller(debutPas(i) + ph[0] + 0.01, true); p.appendChild(s); });
-    else p.textContent = q.texte || ""; if (p.textContent) z.appendChild(p); });
-  typoDom(z);
+    else p.textContent = q.texte || ""; if (p.textContent) { typoDom(p); z.appendChild(p); } });
+  typoDom(ht); etatDiapo = ""; majDiapo(true); formules(z);
 }
 function boucle(maintenant) {
   if (S && enLecture) { const q = S.s.pas[iPas];
@@ -1118,6 +1177,7 @@ $("vitesse").value = memo.lire("vitesse", "1"); if (!$("vitesse").value) $("vite
 if (memo.lire("son", true) === false) reglerSon(false);
 if (memo.lire("st", true) === false) $("b-st").setAttribute("aria-pressed", "false");
 if (memo.lire("texte", false) === true) { $("b-texte").setAttribute("aria-pressed", "true"); $("texte").hidden = false; }
+reglerTexte(+(memo.lire("taille_texte", 1)) || 1, memo.lire("aere", false) === true);
 libelles(); plan(); taille();
 (function () { const ici = memo.lire("ici", null); let d = ici && suite.concat(C.parties.flatMap(p => p.sections.map(s => ({ p, s })))).find(x => x.p.id === ici.p && x.s.id === ici.s && jouable(x.s));
   if (!d) d = suite.find(x => jouable(x.s)) || C.parties.flatMap(p => p.sections.map(s => ({ p, s }))).find(x => jouable(x.s));

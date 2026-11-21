@@ -37,7 +37,7 @@ ORDRE_CHAPITRE = ["format", "titre", "langues", "ecran", "vue", "source", "regla
 ORDRE_PARTIE = ["id", "titre", "type", "place", "prerequis", "parcours", "variantes", "exercice", "sections"]
 ORDRE_SECTION = ["id", "titre", "objectif", "source", "narration", "audio", "arret", "ouverture", "questions",
                  "annexes", "pas"]
-ORDRE_PAS = ["ecarte", "raison", "id", "fond", "video", "camera", "vue", "source", "narration", "phrases", "audio", "duree_s", "voix", "objets", "gestes",
+ORDRE_PAS = ["ecarte", "raison", "id", "fond", "video", "camera", "vue", "source", "narration", "phrases", "audio", "duree_s", "voix", "texte_diapo", "objets", "gestes",
              "a_vous", "retours"]
 ORDRE_GESTE = ["type", "zone", "point", "arrivee", "crans", "texte", "accepte", "tolerance", "touches", "cible",
                "trajectoire", "trajet"]

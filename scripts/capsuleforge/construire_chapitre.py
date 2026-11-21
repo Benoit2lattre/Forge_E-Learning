@@ -376,8 +376,79 @@ def habiller(h: dict | None, sortie: Path) -> dict | None:
 
 
 def _medias_habillage(donnees: dict) -> list[str]:
+    """Fichiers communs du lecteur à mettre dans les paquets : logo de l'école, MathJax et sa licence."""
     h = donnees.get("habillage") or {}
-    return [h["logo"]] if h.get("logo") else []
+    return ([h["logo"]] if h.get("logo") else []) + list(donnees.get("ressources") or [])
+
+
+MATHJAX = ICI.parent / "exoforge" / "moteur" / "vendor" / "mathjax-tex-svg-full.js"
+
+
+def texte_diapo(q: dict, src: str, autres: list[str], publics, champs: dict) -> list[dict]:
+    """Texte de la diapositive d'un pas pour le lecteur (volet Texte) : formes d'édition gardées pour ce public
+    (``publics`` : ``None`` pour la capsule nue), champs remplis, traductions présentes.
+
+    Chaque bloc : ``k`` (``t`` titre, ``p`` paragraphe, ``f`` formule, ``c`` tableau), ``x`` (texte, LaTeX ou
+    lignes de cellules), ``n`` (niveau), ``e`` (état à partir duquel il est visible), ``tr`` (``{langue: x}``).
+    """
+    import pptx_images as PI
+    import pptx_lire as PL
+    out = []
+
+    def texte(v, langue):
+        t = v.get(langue) if isinstance(v, dict) else (v if langue == src else None)
+        return PL.remplir_texte(t, champs) if t else None
+    for b in q.get("texte_diapo") or []:
+        if b.get("cas") and not PI.montree({"cas": b["cas"], "publics": b.get("publics") or []}, publics):
+            continue
+        x = {"e": b["etat"]} if b.get("etat") else {}
+        if b.get("formule"):
+            x.update(k="f", x=b["formule"])
+        elif b.get("cellules"):
+            lignes = [[texte(c.get("texte"), src) or "" for c in l] for l in b["cellules"]]
+            if all(PL.vide(c) for l in lignes for c in l):
+                continue
+            x.update(k="c", x=lignes)
+            tr = {l: [[texte(c.get("texte"), l) or lignes[i][j] for j, c in enumerate(li)] for i, li in enumerate(b["cellules"])]
+                  for l in autres if any(isinstance(c.get("texte"), dict) and c["texte"].get(l) for li in b["cellules"] for c in li)}
+            if tr:
+                x["tr"] = tr
+        else:
+            t = texte(b.get("texte"), src)
+            if not t or PL.vide(t):
+                continue
+            x.update(k="t" if b.get("titre") else "p", x=t)
+            if b.get("niveau"):
+                x["n"] = b["niveau"]
+            tr = {l: v for l in autres for v in [texte(b.get("texte"), l)] if v}
+            if tr:
+                x["tr"] = tr
+        out.append(x)
+    return out
+
+
+def latex_capsule(chap: dict, dossier: Path, profil: str | None, journal=print) -> tuple[dict, dict]:
+    """Macros et couleurs LaTeX des formules du texte des diapositives, pour MathJax : préambule des équations
+    (``latex.fichiers`` du chapitre, ``ppt_commandes.tex`` par défaut) et jeu de couleurs du profil de l'école
+    (``charte.latex_couleurs``), comme pour ExoForge."""
+    sys.path.insert(0, str(ICI.parent / "exoforge"))
+    import generique as G
+    import yaml
+    schema = None
+    if profil:
+        import habillage as HB
+        fp = HB._fichier_profil(profil)
+        if fp:
+            sc = ((yaml.safe_load(fp.read_text(encoding="utf-8")) or {}).get("charte") or {}).get("latex_couleurs")
+            if sc:
+                schema = str((fp.parent / sc).resolve())
+    cfg = {"latex": chap.get("latex") or {"fichiers": ["ppt_commandes.tex"]}}
+    avert: list = []
+    macros, couleurs = G.preparer_latex(cfg, dossier, avert, schema)
+    for a in avert:
+        if "inconnues" not in a:
+            journal(f"  formules : {a}")
+    return macros, couleurs
 
 
 def _paquet(zip_: Path, ident: str, titre: str, page: str, sortie: Path, rels: list[str], version: str = "2004") -> Path:
@@ -684,6 +755,10 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
             if t:
                 x.setdefault("tr", {})[l] = t
 
+    import pptx_edition as PE
+    publics_ed = PE.publics(habillage) if habillage else None
+    champs_ed = (habillage or {}).get("champs") or {}
+
     def tr(obj: dict, champs) -> dict:
         """Renvoie les traductions présentes : ``{langue: {champ: texte}}`` (le lecteur retombe sur la source sinon)."""
         res = {}
@@ -709,6 +784,9 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                                             if o.get("type") == "apparition" and o.get("fichier")), key=lambda a: a[0]),
                      "objets": [{k: o[k] for k in ("type", "forme", "cadre", "position", "trajet", "couleur", "debut_s", "duree_s")
                                  if k in o} for o in objets if o.get("type") in OBJETS]}
+                td = texte_diapo(q, src, autres, publics_ed, champs_ed)
+                if td:
+                    x["diapo"] = td
                 d = didacticiel(q, chap)
                 if d:
                     x["didac"] = d
@@ -783,6 +861,14 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                          "taille": float((chap.get("cameo") or {}).get("taille", 0.22)),
                          "forme": (chap.get("cameo") or {}).get("forme", "rond")},
                "parties": parties, "affichage": affichage(chap), "habillage": habiller(habillage, sortie)}
+    ressources = []
+    if any(b.get("k") == "f" for p in parties for s in p["sections"] for x in s["pas"] for b in x.get("diapo") or []):
+        (sortie / "lecteur").mkdir(exist_ok=True)
+        shutil.copy2(MATHJAX, sortie / "lecteur" / "mathjax.js")
+        shutil.copy2(MATHJAX.parent / "MATHJAX_LICENSE", sortie / "lecteur" / "MATHJAX_LICENSE")
+        ressources += ["lecteur/mathjax.js", "lecteur/MATHJAX_LICENSE"]
+        donnees["latex_macros"], donnees["latex_couleurs"] = latex_capsule(chap, dossier, (habillage or {}).get("profil"), journal)
+    donnees["ressources"] = ressources
     gabarit = (ICI / "lecteur_chapitre.html").read_text(encoding="utf-8")
     langue = html.escape((chap.get("langues") or {}).get("source", "fr"))
 

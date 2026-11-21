@@ -145,6 +145,184 @@ def _pieds(racine) -> list[int]:
     return out
 
 
+SEPARATEURS = " \t·•|,;:/—–-"
+
+
+def remplir_texte(texte: str, valeurs: dict) -> str:
+    """Remplit les champs ``{cours}``… d'un texte ; un champ vide part avec un séparateur voisin, comme à l'export
+    PowerPoint (« Benoit Delattre - {code} » → « Benoit Delattre » dans la capsule nue)."""
+    lignes = []
+    for t in str(texte or "").split("\n"):
+        for _ in range(50):
+            m = CHAMP.search(t)
+            if not m:
+                break
+            v = str(valeurs.get(m.group(1)) or "")
+            if v:
+                t = t[:m.start()] + v + t[m.end():]
+                continue
+            i, j = m.start(), m.end()
+            k = i
+            while k > 0 and t[k - 1] in SEPARATEURS:
+                k -= 1
+            n = j
+            while n < len(t) and t[n] in SEPARATEURS:
+                n += 1
+            t = t[:k] + t[j:] if n == len(t) else t[:i] + t[n:]
+        lignes.append(t)
+    return "\n".join(lignes).strip()
+
+
+def vide(texte: str) -> bool:
+    """Vrai si un texte n'a plus que des espaces et des séparateurs."""
+    return not re.sub(r"[\s·•|,;:/—–\-()]+", "", texte or "")
+
+
+def _latex_iguanatex(z: zipfile.ZipFile, rels_diapo: dict, el) -> str | None:
+    """Renvoie la formule LaTeX d'une équation IguanaTeX (étiquette ``LATEXADDIN`` de la forme), sans préambule."""
+    nv = next((x for x in el if x.tag.endswith("Pr") and x.tag.startswith(P + "nv")), None)
+    if nv is None:
+        return None
+    for t in nv.iter(P + "tags"):
+        cible = rels_diapo.get(t.get("{%s}id" % NS["r"]))
+        if not cible or cible[1] not in z.namelist():
+            continue
+        for tag in ET.fromstring(z.read(cible[1])).iter(P + "tag"):
+            if tag.get("name") == "LATEXADDIN":
+                src = tag.get("val") or ""
+                corps = src.split("\\begin{document}")[-1].split("\\end{document}")[0]
+                corps = corps.strip()
+                for a, b in (("$$", "$$"), ("\\[", "\\]"), ("$", "$")):
+                    if corps.startswith(a) and corps.endswith(b) and len(corps) > len(a) + len(b):
+                        corps = corps[len(a):-len(b)]
+                        break
+                return " ".join(corps.split()) or None
+    return None
+
+
+def _xfrm(el) -> tuple[int, int]:
+    """Coin haut-gauche d'une forme (``y, x``) pour l'ordre de lecture ; (0, 0) si la forme n'a pas de position."""
+    x = el.find("p:spPr/a:xfrm/a:off", NS)
+    if x is None:
+        x = el.find("p:grpSpPr/a:xfrm/a:off", NS)
+    if x is None:
+        x = el.find("p:xfrm/a:off", NS)
+    return (int(x.get("y")), int(x.get("x"))) if x is not None else (0, 0)
+
+
+def _etat_de(spids: list, par: int | None, etats: list) -> int:
+    """Premier état où un élément est visible : la forme (ou l'un de ses groupes) et, s'il y a lieu, son paragraphe."""
+    for k, caches in enumerate(etats):
+        cache = False
+        for c in caches:
+            if isinstance(c, list):
+                if par is not None and c[0] in spids and c[1] <= par <= c[2]:
+                    cache = True
+            elif c in spids:
+                cache = True
+        if not cache:
+            return k
+    return max(0, len(etats) - 1)
+
+
+def texte_diapo(z: zipfile.ZipFile, chemin: str, racine, etats: list) -> list[dict]:
+    """Texte d'une diapositive, dans l'ordre de lecture (titre d'abord, puis de haut en bas et de gauche à droite).
+
+    Blocs : ``{texte, titre: true}``, ``{texte, niveau}`` (un paragraphe, niveau de puce à partir de 0),
+    ``{formule}`` (LaTeX d'une équation IguanaTeX), ``{cellules: [[{texte}…]…]}`` (tableau). Chaque bloc porte, s'il
+    y a lieu, ``etat`` (premier état où il est visible) et, pour une forme d'édition, ``cas`` et ``publics``. Les
+    annotations « cf … », les médias, les images et les pieds de page n'y sont pas ; les champs ``{cours}``… restent
+    écrits tels quels (remplis à la construction).
+    """
+    A = "{%s}" % NS["a"]
+    rels = _rels(z, chemin)
+    arbre = racine.find("p:cSld/p:spTree", NS)
+    titres, autres = [], []
+
+    def ajouter(liste, bloc, spids, par, ed):
+        k = _etat_de(spids, par, etats)
+        if k:
+            bloc["etat"] = k
+        if ed:
+            bloc["cas"] = ed[0]
+            if ed[1]:
+                bloc["publics"] = ed[1]
+        liste.append(bloc)
+
+    def visiter(el, ancetres: list, ed):
+        c = el.find("*/p:cNvPr", NS)
+        if c is None:
+            return
+        spid, nom = int(c.get("id")), c.get("name") or ""
+        if _type_cf(nom):
+            return                                                    # annotation : jamais du texte de diapositive
+        ed = _cas_edition(nom) or ed
+        spids = ancetres + [spid]
+        latex = _latex_iguanatex(z, rels, el)
+        if latex:
+            ajouter(autres, {"formule": latex}, spids, None, ed)
+            return
+        if el.tag == P + "grpSp":
+            for e in sorted((e for e in el if e.tag in (P + "sp", P + "grpSp", P + "graphicFrame", P + "pic")), key=_xfrm):
+                visiter(e, spids, ed)
+            return
+        if el.tag == P + "graphicFrame":
+            tbl = el.find(".//" + A + "tbl")
+            if tbl is not None:
+                lignes = [[{"texte": _texte(tc).replace("\n", " ")} for tc in tr.findall(A + "tc")] for tr in tbl.findall(A + "tr")]
+                if any(x["texte"] for l in lignes for x in l):
+                    ajouter(autres, {"cellules": lignes}, spids, None, ed)
+            return
+        if el.tag != P + "sp":
+            return                                                    # image, média, connecteur
+        ph = el.find("p:nvSpPr/p:nvPr/p:ph", NS)
+        if ph is not None and ph.get("type") in ("ftr", "dt", "sldNum"):
+            return
+        corps = el.find("p:txBody", NS)
+        if corps is None:
+            return
+        titre = ph is not None and ph.get("type") in ("title", "ctrTitle")
+        for i, par in enumerate(corps.findall(A + "p")):
+            t = _texte(par).replace("\n", " ").strip()
+            if not t:
+                continue
+            if titre:
+                ajouter(titres, {"texte": t, "titre": True}, spids, i, ed)
+            else:
+                ppr = par.find(A + "pPr")
+                niveau = int(ppr.get("lvl") or 0) if ppr is not None else 0
+                ajouter(autres, {"texte": t, "niveau": niveau} if niveau else {"texte": t}, spids, i, ed)
+
+    if arbre is None:
+        return []
+    for el in sorted((e for e in arbre if e.tag in (P + "sp", P + "grpSp", P + "graphicFrame", P + "pic")), key=_xfrm):
+        visiter(el, [], None)
+    out, vus = [], set()
+    for b in titres + autres:
+        if b.get("formule") is not None and _etiquette(b["formule"]):
+            continue                                                  # « F », « σ » posés sur un schéma
+        if b.get("texte") is not None and not re.search(r"[^\W\d_]", b["texte"]):
+            continue                                                  # « 1. », « 0. » : numéros de section
+        cle = repr({k: v for k, v in b.items() if k != "etat"})
+        if cle in vus:
+            continue
+        vus.add(cle)
+        out.append(b)
+    return out
+
+
+def _etiquette(latex: str) -> bool:
+    """Vrai si une formule n'est qu'un symbole (lettre, lettre grecque), une fois retirées les commandes de couleur
+    à un argument (``\\TR{F}``) : une étiquette de schéma, pas du texte à lire."""
+    t = latex
+    for _ in range(5):
+        t2 = re.sub(r"\\[A-Za-z]+\s*\{\s*(.*?)\s*\}$", r"\1", t.strip())
+        if t2 == t:
+            break
+        t = t2
+    return bool(re.fullmatch(r"\s*(\\[A-Za-z]+|[A-Za-z])\s*(_\{?\w\}?)?\s*", t))
+
+
 def _formes_cf(racine, journal: list) -> list[dict]:
     """Renvoie les formes d'annotation d'une diapositive (premier niveau), en unités du diaporama (EMU).
 
@@ -321,6 +499,7 @@ def lire(fichier: Path) -> dict:
                     pass
             if par_par:
                 d["animation_par_paragraphe"] = True
+            d["texte_diapo"] = texte_diapo(z, chemin, racine, etats)
             ed, ch, pi = _formes_edition(racine), _champs(racine), _pieds(racine)
             if ed:
                 d["edition"] = ed
@@ -377,7 +556,35 @@ def _recouvre(c1, c2) -> float:
 
 
 SOURCE_PPTX = ("type", "fichier", "diapo", "etats", "titre", "animation_par_paragraphe")
-PAS_PPTX = ("id", "fond", "source", "narration", "phrases", "audio", "duree_s", "objets")
+PAS_PPTX = ("id", "fond", "source", "narration", "phrases", "audio", "duree_s", "objets", "texte_diapo")
+
+
+def garder_traductions(neuf: list[dict], vieux: list[dict] | None, src: str) -> list[dict]:
+    """Reporte sur le texte de diapositive relu ``neuf`` les traductions de ``vieux`` dont le texte source n'a pas
+    changé (textes ``{fr: …, en: …}`` du chapitre)."""
+    connus: dict = {}
+
+    def noter(v):
+        if isinstance(v, dict) and v.get(src):
+            connus.setdefault(" ".join(str(v[src]).split()), v)
+    for b in vieux or []:
+        noter(b.get("texte"))
+        for l in b.get("cellules") or []:
+            for c in l:
+                noter(c.get("texte"))
+
+    def reprendre_v(v):
+        if not isinstance(v, str):
+            return v
+        ancien = connus.get(" ".join(v.split()))
+        return {**ancien, src: v} if ancien else v
+    for b in neuf:
+        if "texte" in b:
+            b["texte"] = reprendre_v(b["texte"])
+        for l in b.get("cellules") or []:
+            for c in l:
+                c["texte"] = reprendre_v(c["texte"])
+    return neuf
 
 
 def _garder(q: dict, vieux: dict, enregistre: bool):
@@ -578,6 +785,9 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
                 q["objets"] = objets
             if d.get("animation_par_paragraphe"):
                 q["source"]["animation_par_paragraphe"] = True
+            if d.get("texte_diapo"):                    # texte de la diapositive, lisible et traduisible (volet Texte)
+                q["texte_diapo"] = garder_traductions(d["texte_diapo"], (vieux or {}).get("texte_diapo"),
+                                                      (chap.get("langues") or {}).get("source") or "fr")
             nouveaux.append(F.ordonner(q, F.ORDRE_PAS))
         sec["pas"] = nouveaux + autres
         d_tot = sum(q.get("duree_s") or 0 for q in nouveaux)
