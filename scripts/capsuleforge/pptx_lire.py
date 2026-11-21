@@ -400,6 +400,34 @@ def _garder(q: dict, vieux: dict, enregistre: bool):
             q[k] = v
 
 
+def dispositions(fichier: Path) -> dict:
+    """Lit sans PowerPoint ce qui compte pour appliquer un modèle : taille des diapositives (EMU), noms des
+    dispositions du fichier et de chaque diapositive, champs des masques. Marche pour un .pptx ou un .potx."""
+    out = {"taille": None, "dispositions": [], "diapos": {}, "champs_masque": []}
+    with zipfile.ZipFile(fichier) as z:
+        pres = ET.fromstring(z.read("ppt/presentation.xml"))
+        t = pres.find("p:sldSz", NS)
+        out["taille"] = [int(t.get("cx")), int(t.get("cy"))] if t is not None else None
+        noms = {}
+        champs = set()
+        for n in z.namelist():
+            if re.match(r"ppt/slideLayouts/slideLayout\d+\.xml$", n):
+                r = ET.fromstring(z.read(n))
+                c = r.find("p:cSld", NS)
+                noms[n] = (c.get("name") if c is not None else "") or ""
+            if re.match(r"ppt/(slideMasters|slideLayouts)/[^/]+\.xml$", n):
+                champs |= {x for v in _champs(ET.fromstring(z.read(n))).values() for x in v}
+        out["dispositions"] = sorted(set(noms.values()))
+        out["champs_masque"] = sorted(champs)
+        lst = pres.find("p:sldIdLst", NS)
+        rels = _rels(z, "ppt/presentation.xml")
+        for k, sld in enumerate(lst if lst is not None else [], 1):
+            chemin = rels[sld.get("{%s}id" % NS["r"])][1]
+            lay = next((c for t_, c in _rels(z, chemin).values() if t_ == "slideLayout"), None)
+            out["diapos"][k] = noms.get(lay, "")
+    return out
+
+
 def masque_chapitre(chap: dict) -> str:
     """Masque des diapositives PowerPoint du chapitre (clé ``powerpoint: {masque: …}``) : ``nu`` (défaut, formes du
     masque et pieds de page cachés) ou ``garder`` (masque neutre, montré partout)."""

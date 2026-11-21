@@ -41,6 +41,7 @@ La clé `habillage` (facultative) donne ce que CapsuleForge pose sur une capsule
 ```yaml
 habillage:
   logo: logo.png                          # dans le dossier du profil : bandeau du lecteur, écran d'accueil
+  modele: modele_ecole1.potx              # dans le dossier du profil : modèle PowerPoint des diapositives
   cadre: principal                        # bandes autour des images (rôle ou couleur de la charte)
   pied: "{code} · {promo} · {ecole}"      # sous l'image
   filigrane: {texte: "{ecole} · {promo}", position: bas-droite, opacite: 0.35}   # si l'édition le demande
@@ -48,7 +49,9 @@ habillage:
   licence: "CC BY-NC-SA 4.0"
 ```
 
-Champs des textes : `{cours}` (titre du cours), `{code}` (code de l'enseignement), `{bloc}`, `{promo}`, `{annee}` (2026-2027), `{ecole}`, `{declinaison}`, `{edition}`, `{enseignant}`, `{capsule}`. Le profil `Ecole1` en donne un exemple, avec un logo fictif.
+Champs des textes : `{cours}` (titre du cours), `{code}` (code de l'enseignement), `{bloc}`, `{promo}`, `{annee}` (2026-2027), `{ecole}`, `{declinaison}`, `{edition}`, `{enseignant}`, `{capsule}`. Le profil `Ecole1` en donne un exemple, avec un logo et un modèle PowerPoint fictifs.
+
+**Modèle PowerPoint.** `modele` (un `.potx`, facultatif) est appliqué par PowerPoint aux diapositives d'une capsule construite pour une édition de l'école : thème, polices, couleurs et masque (logo, bandeau, pied de page) de l'école remplacent ceux du diaporama de l'auteur, qui n'est jamais modifié. Chaque diapositive garde sa disposition, appariée par son nom : les dispositions du modèle doivent porter les mêmes noms que celles des diaporamas (`Titre et contenu`, `Deux contenus`…), et le modèle avoir le même format (16:9). Les champs `{code}`, `{promo}`… écrits dans le masque du modèle sont remplis. Il faut PowerPoint (Windows) à la première construction d'une édition ; les images sont ensuite gardées en cache.
 
 ## Formations, codes et promotions
 

@@ -30,6 +30,7 @@ sources:
   - donnees/diagforge/promotion_groupes
   capsules:
   - data/capsuleforge/demo_traction
+  - data/capsuleforge/essai_habillage
 erreurs: null
 etiquettes:
 - TRACTION

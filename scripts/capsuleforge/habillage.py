@@ -9,6 +9,7 @@ Clé ``habillage`` du profil (toutes facultatives) ::
 
     habillage:
       logo: logo.png                         # dans le dossier du profil ; logo_nuit facultatif
+      modele: modele_ecole.potx              # modèle PowerPoint appliqué aux diapositives d'une édition (Windows)
       cadre: principal                       # couleur des bandes autour des images (rôle ou couleur de la charte)
       pied: "{code} · {promo} · {ecole}"     # sous l'image
       filigrane: {texte: "{ecole} · {promo}", position: bas-droite, opacite: 0.35}
@@ -93,6 +94,12 @@ def pour_cours(spec: str, titre_capsule: str = "") -> dict:
     if hab.get("logo") and fp:
         f = fp.parent / str(hab["logo"])
         logo = f if f.is_file() else None
+    modele = None
+    if hab.get("modele") and fp:
+        f = fp.parent / str(hab["modele"])
+        modele = f if f.is_file() and f.suffix.lower() in (".potx", ".pptx", ".thmx") else None
+        if modele is None:
+            print(f"  modèle PowerPoint « {hab['modele']} » introuvable dans le profil {profil} : thème du diaporama gardé")
     fil = hab.get("filigrane") if isinstance(hab.get("filigrane"), dict) else None
     filigrane = None
     if fil and (e or {}).get("filigrane"):
@@ -103,7 +110,7 @@ def pour_cours(spec: str, titre_capsule: str = "") -> dict:
             "libelle": r["libelle"], "profil": profil, "champs": champs, "couleurs": couleurs,
             "cadre": _couleur(charte, hab.get("cadre")) or principal,
             "police_texte": charte.get("police_texte"), "police_titres": charte.get("police_titres"),
-            "polices_url": charte.get("polices_url"), "logo": logo,
+            "polices_url": charte.get("polices_url"), "logo": logo, "modele": modele,
             "pied": remplir(hab.get("pied") or "{code} · {promo} · {ecole}", champs),
             "mentions": remplir(hab.get("mentions"), champs), "licence": str(hab.get("licence") or ""),
             "filigrane": filigrane, "variante": variantes_edition(d, e)}
@@ -122,9 +129,10 @@ def variantes_edition(d: dict | None, e: dict | None) -> list[str]:
 def resume(h: dict) -> dict:
     """Ce qui fait l'empreinte d'un habillage (pas de chemin absolu, le logo par son contenu)."""
     import hashlib
-    out = {k: v for k, v in h.items() if k not in ("logo", "spec")}
-    if h.get("logo"):
-        out["logo"] = hashlib.md5(Path(h["logo"]).read_bytes()).hexdigest()[:12]
+    out = {k: v for k, v in h.items() if k not in ("logo", "spec", "modele")}
+    for k in ("logo", "modele"):
+        if h.get(k):
+            out[k] = hashlib.md5(Path(h[k]).read_bytes()).hexdigest()[:12]
     return out
 
 

@@ -37,6 +37,7 @@ promo: "P{diplomation}"           # P2029 ; une école qui nomme par l'année d'
 # Champs des textes : {cours} {code} {bloc} {promo} {annee} {ecole} {declinaison} {edition} {enseignant} {capsule}
 habillage:
   logo: logo.png                          # dans ce dossier : bandeau du lecteur et écran d'accueil
+  modele: modele_ecole1.potx              # dans ce dossier : modèle PowerPoint des diapositives d'une édition
   cadre: principal                        # bandes autour des images (rôle ou couleur de la charte)
   pied: "{code} · {promo} · {ecole}"      # sous l'image
   filigrane:                              # posé sur les images si l'édition le demande (filigrane: true)

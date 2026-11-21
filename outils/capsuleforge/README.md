@@ -80,7 +80,11 @@ powerpoint:
   masque: garder
 ```
 
-Les champs écrits dans le masque sont alors remplis aussi. À la construction d'une édition, seules les diapositives qui portent des formes d'édition ou des champs sont réexportées par PowerPoint ; les autres gardent l'image nue. Ces images sont gardées dans `_editions/` du chapitre (jamais publié) et refaites seulement si le diaporama, l'habillage ou la largeur change. Le diaporama est cherché là où il a été repris (noté dans le chapitre), à côté du chapitre, dans `sources/`, puis parmi les diaporamas retenus par l'atelier. Il faut donc PowerPoint (Windows) la première fois qu'on construit une édition ; ensuite, le cache suffit. `capsuleforge pptx` signale dans son journal les formes d'édition et les champs trouvés sur chaque diapositive.
+Les champs écrits dans le masque sont alors remplis aussi.
+
+**Modèle de l'école.** Si le profil de l'école donne un modèle PowerPoint (`habillage: {modele: modele_ecole1.potx}`, voir [Profils d'établissement](../../profils/README.md)), toutes les diapositives de l'édition sont réexportées avec ce modèle appliqué : thème, polices, couleurs et masque de l'école ; les pieds de page de l'auteur restent cachés, ceux qui portent des champs sont remplis. Chaque diapositive garde sa disposition, appariée par son nom ; la construction signale une disposition absente du modèle ou un format différent. Les équations IguanaTeX et les images gardent leurs couleurs d'origine. Sans modèle, l'image d'une édition garde le thème du diaporama.
+
+À la construction d'une édition, seules les diapositives qui portent des formes d'édition ou des champs sont réexportées par PowerPoint (toutes, avec un modèle d'école) ; les autres gardent l'image nue. Ces images sont gardées dans `_editions/` du chapitre (jamais publié) et refaites seulement si le diaporama, l'habillage ou la largeur change. Le diaporama est cherché là où il a été repris (noté dans le chapitre), à côté du chapitre, dans `sources/`, puis parmi les diaporamas retenus par l'atelier. Il faut donc PowerPoint (Windows) la première fois qu'on construit une édition ; ensuite, le cache suffit. `capsuleforge pptx` signale dans son journal les formes d'édition et les champs trouvés sur chaque diapositive.
 
 ### Transcrire le texte dit
 

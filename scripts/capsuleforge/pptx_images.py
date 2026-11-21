@@ -7,7 +7,9 @@ en PNG. Rien n'est enregistré dans le diaporama. Si PowerPoint était déjà ou
 Habillage (paramètre ``edition`` de :func:`exporter`) : les formes « cf édition … » et « cf nu » sont montrées ou
 cachées selon le public, les champs ``{cours}``, ``{promo}``… sont remplis (vides pour la capsule nue ; une forme
 qui n'a plus que des séparateurs est cachée), et, masque nu, les formes du masque (« Masquer les graphiques
-d'arrière-plan ») et les pieds de page sans champ sont cachés ; le fond et les couleurs du thème restent.
+d'arrière-plan ») et les pieds de page sans champ sont cachés ; le fond et les couleurs du thème restent. Avec
+le modèle d'une école (``edition["modele"]``), ce modèle est appliqué au diaporama ouvert (jamais enregistré) et
+son masque est montré ; les pieds de page de l'auteur restent cachés.
 
 Dépendance : ``comtypes`` (déjà installé avec ``uiautomation``).
 Licence : GPL v3.
@@ -138,14 +140,53 @@ def _vide(texte: str) -> bool:
 def _masques(pres, valeurs: dict, journal) -> None:
     """Remplit les champs écrits dans les masques et les dispositions du diaporama (masque gardé)."""
     for i in range(1, pres.Designs.Count + 1):
-        m = pres.Designs.Item(i).SlideMaster
-        collections = [m.Shapes] + [m.CustomLayouts.Item(j).Shapes for j in range(1, m.CustomLayouts.Count + 1)]
+        try:
+            m = pres.Designs.Item(i).SlideMaster
+            collections = [m.Shapes] + [m.CustomLayouts.Item(j).Shapes for j in range(1, m.CustomLayouts.Count + 1)]
+        except Exception as exc:
+            journal(f"  masque {i} : non lu ({type(exc).__name__})")
+            continue
         for coll in collections:
             for k in range(1, coll.Count + 1):
                 try:
                     remplir(coll.Item(k), valeurs)
                 except Exception as exc:
                     journal(f"  masque : champ non rempli ({type(exc).__name__})")
+
+
+def appliquer_modele(pres, modele: Path, numeros: list[int], journal) -> None:
+    """Applique le modèle de l'école au diaporama ouvert (en mémoire, jamais enregistré) et vérifie que chaque
+    diapositive garde sa disposition (appariée par son nom) ; sinon, la remet d'après son nom si le modèle l'a."""
+    avant = {}
+    for n in numeros:
+        try:
+            avant[n] = str(pres.Slides.Item(n).CustomLayout.Name)
+        except Exception:
+            pass
+    pres.ApplyTemplate(str(Path(modele).resolve()))
+    journal(f"  modèle {Path(modele).name} appliqué")
+    par_nom = {}
+    for i in range(1, pres.Designs.Count + 1):
+        m = pres.Designs.Item(i).SlideMaster
+        for j in range(1, m.CustomLayouts.Count + 1):
+            lay = m.CustomLayouts.Item(j)
+            par_nom.setdefault(str(lay.Name), lay)
+    for n, nom in avant.items():
+        diapo = pres.Slides.Item(n)
+        try:
+            apres = str(diapo.CustomLayout.Name)
+        except Exception:
+            continue
+        if apres == nom:
+            continue
+        if nom in par_nom:
+            try:
+                diapo.CustomLayout = par_nom[nom]
+                journal(f"  diapo {n} : disposition « {nom} » remise (PowerPoint avait choisi « {apres} »)")
+                continue
+            except Exception:
+                pass
+        journal(f"  diapo {n} : disposition « {nom} » absente du modèle, « {apres} » à la place : à vérifier")
 
 
 def montree(f: dict, publics) -> bool:
@@ -202,8 +243,9 @@ def exporter(fichier: Path, diapos: list[dict], dossier: Path, largeur: int, jou
     """Écrit ``<dossier>/images/dNN_eK.png`` pour chaque état des diapositives données et renvoie les chemins relatifs écrits.
 
     ``diapos`` : diapositives issues de ``pptx_lire.lire`` ; ``largeur`` : largeur des images en pixels.
-    ``edition`` : ``{publics, champs, masque}`` — ``publics`` : écoles et variantes de l'édition, ``None`` pour la
-    capsule nue ; ``champs`` : valeurs des champs ; ``masque`` : ``nu`` (défaut) ou ``garder``. Sans ``edition``,
+    ``edition`` : ``{publics, champs, masque, modele}`` — ``publics`` : écoles et variantes de l'édition, ``None``
+    pour la capsule nue ; ``champs`` : valeurs des champs ; ``masque`` : ``nu`` (défaut) ou ``garder`` ;
+    ``modele`` : modèle PowerPoint de l'école, appliqué avant l'export (son masque est alors montré). Sans ``edition``,
     tout est montré tel quel. Ne fonctionne que sous Windows, avec PowerPoint installé.
     """
     if sys.platform != "win32":
@@ -222,7 +264,11 @@ def exporter(fichier: Path, diapos: list[dict], dossier: Path, largeur: int, jou
         hauteur = round(largeur * float(pres.PageSetup.SlideHeight) / float(pres.PageSetup.SlideWidth))
         valeurs = (edition or {}).get("champs") or {}
         garder = (edition or {}).get("masque") == "garder"
-        if edition is not None and garder:
+        modele = (edition or {}).get("modele")
+        if modele:
+            appliquer_modele(pres, Path(modele), [d["n"] for d in diapos], journal)
+        montrer_masque = garder or bool(modele)              # masque neutre gardé, ou celui de l'école
+        if edition is not None and montrer_masque:
             _masques(pres, valeurs, journal)
         for d in diapos:
             diapo = pres.Slides.Item(d["n"])
@@ -232,11 +278,12 @@ def exporter(fichier: Path, diapos: list[dict], dossier: Path, largeur: int, jou
                 publics = edition.get("publics")
                 fixes |= {f["spid"] for f in d.get("edition") or [] if not montree(f, publics)}
                 champs = {int(k): v for k, v in (d.get("champs") or {}).items()}
-                if not garder:
+                if not montrer_masque:
                     try:
                         diapo.DisplayMasterShapes = 0                   # « Masquer les graphiques d'arrière-plan »
                     except Exception as exc:
                         journal(f"  diapo {d['n']} : masque non caché ({type(exc).__name__})")
+                if not garder:                                          # pied de page de l'auteur : jamais repris
                     fixes |= {s for s in d.get("pieds") or [] if s not in champs}
                 for s in champs:
                     if s in fixes or s not in formes:
