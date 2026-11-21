@@ -200,6 +200,25 @@ def _latex_iguanatex(z: zipfile.ZipFile, rels_diapo: dict, el) -> str | None:
     return None
 
 
+def _liens(par, rels: dict) -> list[dict]:
+    """Liens hypertextes d'un paragraphe : ``[{texte, url}]`` (morceaux qui se suivent vers la même adresse réunis)."""
+    A = "{%s}" % NS["a"]
+    out, avant = [], None
+    for r in par.findall(A + "r"):
+        h = r.find(A + "rPr/" + A + "hlinkClick")
+        cible = rels.get(h.get("{%s}id" % NS["r"])) if h is not None else None
+        url = cible[1] if cible and re.match(r"(https?:|mailto:)", cible[1] or "", re.I) else None
+        t = "".join(x.text or "" for x in r.iter(A + "t"))
+        if url and out and avant == url:
+            out[-1]["texte"] += t
+        elif url and t.strip():
+            out.append({"texte": t, "url": url})
+        avant = url
+    for x in out:
+        x["texte"] = x["texte"].strip()
+    return [x for x in out if x["texte"]]
+
+
 def _xfrm(el) -> tuple[int, int]:
     """Coin haut-gauche d'une forme (``y, x``) pour l'ordre de lecture ; (0, 0) si la forme n'a pas de position."""
     x = el.find("p:spPr/a:xfrm/a:off", NS)
@@ -287,11 +306,15 @@ def texte_diapo(z: zipfile.ZipFile, chemin: str, racine, etats: list) -> list[di
             if not t:
                 continue
             if titre:
-                ajouter(titres, {"texte": t, "titre": True}, spids, i, ed)
+                b = {"texte": t, "titre": True}
             else:
                 ppr = par.find(A + "pPr")
                 niveau = int(ppr.get("lvl") or 0) if ppr is not None else 0
-                ajouter(autres, {"texte": t, "niveau": niveau} if niveau else {"texte": t}, spids, i, ed)
+                b = {"texte": t, "niveau": niveau} if niveau else {"texte": t}
+            liens = _liens(par, rels)
+            if liens:
+                b["liens"] = liens
+            ajouter(titres if titre else autres, b, spids, i, ed)
 
     if arbre is None:
         return []

@@ -43,6 +43,9 @@ def _source(valeur, langue: str) -> str:
     return str(valeur or "")
 
 
+PARCOURS_STANDARD = ("Vue d'ensemble", "Lecture détaillée", "Lecture immersive")   # titres de nouvelle.PARCOURS
+
+
 def _brut(valeur) -> str:
     """Texte d'un champ, quelle que soit sa forme (chaîne, ou dictionnaire par langue : sa première valeur)."""
     return str(next(iter(valeur.values()), "") if isinstance(valeur, dict) else valeur or "")
@@ -52,6 +55,8 @@ def elements(chap: dict):
     """Produit le triplet ``(clé, objet parent, champ)`` de chaque texte traduisible du chapitre, dans l'ordre du fichier."""
     yield "chapitre/titre", chap, "titre"
     for c in chap.get("parcours") or []:
+        if isinstance(c.get("titre"), str) and c["titre"] in PARCOURS_STANDARD:
+            continue                                    # « Vue d'ensemble »… : traduits par le lecteur lui-même
         yield f"parcours/{c.get('id')}/titre", c, "titre"
     for p in chap.get("parties") or []:
         yield f"partie/{p.get('id')}/titre", p, "titre"

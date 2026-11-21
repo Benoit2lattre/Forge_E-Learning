@@ -338,6 +338,7 @@ def _medias(parties: list[dict], sortie: Path) -> list[str]:
             for q in s["pas"]:
                 rels += [q.get("fond"), q.get("audio"), (q.get("video") or {}).get("src"), (q.get("camera") or {}).get("src")] + [a[1] for a in q.get("apparitions") or []]
                 rels += [v.get("audio") for v in (q.get("voix") or {}).values()]
+                rels += [r for m in (q.get("fonds_tr") or {}).values() for r in m.values()]
             if s.get("exercice"):
                 d = sortie / s["exercice"]["base"]
                 rels += [f.relative_to(sortie).as_posix() for f in sorted(d.rglob("*")) if f.is_file()]
@@ -389,7 +390,8 @@ def texte_diapo(q: dict, src: str, autres: list[str], publics, champs: dict) -> 
     (``publics`` : ``None`` pour la capsule nue), champs remplis, traductions présentes.
 
     Chaque bloc : ``k`` (``t`` titre, ``p`` paragraphe, ``f`` formule, ``c`` tableau), ``x`` (texte, LaTeX ou
-    lignes de cellules), ``n`` (niveau), ``e`` (état à partir duquel il est visible), ``tr`` (``{langue: x}``).
+    lignes de cellules), ``n`` (niveau), ``e`` (état à partir duquel il est visible), ``l`` (liens ``[texte, adresse]``),
+    ``tr`` (``{langue: x}``).
     """
     import pptx_images as PI
     import pptx_lire as PL
@@ -420,6 +422,8 @@ def texte_diapo(q: dict, src: str, autres: list[str], publics, champs: dict) -> 
             x.update(k="t" if b.get("titre") else "p", x=t)
             if b.get("niveau"):
                 x["n"] = b["niveau"]
+            if b.get("liens"):                                # liens de la diapositive, cliquables dans le volet Texte
+                x["l"] = [[li["texte"], li["url"]] for li in b["liens"] if li.get("texte") and li.get("url")]
             tr = {l: v for l in autres for v in [texte(b.get("texte"), l)] if v}
             if tr:
                 x["tr"] = tr
@@ -612,7 +616,7 @@ def didacticiel(q: dict, chap: dict) -> dict | None:
 def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fmt: str = "webp",
                audio: str = "mp3", journal=print, scorm: str | None = None, scorm_version: str = "2004",
                habillage: dict | None = None, nom_paquets: str | None = None, paquets: list | None = None,
-               variante=None, images_edition: dict | None = None) -> Path:
+               variante=None, images_edition: dict | None = None, images_langues: dict | None = None) -> Path:
     """Construit le lecteur d'un chapitre et renvoie le chemin de ``<sortie>/index.html``.
 
     ``largeur`` : largeur maximale des images (réduction seulement) ; ``fmt`` : ``webp`` ou ``png`` ;
@@ -622,7 +626,8 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
     filigrane d'une édition ; ``nom_paquets`` : nom de base des paquets (sinon le dossier de sortie) ; ``paquets`` :
     liste complétée par les paquets écrits ; ``variante`` : variante(s) du chapitre (sinon celles de l'édition, sinon
     la capsule nue) — voir ``variantes.py`` ; ``images_edition`` : images du chapitre remplacées par celles de
-    l'édition (``pptx_edition.produire``).
+    l'édition (``pptx_edition.produire``) ; ``images_langues`` : ``{langue: {image: image traduite}}``, diapositives
+    traduites (``pptx_edition.produire_langues``), montrées par le lecteur dans la langue des sous-titres.
     """
     from PIL import Image
     chapitre_yaml = Path(chapitre_yaml)
@@ -647,8 +652,10 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
     masques = chap.get("masques") or []
     filigrane = (habillage or {}).get("filigrane")
     images_edition = {str(k): Path(v) for k, v in (images_edition or {}).items()}
+    images_langues = {l: {str(k): Path(v) for k, v in d.items()} for l, d in (images_langues or {}).items()}
     reglages = json.dumps([largeur, fmt, audio, masques, filigrane, variante,
-                           sorted((k, str(v)) for k, v in images_edition.items())], sort_keys=True)
+                           sorted((k, str(v)) for k, v in images_edition.items()),
+                           sorted((l, k, str(v)) for l, d in images_langues.items() for k, v in d.items())], sort_keys=True)
     temoin = sortie / "_reglages.json"
     memes = temoin.is_file() and temoin.read_text(encoding="utf-8") == reglages
     temoin.write_text(reglages, encoding="utf-8")
@@ -659,13 +666,18 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
     def a_jour(src: Path, dst: Path) -> bool:
         return memes and dst.is_file() and dst.stat().st_size > 0 and dst.stat().st_mtime >= src.stat().st_mtime
 
-    def image(rel: str | None) -> str | None:
+    def image(rel: str | None, langue: str | None = None) -> str | None:
         if not rel:
             return None
-        if rel in images:
-            return images[rel]
-        src = images_edition.get(rel) or dossier / rel        # diapositive habillée pour l'édition, sinon nue
-        nom = Path(rel).stem + (".webp" if fmt == "webp" else ".png")
+        cle_im = (rel, langue) if langue else rel
+        if cle_im in images:
+            return images[cle_im]
+        if langue:                                            # diapositive traduite
+            src = images_langues[langue][rel]
+            nom = Path(rel).stem + f".{langue}" + (".webp" if fmt == "webp" else ".png")
+        else:
+            src = images_edition.get(rel) or dossier / rel    # diapositive habillée pour l'édition, sinon nue
+            nom = Path(rel).stem + (".webp" if fmt == "webp" else ".png")
         dst = sortie / "images" / nom
         if not a_jour(src, dst):
             with Image.open(src) as im:
@@ -682,8 +694,8 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                     im.save(dst, "WEBP", quality=86, method=5)
                 else:
                     im.save(dst, "PNG", optimize=True)
-        images[rel] = f"images/{nom}"
-        return images[rel]
+        images[cle_im] = f"images/{nom}"
+        return images[cle_im]
 
     videos: dict[str, str] = {}
 
@@ -787,6 +799,14 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                 td = texte_diapo(q, src, autres, publics_ed, champs_ed)
                 if td:
                     x["diapo"] = td
+                ft = {}                                       # diapositives traduites : image d'origine → image traduite
+                for l, d_l in images_langues.items():
+                    m = {image(r): image(r, l) for r in [q.get("fond")] + [o.get("fichier") for o in objets
+                                                                           if o.get("type") == "apparition"] if r and r in d_l}
+                    if m:
+                        ft[l] = m
+                if ft:
+                    x["fonds_tr"] = ft
                 d = didacticiel(q, chap)
                 if d:
                     x["didac"] = d

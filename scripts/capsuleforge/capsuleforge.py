@@ -190,9 +190,11 @@ def cmd_construire(a):
         if getattr(a, "cours", None):
             return construire_pour_cours(a, y2)
         sortie = Path(a.sortie) if a.sortie else chemins.SORTIES / "capsuleforge" / y2.parent.name
+        import pptx_edition as PE
+        langues = PE.produire_langues(PE.plan_langues(y2, F.lire(y2), None), y2.parent)   # diapositives traduites
         construire_chapitre.construire(y2, sortie, largeur=a.largeur, fmt=a.format or "webp", audio=a.audio,
                                        scorm=getattr(a, "scorm", None), scorm_version=getattr(a, "scorm_version", None) or "2004",
-                                       variante=getattr(a, "variante", None))
+                                       variante=getattr(a, "variante", None), images_langues=langues)
         return 0
     import construire
     sortie = Path(a.sortie) if a.sortie else chemins.SORTIES / "capsuleforge" / y.parent.name
@@ -254,6 +256,9 @@ def construire_pour_cours(a, y: Path) -> int:
                 "format": a.format or "webp", "audio": a.audio}
     if pl:
         reglages["powerpoint"] = PE.resume(pl)
+    tl = PE.plan_langues(y, chap, h)            # diapositives traduites
+    if tl:
+        reglages["powerpoint_langues"] = PE.resume_langues(tl)
     emp = empreinte_capsule(y, reglages)
     b = registre.base({"cours": h["cours"], "declinaison": h["declinaison"], "edition": h["edition"]})
     v = registre.preparer(b, y, None, emp, "capsule", nom)
@@ -264,9 +269,10 @@ def construire_pour_cours(a, y: Path) -> int:
     sortie = Path(a.sortie) if a.sortie else chemins.SORTIES / "capsuleforge" / HB.nom_paquet(h, nom)
     paquets: list = []
     images = PE.produire(pl, y.parent)
+    langues = PE.produire_langues(tl, y.parent, exiger=True)
     construire_chapitre.construire(y, sortie, largeur=a.largeur, fmt=a.format or "webp", audio=a.audio, scorm=scorm,
                                    scorm_version=version, habillage=h, nom_paquets=HB.nom_paquet(h, nom, v["label"]),
-                                   paquets=paquets, images_edition=images)
+                                   paquets=paquets, images_edition=images, images_langues=langues)
     if not paquets:
         print("Aucun paquet SCORM écrit : rien de rangé")
         return 1
@@ -274,7 +280,7 @@ def construire_pour_cours(a, y: Path) -> int:
     d.mkdir(parents=True, exist_ok=True)
     for z in paquets:
         shutil.copy2(z, d / z.name)
-    registre.enregistrer_exercice(b, v, y, {k: x for k, x in reglages.items() if k not in ("habillage", "powerpoint")}
+    registre.enregistrer_exercice(b, v, y, {k: x for k, x in reglages.items() if k not in ("habillage", "powerpoint", "powerpoint_langues")}
                                   | {"profil": h["profil"], "filigrane": bool(h["filigrane"])}
                                   | ({"diapositives_habillees": sum(len(d["diapos"]) for d in pl["diaporamas"])} if pl else {}),
                                   emp, h["cours"], "capsule")

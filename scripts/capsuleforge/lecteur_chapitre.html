@@ -159,6 +159,7 @@ nav .duree .q{color:var(--navy2);white-space:nowrap}
 #texte .diapo{margin:6px 0 6px;padding:4px 10px;border-left:3px solid var(--slate-l)}
 #texte .diapo .dt{font-weight:700;margin:2px 0}
 #texte .diapo .dp{margin:2px 0}
+#texte .diapo a{color:inherit;text-decoration:underline}
 #texte .diapo .df{margin:4px 0;overflow-x:auto}
 #texte .diapo table{border-collapse:collapse;margin:4px 0}
 #texte .diapo td{border:1px solid var(--bord);padding:2px 8px}
@@ -346,13 +347,13 @@ const LG = C.langues || { source: "fr", autres: [], noms: {} };
 C._titre = C.titre;
 for (const p of C.parties) { p._t = { titre: p.titre };
   for (const s of p.sections) { s._t = { titre: s.titre, objectif: s.objectif, ouverture: s.ouverture };
-    for (const q of s.pas) q._src = { audio: q.audio, duree_s: q.duree_s, apparitions: q.apparitions, objets: q.objets,
+    for (const q of s.pas) q._src = { fond: q.fond, audio: q.audio, duree_s: q.duree_s, apparitions: q.apparitions, objets: q.objets,
                                       temps: q.phrases.map(ph => [ph[0], ph[1]]), textes: q.phrases.map(ph => ph[2]) }; } }
 const tousPas = () => C.parties.flatMap(p => p.sections.flatMap(s => s.pas));
 const voixDispo = [LG.source].concat((LG.autres || []).filter(l => tousPas().some(q => q.voix && q.voix[l])));
 const toutesQuestions = () => C.parties.flatMap(p => p.sections.flatMap(s => (s.lots || []).flatMap(l => l.questions)));
 const stDispo = [LG.source].concat((LG.autres || []).filter(l => tousPas().some(q => q.trad && q.trad[l]) || C.parties.some(p => p.tr && p.tr[l])
-  || tousPas().some(q => (q.diapo || []).some(b => b.tr && b.tr[l]))
+  || tousPas().some(q => (q.diapo || []).some(b => b.tr && b.tr[l]) || (q.fonds_tr && q.fonds_tr[l]))
   || toutesQuestions().some(q => q.tr && q.tr[l]) || C.parties.some(p => p.sections.some(s => s.exercice && s.exercice.html_tr && s.exercice.html_tr[l]))));
 /* questions : textes d'origine gardés une fois, traduction prise dans q.tr[langue][chemin] (chemins : construire_chapitre.textes_question) */
 function traduireQuestion(q) {
@@ -373,7 +374,9 @@ function appliquerLangues() {
     for (const s of p.sections) { for (const k of ["titre", "objectif", "ouverture"]) s[k] = t(s, k) || s._t[k];
       let d = 0;
       for (const q of s.pas) { const v = (voixL !== LG.source && q.voix && q.voix[voixL]) || null, o = q._src;
-        q.audio = v ? v.audio : o.audio; q.duree_s = v ? v.duree_s : o.duree_s; q.apparitions = v ? v.apparitions : o.apparitions;
+        const fi = (stL !== LG.source && q.fonds_tr && q.fonds_tr[stL]) || null, im = f => (fi && fi[f]) || f;   /* diapositives traduites */
+        q.audio = v ? v.audio : o.audio; q.duree_s = v ? v.duree_s : o.duree_s; q.fond = im(o.fond);
+        q.apparitions = (v ? v.apparitions : o.apparitions).map(a => [a[0], im(a[1])]);
         q.objets = v ? v.objets : o.objets; q.voixSynthese = v ? true : !!q.synthese;
         const tps = v ? v.temps : o.temps, tr = stL !== LG.source && q.trad && q.trad[stL];
         q.phrases = tps.map((x, k) => [x[0], x[1], (tr && tr[k] && typo(tr[k])) || o.textes[k]]); d += q.duree_s; }
@@ -385,7 +388,7 @@ function appliquerLangues() {
 const UI = { en: {
   "< 1 min": "< 1 min", "{0} min": "{0} min", "pratique {0} sur {1}": "practice {0} of {1}", ", partie achevée": ", part completed", "{0} % lu": "{0}% read",
   "Durée de ce parcours :": "Length of this path:", " disponibles sur {0} prévues": " available out of {0} planned",
-  "Vue d'ensemble": "Overview", "Approfondissements": "Further reading", "Pratique": "Practice",
+  "Vue d'ensemble": "Overview", "Lecture détaillée": "Detailed reading", "Lecture immersive": "Immersive reading", "Approfondissements": "Further reading", "Pratique": "Practice",
   "Sections du cours parcourues": "Course sections viewed", "Sections des annexes parcourues": "Appendix sections viewed",
   "Quiz répondus et exercices faits": "Quizzes answered and exercises done", " — non proposé par ce parcours": " — not offered in this path",
   "à venir": "coming soon", " (à venir)": " (coming soon)", "Partie {0}, {1}, {2}": "Part {0}, {1}, {2}", ". Aller à la première section non vue": ". Go to the first unseen section",
@@ -1014,10 +1017,22 @@ function blocsDiapo(q, i) {
   for (const b of q.diapo) { const x = (stL !== LG.source && b.tr && b.tr[stL]) || b.x; let e;
     if (b.k === "f") { e = document.createElement("div"); e.className = "df"; e.textContent = "\\[" + b.x + "\\]"; }
     else if (b.k === "c") { e = document.createElement("table"); for (const l of x) { const tr = e.insertRow(); for (const c of l) tr.insertCell().textContent = typo(c); } }
-    else { e = document.createElement("div"); e.className = b.k === "t" ? "dt" : "dp"; e.textContent = typo(x);
+    else { e = document.createElement("div"); e.className = b.k === "t" ? "dt" : "dp"; avecLiens(e, typo(x), b.l);
       if (b.n) e.style.marginLeft = (1.2 * b.n) + "em"; }
     e.dataset.e = b.e || 0; d.appendChild(e); }
   return d;
+}
+/* liens du texte (ceux de la diapositive) : chaque texte lié retrouvé dans le paragraphe, source ou traduction */
+function avecLiens(e, t, liens) {
+  const ok = (liens || []).filter(l => l[0] && /^(https?:|mailto:)/i.test(l[1] || ""));
+  if (!ok.length) { e.textContent = t; return; }
+  let reste = t;
+  while (reste) { let mieux = null;
+    for (const l of ok) { const i = reste.indexOf(l[0]); if (i >= 0 && (!mieux || i < mieux[0])) mieux = [i, l]; }
+    if (!mieux) { e.appendChild(document.createTextNode(reste)); break; }
+    if (mieux[0]) e.appendChild(document.createTextNode(reste.slice(0, mieux[0])));
+    const a = document.createElement("a"); a.href = mieux[1][1]; a.target = "_blank"; a.rel = "noopener"; a.textContent = mieux[1][0];
+    e.appendChild(a); reste = reste.slice(mieux[0] + mieux[1][0].length); }
 }
 let etatDiapo = "";
 function majDiapo(force) {
@@ -1138,7 +1153,7 @@ function libelles() {
   document.querySelector(".aide").innerHTML = langueUI === "fr" ? AIDE_FR : T("aide");
   for (const o of $("vitesse").options) o.textContent = "× " + (langueUI === "fr" ? o.value.replace(".", ",") : o.value);
   for (const o of $("voix").options) o.textContent = nomL(o.value) + (o.value !== LG.source ? T(" (synthèse)") : "");
-  for (const o of $("parcours").options) { const c = C.parcours.find(x => x.id === o.value); if (c) o.textContent = (c.tr && c.tr[stL] && c.tr[stL].titre) || c.titre; }
+  for (const o of $("parcours").options) { const c = C.parcours.find(x => x.id === o.value); if (c) o.textContent = (c.tr && c.tr[stL] && c.tr[stL].titre) || T(c.titre); }
   bouton(); const bs = $("b-son"); bs.textContent = bs.getAttribute("aria-pressed") === "true" ? T("🔊 Son") : T("🔇 Muet"); $("b-cameo").textContent = cameoActif ? T("👤 Caméo") : T("👤 Sans caméo");
 }
 appliquerLangues();

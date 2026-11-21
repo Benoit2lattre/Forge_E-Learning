@@ -189,6 +189,57 @@ def appliquer_modele(pres, modele: Path, numeros: list[int], journal) -> None:
         journal(f"  diapo {n} : disposition « {nom} » absente du modèle, « {apres} » à la place : à vérifier")
 
 
+def _norme(t) -> str:
+    return " ".join(str(t or "").replace("\x0b", " ").replace("\v", " ").split())
+
+
+def traduire(forme, table: dict) -> int:
+    """Remplace dans une forme chaque paragraphe (ou cellule de tableau) dont le texte est dans ``table``
+    (``{texte source: traduction}``, textes réduits à des espaces simples) ; renvoie le nombre de remplacements.
+
+    Le remplacement garde la mise en forme du début du paragraphe ; un texte lié (valeur ``[traduction, [textes
+    liés]]``) que l'on retrouve dans la traduction reste en place, avec son lien et son style, et seul ce qui
+    l'entoure est remplacé. Les paragraphes sont parcourus du dernier au premier, pour que les positions restent justes.
+    """
+    n = 0
+    cellules = False
+    try:
+        cellules = bool(int(forme.HasTable))
+    except Exception:
+        pass
+    for plage in _plages(forme):
+        t = str(plage.Text)
+        if cellules:                                            # une cellule : tout son texte
+            cible = table.get(_norme(t.replace("\r", " ")))
+            if cible is not None and t:
+                plage.Characters(1, len(t)).Text = cible
+                n += 1
+            continue
+        morceaux, pos = [], 0
+        for par in t.split("\r"):
+            morceaux.append((pos, par))
+            pos += len(par) + 1
+        for debut, par in reversed(morceaux):
+            cible = table.get(_norme(par))
+            if cible is None or not par:
+                continue
+            garder = []
+            if isinstance(cible, list):                         # paragraphe avec liens : [traduction, [textes liés]]
+                cible, garder = cible[0], cible[1]
+            g = next((x for x in garder if x in par and x in cible), None)
+            if g:                                               # le texte lié reste en place, avec son lien et son style
+                i, j = par.index(g), cible.index(g)
+                avant, apres = cible[:j], cible[j + len(g):]
+                if par[i + len(g):] != apres:
+                    plage.Characters(debut + 1 + i + len(g), len(par) - i - len(g)).Text = apres
+                if par[:i] != avant:
+                    plage.Characters(debut + 1, i).Text = avant
+            else:
+                plage.Characters(debut + 1, len(par)).Text = cible
+            n += 1
+    return n
+
+
 def montree(f: dict, publics) -> bool:
     """Dit si une forme d'édition (``pptx_lire``) est montrée pour ces publics (``None`` : capsule nue)."""
     if f["cas"] == "nu":
@@ -245,7 +296,8 @@ def exporter(fichier: Path, diapos: list[dict], dossier: Path, largeur: int, jou
     ``diapos`` : diapositives issues de ``pptx_lire.lire`` ; ``largeur`` : largeur des images en pixels.
     ``edition`` : ``{publics, champs, masque, modele}`` — ``publics`` : écoles et variantes de l'édition, ``None``
     pour la capsule nue ; ``champs`` : valeurs des champs ; ``masque`` : ``nu`` (défaut) ou ``garder`` ;
-    ``modele`` : modèle PowerPoint de l'école, appliqué avant l'export (son masque est alors montré). Sans ``edition``,
+    ``modele`` : modèle PowerPoint de l'école, appliqué avant l'export (son masque est alors montré) ;
+    ``traductions`` : ``{diapositive: {texte source: traduction}}``, textes remplacés avant les champs. Sans ``edition``,
     tout est montré tel quel. Ne fonctionne que sous Windows, avec PowerPoint installé.
     """
     if sys.platform != "win32":
@@ -274,6 +326,16 @@ def exporter(fichier: Path, diapos: list[dict], dossier: Path, largeur: int, jou
             diapo = pres.Slides.Item(d["n"])
             formes = _formes(diapo)
             fixes: set = set()                                          # cachées dans tous les états
+            table = ((edition or {}).get("traductions") or {}).get(d["n"]) or {}
+            if table:                                                   # diapositive traduite : textes remplacés
+                faits = 0
+                for f in formes.values():
+                    try:
+                        faits += traduire(f, table)
+                    except Exception as exc:
+                        journal(f"  diapo {d['n']} : texte non traduit dans « {getattr(f, 'Name', '?')} » ({type(exc).__name__})")
+                if faits < len(table):
+                    journal(f"  diapo {d['n']} : {faits} texte(s) traduit(s) sur {len(table)} (les autres n'ont pas été retrouvés)")
             if edition is not None:
                 publics = edition.get("publics")
                 fixes |= {f["spid"] for f in d.get("edition") or [] if not montree(f, publics)}

@@ -7,6 +7,10 @@ champs remplis. Les autres diapositives gardent les images nues. Si le profil de
 PowerPoint (``habillage: {modele: modele_ecole.potx}``), toutes les diapositives sont réexportées avec ce modèle
 appliqué (thème, polices, couleurs et masque de l'école ; dispositions appariées par leur nom).
 
+Diapositives traduites : pour chaque autre langue du chapitre, les diapositives dont le texte (``texte_diapo``) a des
+traductions sont réexportées avec ces textes à la place des textes d'origine (capsule nue ou édition), et gardées
+en cache de la même façon (:func:`plan_langues`, :func:`produire_langues`).
+
 Le diaporama est cherché là où il a été repris (``source.chemin`` de la section), à côté du chapitre, dans
 ``sources/``, puis parmi les diaporamas retenus par l'atelier. Les images d'une édition sont gardées en cache dans ``<chapitre>/_editions/<clé>/`` : elles ne sont refaites que
 si le diaporama, la liste des diapositives, l'habillage ou la largeur change. Sans PowerPoint (hors Windows), le
@@ -197,3 +201,137 @@ def produire(pl: dict | None, dossier: Path, journal=print) -> dict:
             if (cache / r).is_file():
                 out[r] = cache / r
     return out
+
+
+# --------------------------------------------------------------------------- diapositives traduites (H14)
+def _norme(t) -> str:
+    """Texte comparé pour retrouver un paragraphe : espaces, retours à la ligne et tabulations réduits à une espace."""
+    return " ".join(str(t or "").replace("\x0b", " ").split())
+
+
+def _traductions_pas(q: dict, src: str, langue: str) -> dict:
+    """Table ``{texte source: traduction}`` des textes de la diapositive d'un pas traduits dans ``langue`` ; pour un
+    paragraphe qui porte des liens, la valeur est ``[traduction, [textes des liens]]``."""
+    out = {}
+
+    def noter(v, liens=None):
+        if isinstance(v, dict) and v.get(langue) and v.get(src):
+            garder = [li["texte"] for li in liens or [] if li.get("texte")]
+            out[_norme(v[src])] = [str(v[langue]), garder] if garder else str(v[langue])
+    for b in q.get("texte_diapo") or []:
+        noter(b.get("texte"), b.get("liens"))
+        for l in b.get("cellules") or []:
+            for c in l:
+                noter(c.get("texte"))
+    return out
+
+
+def plan_langues(y: Path, chap: dict, h: dict | None, journal=print) -> list[dict]:
+    """Prépare les diapositives traduites (H14), sans PowerPoint : pour chaque autre langue du chapitre et chaque
+    diaporama, les diapositives qui ont des textes traduits et leur table de traduction.
+
+    Les images sont celles de la capsule nue (``h`` vide) ou de l'édition (formes d'édition, champs, modèle de
+    l'école), textes remplacés. Renvoie une liste de travaux ``{langue, cle, fichier, chemin, md5, diapos,
+    traductions: {n: {source: cible}}, rels, publics, champs, masque, modele, modele_md5, largeur}``.
+    """
+    src = (chap.get("langues") or {}).get("source") or "fr"
+    autres = [l for l in (chap.get("langues") or {}).get("autres") or [] if l != src]
+    if not autres:
+        return []
+    dossier = Path(y).parent
+    par_fichier: dict = {}
+    notes: dict = {}
+    for p in chap.get("parties") or []:
+        for s in p.get("sections") or []:
+            for q in s.get("pas") or []:
+                sq = q.get("source") or {}
+                if sq.get("type") == "pptx" and sq.get("fichier") and sq.get("diapo") and q.get("texte_diapo"):
+                    par_fichier.setdefault(sq["fichier"], []).append(q)
+                    if (s.get("source") or {}).get("chemin"):
+                        notes.setdefault(sq["fichier"], s["source"]["chemin"])
+    masque = L.masque_chapitre(chap)
+    modele = Path(h["modele"]) if h and h.get("modele") else None
+    pub = publics(h) if h else None
+    champs = {k: str(v or "") for k, v in sorted(((h or {}).get("champs") or {}).items())}
+    largeur = (chap.get("ecran") or {}).get("largeur") or 1440
+    travaux = []
+    for fichier, pas in sorted(par_fichier.items()):
+        tables = {l: {} for l in autres}
+        for q in pas:
+            for l in autres:
+                t = _traductions_pas(q, src, l)
+                if t:
+                    tables[l].setdefault(q["source"]["diapo"], {}).update(t)
+        if not any(tables.values()):
+            continue
+        chemin = trouver(dossier, fichier, notes.get(fichier))
+        if chemin is None:
+            journal(f"  diaporama {fichier} introuvable : diapositives non traduites (images de la langue source)")
+            continue
+        md5 = _md5(chemin)
+        for l, t in tables.items():
+            if not t:
+                continue
+            diapos = sorted(t)
+            rels = sorted({r for q in pas if q["source"]["diapo"] in diapos
+                           for r in [q.get("fond")] + [o.get("fichier") for o in q.get("objets") or [] if o.get("type") == "apparition"]
+                           if r})
+            x = {"langue": l, "fichier": fichier, "chemin": str(chemin), "md5": md5, "diapos": diapos,
+                 "traductions": {n: t[n] for n in diapos}, "rels": rels, "publics": pub, "champs": champs, "masque": masque,
+                 "modele": str(modele) if modele else None, "modele_md5": _md5(modele) if modele else None, "largeur": largeur}
+            x["cle"] = hashlib.md5(json.dumps([l, pub, champs, masque, largeur, x["modele_md5"]], sort_keys=True)
+                                   .encode("utf-8")).hexdigest()[:10]
+            travaux.append(x)
+    return travaux
+
+
+def resume_langues(travaux: list[dict]) -> list[dict] | None:
+    """Empreinte des diapositives traduites (sans chemin) : langue, diaporama, diapositives, textes, habillage, code."""
+    if not travaux:
+        return None
+    ici = Path(__file__).resolve().parent
+    code = hashlib.md5(b"".join((ici / n).read_bytes() for n in ("pptx_images.py", "pptx_edition.py"))).hexdigest()[:12]
+    return [{"langue": x["langue"], "fichier": x["fichier"], "md5": x["md5"], "diapos": x["diapos"], "cle": x["cle"],
+             "textes": hashlib.md5(json.dumps(x["traductions"], sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()[:12],
+             "code": code} for x in travaux]
+
+
+def produire_langues(travaux: list[dict], dossier: Path, journal=print, exiger: bool = False) -> dict:
+    """Produit (ou reprend du cache) les diapositives traduites ; renvoie ``{langue: {image du chapitre: image}}``.
+
+    Sans PowerPoint et sans cache à jour : arrêt si ``exiger`` (édition rangée comme version), sinon les images de la
+    langue source restent, avec un avertissement.
+    """
+    out: dict = {}
+    resu = {(r["langue"], r["fichier"]): r for r in resume_langues(travaux) or []}
+    for x in travaux:
+        cache = Path(dossier) / "_editions" / x["cle"] / Path(x["fichier"]).stem
+        temoin = cache / "temoin.json"
+        attendu = json.dumps(resu[(x["langue"], x["fichier"])], sort_keys=True)
+        complet = all((cache / r).is_file() for r in x["rels"] if r.startswith("images/"))
+        if temoin.is_file() and temoin.read_text(encoding="utf-8") == attendu and complet:
+            journal(f"  {x['fichier']} ({x['langue']}) : diapositives traduites reprises du cache ({len(x['diapos'])})")
+        elif sys.platform != "win32":
+            msg = (f"{x['fichier']} : diapositives {', '.join(map(str, x['diapos']))} traduites en {x['langue']}, "
+                   "dont les images demandent PowerPoint (Windows)")
+            if exiger:
+                raise SystemExit(msg + ". Construire sous Windows ; le cache servira ensuite.")
+            journal(f"  {msg} : images en langue source pour l'instant")
+            continue
+        else:
+            import pptx_images
+            lu = L.lire(Path(x["chemin"]))
+            diapos = [d for d in lu["diapos"] if d["n"] in x["diapos"]]
+            journal(f"  {x['fichier']} : diapositives traduites en {x['langue']} ({', '.join(map(str, x['diapos']))})")
+            cache.mkdir(parents=True, exist_ok=True)
+            if temoin.is_file():
+                temoin.unlink()
+            pptx_images.exporter(Path(x["chemin"]), diapos, cache, x["largeur"], journal=journal,
+                                 edition={"publics": x["publics"], "champs": x["champs"], "masque": x["masque"],
+                                          "modele": x["modele"], "traductions": x["traductions"]})
+            temoin.write_text(attendu, encoding="utf-8")
+        for r in x["rels"]:
+            if (cache / r).is_file():
+                out.setdefault(x["langue"], {})[r] = cache / r
+    return out
+
