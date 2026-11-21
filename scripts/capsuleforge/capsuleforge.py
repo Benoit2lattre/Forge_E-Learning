@@ -248,8 +248,12 @@ def construire_pour_cours(a, y: Path) -> int:
     print(f"Cours : {h['libelle']}" + (f" (profil {h['profil']})" if h["profil"] else " (aucun profil d'école : charte de Forge)"))
     scorm = getattr(a, "scorm", None) or "chapitre"
     version = getattr(a, "scorm_version", None) or "2004"
+    import pptx_edition as PE
+    pl = PE.plan(y, chap, h)                    # diapositives PowerPoint à habiller (formes d'édition, champs)
     reglages = {"habillage": HB.resume(h), "scorm": scorm, "scorm_version": version, "largeur": a.largeur,
                 "format": a.format or "webp", "audio": a.audio}
+    if pl:
+        reglages["powerpoint"] = PE.resume(pl)
     emp = empreinte_capsule(y, reglages)
     b = registre.base({"cours": h["cours"], "declinaison": h["declinaison"], "edition": h["edition"]})
     v = registre.preparer(b, y, None, emp, "capsule", nom)
@@ -259,9 +263,10 @@ def construire_pour_cours(a, y: Path) -> int:
         return 0
     sortie = Path(a.sortie) if a.sortie else chemins.SORTIES / "capsuleforge" / HB.nom_paquet(h, nom)
     paquets: list = []
+    images = PE.produire(pl, y.parent)
     construire_chapitre.construire(y, sortie, largeur=a.largeur, fmt=a.format or "webp", audio=a.audio, scorm=scorm,
                                    scorm_version=version, habillage=h, nom_paquets=HB.nom_paquet(h, nom, v["label"]),
-                                   paquets=paquets)
+                                   paquets=paquets, images_edition=images)
     if not paquets:
         print("Aucun paquet SCORM écrit : rien de rangé")
         return 1
@@ -269,8 +274,10 @@ def construire_pour_cours(a, y: Path) -> int:
     d.mkdir(parents=True, exist_ok=True)
     for z in paquets:
         shutil.copy2(z, d / z.name)
-    registre.enregistrer_exercice(b, v, y, {k: x for k, x in reglages.items() if k != "habillage"}
-                                  | {"profil": h["profil"], "filigrane": bool(h["filigrane"])}, emp, h["cours"], "capsule")
+    registre.enregistrer_exercice(b, v, y, {k: x for k, x in reglages.items() if k not in ("habillage", "powerpoint")}
+                                  | {"profil": h["profil"], "filigrane": bool(h["filigrane"])}
+                                  | ({"diapositives_habillees": sum(len(d["diapos"]) for d in pl["diaporamas"])} if pl else {}),
+                                  emp, h["cours"], "capsule")
     print(f"Version {v['id']} inscrite au registre de {registre.rel(b)}")
     print(f"Version : {registre.rel(d)}")
     return 0

@@ -59,6 +59,29 @@ Les spots, cadres et pointeurs se dessinent aussi dans PowerPoint, sur la diapos
 
 Le nom peut être suivi de ce que l'on veut (`cf pointeur moyennes`). Ces formes ne sont jamais sur les images, et leurs animations éventuelles sont ignorées. `capsuleforge pptx …` les relit à chaque passage : leur forme vient du diaporama, leur instant et leur durée se règlent dans la relecture et sont gardés. Une apparition qui manque se remet comme animation PowerPoint ordinaire, puis on relance `capsuleforge pptx`. Limites : formes hors d'un groupe, sans rotation.
 
+### Habiller dans PowerPoint : formes d'édition et champs
+
+Une capsule reprise d'un diaporama est nue : ses images ne nomment aucun établissement. Ce qui dépend de l'édition se prépare sur les diapositives elles-mêmes, puis est rempli à la construction pour chaque édition (`construire --cours`).
+
+| Dans le diaporama | Capsule nue | Édition |
+| --- | --- | --- |
+| forme nommée `cf édition` (volet Sélection) | cachée | montrée |
+| forme nommée `cf édition ecole1` (ou `cf édition ecole1, aero`) | cachée | montrée seulement pour ce public : l'école du profil ou une variante active |
+| forme nommée `cf nu` | montrée | cachée |
+| texte `{cours}`, `{code}`, `{bloc}`, `{promo}`, `{annee}`, `{ecole}`, `{enseignant}`, `{declinaison}`, `{capsule}` | vide | valeur de l'édition (`cours.yaml` et profil de l'école) |
+| formes du masque (logo, bandeau) et pieds de page sans champ | cachés | cachés |
+
+Exemple : sur la page de titre, un sous-titre `{cours} · {promo}` et un cartouche `cf édition ecole1` avec le logo de l'école ; dans le pied de page, `{code} · {promo}`. Dans la capsule nue, un champ vidé part avec le séparateur voisin (`Benoit Delattre - {code}` devient « Benoit Delattre ») et une forme dont il ne reste que des séparateurs est cachée : ni sous-titre vide ni pied orphelin. Un libellé ne part pas avec son champ (`Promo {promo}` donnerait « Promo ») : une telle forme se nomme `cf édition`. Un champ peut être mis en forme comme le reste du texte, la mise en forme est gardée.
+
+Le masque des diapositives est caché par défaut (« Masquer les graphiques d'arrière-plan » de PowerPoint) : le fond et les couleurs du thème restent, les logos et les mentions qu'il porte disparaissent. Pour un masque neutre à garder partout, écrire dans `chapitre.yaml` :
+
+```yaml
+powerpoint:
+  masque: garder
+```
+
+Les champs écrits dans le masque sont alors remplis aussi. À la construction d'une édition, seules les diapositives qui portent des formes d'édition ou des champs sont réexportées par PowerPoint ; les autres gardent l'image nue. Ces images sont gardées dans `_editions/` du chapitre (jamais publié) et refaites seulement si le diaporama, l'habillage ou la largeur change. Le diaporama est cherché là où il a été repris (noté dans le chapitre), à côté du chapitre, dans `sources/`, puis parmi les diaporamas retenus par l'atelier. Il faut donc PowerPoint (Windows) la première fois qu'on construit une édition ; ensuite, le cache suffit. `capsuleforge pptx` signale dans son journal les formes d'édition et les champs trouvés sur chaque diapositive.
+
 ### Transcrire le texte dit
 
 ```
@@ -164,6 +187,7 @@ La capsule source reste nue : elle ne nomme aucun établissement. Avec `--cours`
 - **charte et logo** de l'école (clés `charte` et `habillage` de son profil d'établissement) : couleurs du lecteur, police, logo dans le bandeau ;
 - **écran d'accueil** à la première ouverture : logo, titre de la capsule, cours, code, école, année, promo, enseignant, mentions ;
 - **pied de page** sous l'image (`MEC-L3-TR · P2029 · Ecole1`) et **crédits** (licence, mentions) en fin de parcours ;
+- **diapositives habillées** dans PowerPoint pour l'édition : formes « cf édition », champs `{cours}`, `{promo}`… (voir « Habiller dans PowerPoint » plus haut) ;
 - **filigrane** sur les images (texte, place et opacité donnés par le profil) quand l'édition le demande (`filigrane: true`, case de l'édition dans AtelierForge) ;
 - **exercices ExoForge** construits avec la même charte ;
 - **paquets** au nom de l'édition (`demo_traction_ecole1-meca_2026_v1_scorm2004.zip`, un pour la capsule par défaut), titrés « capsule — cours — déclinaison — année ».

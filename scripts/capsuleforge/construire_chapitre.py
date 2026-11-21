@@ -541,7 +541,7 @@ def didacticiel(q: dict, chap: dict) -> dict | None:
 def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fmt: str = "webp",
                audio: str = "mp3", journal=print, scorm: str | None = None, scorm_version: str = "2004",
                habillage: dict | None = None, nom_paquets: str | None = None, paquets: list | None = None,
-               variante=None) -> Path:
+               variante=None, images_edition: dict | None = None) -> Path:
     """Construit le lecteur d'un chapitre et renvoie le chemin de ``<sortie>/index.html``.
 
     ``largeur`` : largeur maximale des images (réduction seulement) ; ``fmt`` : ``webp`` ou ``png`` ;
@@ -550,7 +550,8 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
     contient des erreurs bloquantes. ``habillage`` (``habillage.pour_cours``) : charte, logo, accueil, pied, crédits et
     filigrane d'une édition ; ``nom_paquets`` : nom de base des paquets (sinon le dossier de sortie) ; ``paquets`` :
     liste complétée par les paquets écrits ; ``variante`` : variante(s) du chapitre (sinon celles de l'édition, sinon
-    la capsule nue) — voir ``variantes.py``.
+    la capsule nue) — voir ``variantes.py`` ; ``images_edition`` : images du chapitre remplacées par celles de
+    l'édition (``pptx_edition.produire``).
     """
     from PIL import Image
     chapitre_yaml = Path(chapitre_yaml)
@@ -574,7 +575,9 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
     fmt = (fmt or "webp").lower().lstrip(".")
     masques = chap.get("masques") or []
     filigrane = (habillage or {}).get("filigrane")
-    reglages = json.dumps([largeur, fmt, audio, masques, filigrane, variante], sort_keys=True)
+    images_edition = {str(k): Path(v) for k, v in (images_edition or {}).items()}
+    reglages = json.dumps([largeur, fmt, audio, masques, filigrane, variante,
+                           sorted((k, str(v)) for k, v in images_edition.items())], sort_keys=True)
     temoin = sortie / "_reglages.json"
     memes = temoin.is_file() and temoin.read_text(encoding="utf-8") == reglages
     temoin.write_text(reglages, encoding="utf-8")
@@ -590,7 +593,7 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
             return None
         if rel in images:
             return images[rel]
-        src = dossier / rel
+        src = images_edition.get(rel) or dossier / rel        # diapositive habillée pour l'édition, sinon nue
         nom = Path(rel).stem + (".webp" if fmt == "webp" else ".png")
         dst = sortie / "images" / nom
         if not a_jour(src, dst):

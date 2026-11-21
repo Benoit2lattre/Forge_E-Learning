@@ -4,6 +4,11 @@ PowerPoint est piloté par COM : le fichier est ouvert en lecture seule, sans fe
 formes et paragraphes qui ne sont pas encore apparus sont cachés en mémoire, puis la diapositive est exportée
 en PNG. Rien n'est enregistré dans le diaporama. Si PowerPoint était déjà ouvert, il le reste.
 
+Habillage (paramètre ``edition`` de :func:`exporter`) : les formes « cf édition … » et « cf nu » sont montrées ou
+cachées selon le public, les champs ``{cours}``, ``{promo}``… sont remplis (vides pour la capsule nue ; une forme
+qui n'a plus que des séparateurs est cachée), et, masque nu, les formes du masque (« Masquer les graphiques
+d'arrière-plan ») et les pieds de page sans champ sont cachés ; le fond et les couleurs du thème restent.
+
 Dépendance : ``comtypes`` (déjà installé avec ``uiautomation``).
 Licence : GPL v3.
 """
@@ -13,6 +18,7 @@ import sys
 from pathlib import Path
 
 MSO_GROUPE, MSO_MEDIA = 6, 16
+CHAMPS = ("cours", "code", "bloc", "promo", "annee", "ecole", "declinaison", "edition", "enseignant", "capsule")
 
 
 def _formes(diapo) -> dict:
@@ -46,6 +52,107 @@ def _paragraphe(forme, i: int):
         except Exception as exc:
             erreurs.append(f"{type(exc).__name__}: {exc}")
     raise RuntimeError("paragraphe inaccessible — " + " | ".join(erreurs))
+
+
+def _plages(forme) -> list:
+    """Renvoie les plages de texte d'une forme : son cadre de texte, ou les cellules d'un tableau."""
+    out = []
+    try:
+        if int(forme.HasTextFrame) and int(forme.TextFrame.HasText):
+            out.append(forme.TextFrame.TextRange)
+    except Exception:
+        pass
+    try:
+        if int(forme.HasTable):
+            t = forme.Table
+            for i in range(1, t.Rows.Count + 1):
+                for j in range(1, t.Columns.Count + 1):
+                    out.append(t.Cell(i, j).Shape.TextFrame.TextRange)
+    except Exception:
+        pass
+    return out
+
+
+SEPARATEURS = " \t·•|,;:/—–-"
+FINS = "\r\n\v\x0b"
+
+
+def _effacer(plage, cle: str) -> bool:
+    """Efface un champ vide et un séparateur voisin (« Benoit Delattre - {code} » → « Benoit Delattre »).
+
+    Champ en fin de ligne : le séparateur qui le précède part avec lui ; en début ou au milieu de ligne : celui
+    qui le suit. Renvoie faux si le champ n'est plus dans le texte.
+    """
+    t = str(plage.Text)
+    i = t.find(cle)
+    if i < 0:
+        return False
+    j = i + len(cle)
+    k = i
+    while k > 0 and t[k - 1] in SEPARATEURS:
+        k -= 1
+    m = j
+    while m < len(t) and t[m] in SEPARATEURS:
+        m += 1
+    debut, fin = (k, m) if (m == len(t) or t[m] in FINS) else (i, m)
+    try:
+        plage.Characters(debut + 1, fin - debut).Text = ""
+    except Exception:                                   # à défaut, le champ seul
+        r = plage.Find(cle)
+        if r is None:
+            return False
+        r.Text = ""
+    return True
+
+
+def remplir(forme, valeurs: dict) -> str:
+    """Remplace les champs ``{…}`` du texte d'une forme par ``valeurs``, mise en forme gardée ; un champ vide est
+    effacé avec un séparateur voisin. Renvoie le texte obtenu."""
+    import re
+    texte = []
+    for plage in _plages(forme):
+        for nom in CHAMPS:
+            cle = "{" + nom + "}"
+            val = str(valeurs.get(nom) or "")
+            for _ in range(50):                                 # chaque occurrence, sans boucle sans fin
+                if cle not in str(plage.Text):
+                    break
+                if not val:
+                    if not _effacer(plage, cle):
+                        break
+                    continue
+                r = plage.Find(cle)
+                if r is None:
+                    break
+                r.Text = val
+        texte.append(str(plage.Text))
+    return re.sub(r"\s+", " ", " ".join(texte)).strip()
+
+
+def _vide(texte: str) -> bool:
+    """Vrai si un texte n'a plus que des espaces et des séparateurs (« · », « - », « , »…)."""
+    import re
+    return not re.sub(r"[\s·•|,;:/—–\-()]+", "", texte or "")
+
+
+def _masques(pres, valeurs: dict, journal) -> None:
+    """Remplit les champs écrits dans les masques et les dispositions du diaporama (masque gardé)."""
+    for i in range(1, pres.Designs.Count + 1):
+        m = pres.Designs.Item(i).SlideMaster
+        collections = [m.Shapes] + [m.CustomLayouts.Item(j).Shapes for j in range(1, m.CustomLayouts.Count + 1)]
+        for coll in collections:
+            for k in range(1, coll.Count + 1):
+                try:
+                    remplir(coll.Item(k), valeurs)
+                except Exception as exc:
+                    journal(f"  masque : champ non rempli ({type(exc).__name__})")
+
+
+def montree(f: dict, publics) -> bool:
+    """Dit si une forme d'édition (``pptx_lire``) est montrée pour ces publics (``None`` : capsule nue)."""
+    if f["cas"] == "nu":
+        return publics is None
+    return publics is not None and (not f["publics"] or bool(set(f["publics"]) & set(publics)))
 
 
 def _powerpoint(journal):
@@ -90,11 +197,14 @@ def _powerpoint(journal):
         "Puis relancer la même commande, PowerPoint restant ouvert.")
 
 
-def exporter(fichier: Path, diapos: list[dict], dossier: Path, largeur: int, journal=print) -> list[str]:
+def exporter(fichier: Path, diapos: list[dict], dossier: Path, largeur: int, journal=print,
+             edition: dict | None = None) -> list[str]:
     """Écrit ``<dossier>/images/dNN_eK.png`` pour chaque état des diapositives données et renvoie les chemins relatifs écrits.
 
     ``diapos`` : diapositives issues de ``pptx_lire.lire`` ; ``largeur`` : largeur des images en pixels.
-    Ne fonctionne que sous Windows, avec PowerPoint installé.
+    ``edition`` : ``{publics, champs, masque}`` — ``publics`` : écoles et variantes de l'édition, ``None`` pour la
+    capsule nue ; ``champs`` : valeurs des champs ; ``masque`` : ``nu`` (défaut) ou ``garder``. Sans ``edition``,
+    tout est montré tel quel. Ne fonctionne que sous Windows, avec PowerPoint installé.
     """
     if sys.platform != "win32":
         raise SystemExit("L'export des images demande PowerPoint, donc Windows.")
@@ -110,9 +220,37 @@ def exporter(fichier: Path, diapos: list[dict], dossier: Path, largeur: int, jou
     try:
         pres = app.Presentations.Open(str(fichier), -1, 0, 0)          # lecture seule, sans fenêtre
         hauteur = round(largeur * float(pres.PageSetup.SlideHeight) / float(pres.PageSetup.SlideWidth))
+        valeurs = (edition or {}).get("champs") or {}
+        garder = (edition or {}).get("masque") == "garder"
+        if edition is not None and garder:
+            _masques(pres, valeurs, journal)
         for d in diapos:
             diapo = pres.Slides.Item(d["n"])
             formes = _formes(diapo)
+            fixes: set = set()                                          # cachées dans tous les états
+            if edition is not None:
+                publics = edition.get("publics")
+                fixes |= {f["spid"] for f in d.get("edition") or [] if not montree(f, publics)}
+                champs = {int(k): v for k, v in (d.get("champs") or {}).items()}
+                if not garder:
+                    try:
+                        diapo.DisplayMasterShapes = 0                   # « Masquer les graphiques d'arrière-plan »
+                    except Exception as exc:
+                        journal(f"  diapo {d['n']} : masque non caché ({type(exc).__name__})")
+                    fixes |= {s for s in d.get("pieds") or [] if s not in champs}
+                for s in champs:
+                    if s in fixes or s not in formes:
+                        continue
+                    try:
+                        if _vide(remplir(formes[s], valeurs)):
+                            fixes.add(s)                                # champ vide seul dans sa forme : cachée
+                    except Exception as exc:
+                        journal(f"  diapo {d['n']} : champs de la forme {s} non remplis ({type(exc).__name__} : {exc})")
+                for s in fixes:
+                    try:
+                        formes[s].Visible = 0
+                    except Exception:
+                        pass
             for f in formes.values():                                   # icône de la narration : jamais montrée
                 try:
                     if int(f.Type) == MSO_MEDIA:
@@ -126,6 +264,7 @@ def exporter(fichier: Path, diapos: list[dict], dossier: Path, largeur: int, jou
                     journal(f"  diapositive {d['n']} : annotation « {f.get('nom')} » non cachée ({type(e).__name__})")
             # tout ce qu'une animation fait apparaître ou disparaître dans cette diapositive
             animes = {tuple(c) if isinstance(c, list) else c for e in d["etats"] for c in e}
+            animes = {c for c in animes if (c[0] if isinstance(c, tuple) else c) not in fixes}
             # Du dernier état au premier : le texte ne fait alors que se cacher, jamais se remontrer. Remontrer
             # un paragraphe abîme sa puce (une puce image redevient un numéro), constaté sur un diaporama réel.
             par_caches: set = set()

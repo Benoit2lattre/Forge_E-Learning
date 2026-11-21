@@ -23,6 +23,10 @@ site/_build/
 site/api/
 profils/index_profils.json
 site_build.log
+_editions/
+# Essais de capsules rangés dans un cours (nommer les essais essai_… ou test_…)
+donnees/cours/**/capsules/essai_*/
+donnees/cours/**/capsules/test_*/
 
 # Lourds ou personnels, par type
 *.mp4

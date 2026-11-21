@@ -104,7 +104,7 @@ Un pas de didacticiel porte en plus les gestes attendus et les retours :
 
 ## Référence des champs
 
-**Chapitre** : `format`, `titre`, `langues` (`source`, `autres`), `ecran` (`largeur`, `hauteur`, `echelle`), `vue`, `source`, `reglages` (`modes`, `essais`, `trajectoire`, `retours`), `masques`, `affichage` (format de la zone d'image du lecteur, `16:9` par défaut ; les fonds y sont calés sans déformation), `parcours`, `variantes`, `parties`, `image_finale`, `cameo` (`position` : `bas-droite` par défaut, `bas-gauche`, `haut-droite`, `haut-gauche`, ou `aucune` : webcam gardée mais non montrée ; `taille` : part de la largeur de l'image, 0,22 par défaut ; `forme` : `rond` ou `rectangle` ; écrit par `capsuleforge cameo`).
+**Chapitre** : `format`, `titre`, `langues` (`source`, `autres`), `ecran` (`largeur`, `hauteur`, `echelle`), `vue`, `source`, `reglages` (`modes`, `essais`, `trajectoire`, `retours`), `masques`, `affichage` (format de la zone d'image du lecteur, `16:9` par défaut ; les fonds y sont calés sans déformation), `powerpoint` (`masque` : `nu` par défaut, les formes du masque et les pieds de page sans champ sont cachés sur les images des diapositives ; `garder` pour un masque neutre, montré partout ; voir « Habiller dans PowerPoint » dans le [mode d'emploi](README.md)), `parcours`, `variantes`, `parties`, `image_finale`, `cameo` (`position` : `bas-droite` par défaut, `bas-gauche`, `haut-droite`, `haut-gauche`, ou `aucune` : webcam gardée mais non montrée ; `taille` : part de la largeur de l'image, 0,22 par défaut ; `forme` : `rond` ou `rectangle` ; écrit par `capsuleforge cameo`).
 
 **Parcours** : `id`, `titre`, `annexes` (`aucune`, `a_la_demande`, `integrees`), `questions` (`aucune`, `proposees`, `obligatoires`), `exercices`.
 
@@ -112,7 +112,7 @@ Un pas de didacticiel porte en plus les gestes attendus et les retours :
 
 **Exercice** (sur une partie, seul ou en liste) : `outil` (`exoforge`, valeur par défaut), `fiche` (fiche ExoForge, cherchée à côté du chapitre puis dans `data/exoforge`), `titre` (sinon celui de la fiche), `objectif`, `duree_min` (sinon 1,5 min par étape de la fiche), `poids` dans la note SCORM (une question pèse 1 ; par défaut la durée en minutes ; 0 = hors note). À la construction, la fiche est construite par ExoForge si besoin et l'exercice devient la dernière section de la partie (nom `B-Ex`). Une annexe peut ainsi porter du cours et un exercice ; une partie de type `exercice` peut n'avoir aucune section. L'exercice n'est proposé que par les parcours `exercices: true` ; il est appelé comme une annexe (`annexes: [id]` sur une section). Le lecteur l'affiche dans un cadre et lui sert d'API SCORM 1.2 : l'exercice compte comme fait quand il est terminé, avec son score (meilleur, dernier, nombre de fois) et ses réponses gardés dans le navigateur.
 
-**Section** : `id`, `titre`, `objectif`, `source`, `narration`, `audio`, `arret`, `ouverture`, `questions`, `annexes`, `variantes`, `sauf`, `pas`.
+**Section** : `id`, `titre`, `objectif`, `source` (`fichier`, `diapos`, `duree_s` ; `chemin` : où le diaporama a été repris, relatif au chapitre, pour le retrouver à la construction d'une édition), `narration`, `audio`, `arret`, `ouverture`, `questions`, `annexes`, `variantes`, `sauf`, `pas`.
 
 **Pas** : `id`, `fond`, `fond_pour`, `vue`, `source`, `narration`, `phrases` (`debut_s`, `fin_s`, `texte`, `variantes`, `sauf`, `pour`, `audio_pour`), `variantes`, `sauf`, `audio`, `duree_s`, `voix`, `objets`, `gestes`, `a_vous` (`observer`, `indice`), `retours` (`juste`, `faux`), `ecarte`, `raison`.
 

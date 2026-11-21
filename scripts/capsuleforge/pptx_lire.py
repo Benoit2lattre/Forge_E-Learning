@@ -9,6 +9,11 @@ Formes d'annotation : une forme nommée « cf spot », « cf cadre », « cf poi
 PowerPoint) n'est jamais sur les images ; elle devient un objet du pas. Un pointeur tracé en ligne brisée
 (forme libre) ou en trait donne une trajectoire.
 
+Habillage (lot 6) : une forme « cf édition » n'est montrée que dans une capsule habillée pour une édition,
+« cf édition ecole1 » seulement pour ce public (école ou variante), « cf nu » seulement dans la capsule nue ;
+un texte ``{cours}``, ``{code}``, ``{promo}``… est un champ, rempli à l'export d'une édition (vide dans la
+capsule nue). La lecture les repère (``edition``, ``champs``, ``pieds``) ; l'export est fait par ``pptx_images``.
+
 Limite connue : PowerPoint n'enregistre pas l'instant des clics pendant une narration, seulement la durée de
 la diapositive ; les apparitions sont donc réparties sur cette durée, à régler ensuite.
 Licence : GPL v3.
@@ -70,6 +75,74 @@ def _type_cf(nom: str) -> str | None:
     """
     m = re.match(r"^\s*cf[\s:_-]+([a-zà-ÿ]+)", (nom or "").lower())
     return TYPES_CF.get(m.group(1)) if m else None
+
+
+CHAMPS = ("cours", "code", "bloc", "promo", "annee", "ecole", "declinaison", "edition", "enseignant", "capsule")
+CHAMP = re.compile(r"\{(" + "|".join(CHAMPS) + r")\}")
+EDITION = re.compile(r"^\s*cf[\s:_-]+(édition|edition|nu)(?=$|[\s:_,;-])[\s:_,;-]*(.*)$")
+
+
+def _cas_edition(nom: str) -> tuple[str, list[str]] | None:
+    """Renvoie ``("edition", publics)`` pour « cf édition [public…] », ``("nu", [])`` pour « cf nu », sinon ``None``.
+
+    Les publics (noms d'école ou de variante) sont séparés par des espaces ou des virgules ; une liste vide veut
+    dire « toute édition ».
+    """
+    m = EDITION.match((nom or "").lower())
+    if not m:
+        return None
+    if m.group(1) == "nu":
+        return "nu", []
+    return "edition", [x for x in re.split(r"[\s,;]+", m.group(2)) if x]
+
+
+def _formes_edition(racine) -> list[dict]:
+    """Renvoie les formes d'édition d'une diapositive (« cf édition … », « cf nu »), groupes compris :
+    ``[{spid, nom, cas, publics}]``."""
+    arbre = racine.find("p:cSld/p:spTree", NS)
+    out = []
+    if arbre is None:
+        return out
+    for c in arbre.iter(P + "cNvPr"):
+        cas = _cas_edition(c.get("name"))
+        if cas:
+            out.append({"spid": int(c.get("id")), "nom": c.get("name"), "cas": cas[0], "publics": cas[1]})
+    return out
+
+
+def _champs(racine) -> dict:
+    """Renvoie les champs (``{cours}``, ``{promo}``…) des formes de texte et des tableaux : ``{spid: [noms]}``.
+
+    Un champ coupé en plusieurs morceaux de mise en forme est reconnu (le texte du paragraphe est recollé).
+    """
+    A = "{%s}" % NS["a"]
+    out = {}
+    arbre = racine.find("p:cSld/p:spTree", NS)
+    if arbre is None:
+        return out
+    for el in arbre.iter():
+        if el.tag not in (P + "sp", P + "graphicFrame"):
+            continue
+        c = el.find("*/p:cNvPr", NS)
+        if c is None:
+            continue
+        noms = []
+        for par in el.iter(A + "p"):
+            t = "".join(x.text or "" for x in par.iter(A + "t"))
+            noms += [m.group(1) for m in CHAMP.finditer(t)]
+        if noms:
+            out[int(c.get("id"))] = sorted(set(noms))
+    return out
+
+
+def _pieds(racine) -> list[int]:
+    """Renvoie les espaces réservés de pied de page et de date d'une diapositive (cachés avec le masque nu)."""
+    out = []
+    for sp in racine.iter(P + "sp"):
+        ph = sp.find("p:nvSpPr/p:nvPr/p:ph", NS)
+        if ph is not None and ph.get("type") in ("ftr", "dt"):
+            out.append(int(sp.find("p:nvSpPr/p:cNvPr", NS).get("id")))
+    return out
 
 
 def _formes_cf(racine, journal: list) -> list[dict]:
@@ -196,7 +269,9 @@ def lire(fichier: Path) -> dict:
     """Lit un diaporama et renvoie sa structure : taille et, par diapositive, titre, notes, durée, audio, états.
 
     Chaque diapositive porte aussi les identifiants des formes à cacher à l'export (``medias``) et, s'il y en a,
-    ses formes d'annotation (``formes``) et les remarques de lecture (``remarques``).
+    ses formes d'annotation (``formes``), ses formes d'édition (``edition``), ses champs (``champs`` :
+    ``{spid: [noms]}``), ses pieds de page (``pieds``) et les remarques de lecture (``remarques``). Le diaporama porte
+    ``champs_masque`` : les champs écrits dans les masques et les dispositions.
     """
     fichier = Path(fichier)
     with zipfile.ZipFile(fichier) as z:
@@ -246,8 +321,17 @@ def lire(fichier: Path) -> dict:
                     pass
             if par_par:
                 d["animation_par_paragraphe"] = True
+            ed, ch, pi = _formes_edition(racine), _champs(racine), _pieds(racine)
+            if ed:
+                d["edition"] = ed
+            if ch:
+                d["champs"] = ch
+            if pi:
+                d["pieds"] = pi
             diapos.append(d)
-    return {"fichier": fichier.name, "largeur_emu": int(taille.get("cx")), "hauteur_emu": int(taille.get("cy")),
+        champs_masque = sorted({c for n in z.namelist() if re.match(r"ppt/(slideMasters|slideLayouts)/[^/]+\.xml$", n)
+                                for v in _champs(ET.fromstring(z.read(n))).values() for c in v})
+    return {"fichier": fichier.name, "champs_masque": champs_masque, "largeur_emu": int(taille.get("cx")), "hauteur_emu": int(taille.get("cy")),
             "largeur_pouces": int(taille.get("cx")) / EMU_PAR_POUCE, "hauteur_pouces": int(taille.get("cy")) / EMU_PAR_POUCE,
             "diapos": diapos}
 
@@ -316,13 +400,22 @@ def _garder(q: dict, vieux: dict, enregistre: bool):
             q[k] = v
 
 
+def masque_chapitre(chap: dict) -> str:
+    """Masque des diapositives PowerPoint du chapitre (clé ``powerpoint: {masque: …}``) : ``nu`` (défaut, formes du
+    masque et pieds de page cachés) ou ``garder`` (masque neutre, montré partout)."""
+    m = str(((chap.get("powerpoint") or {}).get("masque")) or "nu").lower()
+    return "garder" if m in ("garder", "garde", "montrer") else "nu"
+
+
 def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None = None, images: bool = True) -> dict:
     """Reprend le diaporama ``src`` dans les sections du chapitre ``y`` qui y renvoient ; renvoie le chapitre écrit.
 
     Les sections visées sont celles dont ``source.fichier`` est le nom du diaporama et dont ``source.diapos``
     contient une des diapositives demandées (``diapos`` : « 6-12 », « 3,5 »… ; toutes si ``None``). Chaque
     diapositive devient un pas (image, audio, durée), chaque clic d'animation une apparition, et les formes
-    d'annotation des objets ; le texte déjà relu et les réglages de temps existants sont conservés.
+    d'annotation des objets ; le texte déjà relu et les réglages de temps existants sont conservés. Les images sont
+    celles de la capsule nue : formes « cf édition » cachées, champs vides, masque caché sauf ``powerpoint: {masque:
+    garder}`` dans le chapitre (``pptx_edition`` refait celles d'une édition).
 
     Écrit les images avec PowerPoint (``pptx_images``, sauf si ``images`` est faux), ``pptx_journal.txt``, une copie
     de l'ancien chapitre dans ``sauvegardes/`` et le nouveau ``chapitre.yaml``. ``largeur`` : largeur des images
@@ -362,14 +455,32 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
     else:
         import traceback
         import pptx_images
+        masque = masque_chapitre(chap)
+        for d in a_lire:                                # habillage repéré : à remplir pour chaque édition
+            ed = ", ".join(f["nom"] for f in d.get("edition") or [])
+            ch = ", ".join("{" + c + "}" for c in sorted({c for v in (d.get("champs") or {}).values() for c in v}))
+            if ed or ch:
+                noter(f"  diapositive {d['n']} : " + " ; ".join(x for x in (ed and f"formes d'édition {ed}",
+                                                                             ch and f"champs {ch}") if x))
+        if lu.get("champs_masque") and masque == "garder":
+            noter(f"  masque : champs {', '.join('{' + c + '}' for c in lu['champs_masque'])}")
+        noter(f"  capsule nue : formes « cf édition » cachées, champs vides, masque {'gardé' if masque == 'garder' else 'caché'}")
         try:
-            ecrits = pptx_images.exporter(src, a_lire, dossier, largeur, journal=noter)
+            ecrits = pptx_images.exporter(src, a_lire, dossier, largeur, journal=noter,
+                                          edition={"publics": None, "champs": {}, "masque": masque})
             noter(f"  {len(ecrits)} images écrites dans {dossier / 'images'}")
         except BaseException:
             noter(traceback.format_exc())
             raise SystemExit(f"L'export des images a échoué : voir {journal}")
+    import os
+    try:                                                # noté pour retrouver le diaporama à la construction d'une édition
+        chemin = Path(os.path.relpath(src.resolve(), dossier.resolve())).as_posix()
+    except ValueError:                                  # autre lecteur (Windows) : pas de chemin relatif
+        chemin = None
     N = F.noms(chap)
     for partie, sec in cibles:
+        if chemin and chemin != src.name:
+            sec["source"]["chemin"] = chemin
         anciens = {(q.get("source") or {}).get("diapo"): q for q in sec.get("pas") or [] if (q.get("source") or {}).get("type") == "pptx"}
         autres = [q for q in sec.get("pas") or [] if (q.get("source") or {}).get("type") != "pptx"]
         nouveaux = []
