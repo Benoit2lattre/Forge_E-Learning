@@ -194,11 +194,23 @@ def cmd_construire(a):
         langues = PE.produire_langues(PE.plan_langues(y2, F.lire(y2), None), y2.parent)   # diapositives traduites
         construire_chapitre.construire(y2, sortie, largeur=a.largeur, fmt=a.format or "webp", audio=a.audio,
                                        scorm=getattr(a, "scorm", None), scorm_version=getattr(a, "scorm_version", None) or "2004",
-                                       variante=getattr(a, "variante", None), images_langues=langues)
+                                       variante=getattr(a, "variante", None), images_langues=langues, pdf=options_pdf(a))
         return 0
     import construire
     sortie = Path(a.sortie) if a.sortie else chemins.SORTIES / "capsuleforge" / y.parent.name
     construire.construire(y, sortie, largeur=a.largeur, fmt=a.format or "png")
+
+
+def options_pdf(a) -> dict | None:
+    """Options ``--pdf`` de ``construire`` : ``{langue, contenu, notes}``, ou ``None`` sans PDF."""
+    if not getattr(a, "pdf", False):
+        return None
+    contenu = [c for c in (getattr(a, "pdf_contenu", None) or "texte").split(",") if c.strip()]
+    inconnus = [c for c in contenu if c not in ("texte", "diapo", "diapos")]
+    if inconnus:
+        raise SystemExit(f"--pdf-contenu : {', '.join(inconnus)} inconnu(s) (texte, diapo)")
+    return {"langue": getattr(a, "pdf_langue", None), "contenu": [c for c in contenu if c != "diapos"],
+            "notes": getattr(a, "pdf_notes", None) or "aucune"}
 
 
 def empreinte_capsule(y: Path, reglages: dict) -> str:
@@ -229,7 +241,7 @@ def empreinte_capsule(y: Path, reglages: dict) -> str:
             if fiche:
                 h.update(fiche.read_bytes())
     lecteur = hashlib.md5(b"".join((ICI / n).read_bytes() for n in ("lecteur_chapitre.html", "construire_chapitre.py",
-                                                                  "habillage.py", "variantes.py"))).hexdigest()
+                                                                  "habillage.py", "variantes.py", "pdf_capsule.py"))).hexdigest()
     return registre.empreinte(y, {**reglages, "medias": h.hexdigest(), "lecteur": lecteur})
 
 
@@ -253,7 +265,7 @@ def construire_pour_cours(a, y: Path) -> int:
     import pptx_edition as PE
     pl = PE.plan(y, chap, h)                    # diapositives PowerPoint à habiller (formes d'édition, champs)
     reglages = {"habillage": HB.resume(h), "scorm": scorm, "scorm_version": version, "largeur": a.largeur,
-                "format": a.format or "webp", "audio": a.audio}
+                "format": a.format or "webp", "audio": a.audio, "pdf": options_pdf(a)}
     if pl:
         reglages["powerpoint"] = PE.resume(pl)
     tl = PE.plan_langues(y, chap, h)            # diapositives traduites
@@ -272,9 +284,12 @@ def construire_pour_cours(a, y: Path) -> int:
     langues = PE.produire_langues(tl, y.parent, exiger=True)
     construire_chapitre.construire(y, sortie, largeur=a.largeur, fmt=a.format or "webp", audio=a.audio, scorm=scorm,
                                    scorm_version=version, habillage=h, nom_paquets=HB.nom_paquet(h, nom, v["label"]),
-                                   paquets=paquets, images_edition=images, images_langues=langues)
+                                   paquets=paquets, images_edition=images, images_langues=langues, pdf=options_pdf(a))
     if not paquets:
         print("Aucun paquet SCORM écrit : rien de rangé")
+        return 1
+    if options_pdf(a) and not any(Path(z).suffix.lower() == ".pdf" for z in paquets):
+        print("PDF demandé mais non écrit : version non rangée (le lecteur et les paquets sont dans dist/)")
         return 1
     d = Path(v["dossier"])
     d.mkdir(parents=True, exist_ok=True)
@@ -656,6 +671,11 @@ def main(argv=None):
     c.add_argument("--scorm-version", choices=["2004", "1.2"], default="2004", help="format des paquets : 2004 (défaut) ou 1.2 (seul format officiellement pris en charge par Moodle)")
     c.add_argument("--cours", help="cours[:déclinaison[/édition]] : capsule habillée pour l'édition (profil de l'école, "
                    "titre, codes, promo), rangée comme version de l'édition et inscrite au registre")
+    c.add_argument("--pdf", action="store_true", help="écrire aussi le PDF de la capsule (Edge ou Chrome, sans fenêtre)")
+    c.add_argument("--pdf-contenu", help="ce que le PDF met sous chaque diapositive : texte (texte dit, défaut), diapo "
+                   "(texte de la diapositive), ou diapos (les images seules) ; plusieurs séparés par des virgules")
+    c.add_argument("--pdf-notes", choices=["aucune", "marge", "dessous"], help="place pour les notes des étudiants")
+    c.add_argument("--pdf-langue", help="langue du PDF (défaut : langue source ; sinon textes et diapositives traduits)")
     c.add_argument("--variante", help="variante(s) du chapitre, séparées par des virgules (sinon celles de l'édition avec --cours, sinon la capsule nue)")
     c.add_argument("--lecteur", choices=["1", "2"], help="dossier qui a capsule.yaml et chapitre.yaml : format à construire (défaut : le plus récent)")
     ed = sp.add_parser("editer", help="ouvrir l'éditeur visuel (navigateur)"); ed.add_argument("capsule")

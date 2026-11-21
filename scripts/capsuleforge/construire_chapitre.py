@@ -616,7 +616,8 @@ def didacticiel(q: dict, chap: dict) -> dict | None:
 def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fmt: str = "webp",
                audio: str = "mp3", journal=print, scorm: str | None = None, scorm_version: str = "2004",
                habillage: dict | None = None, nom_paquets: str | None = None, paquets: list | None = None,
-               variante=None, images_edition: dict | None = None, images_langues: dict | None = None) -> Path:
+               variante=None, images_edition: dict | None = None, images_langues: dict | None = None,
+               pdf: dict | None = None) -> Path:
     """Construit le lecteur d'un chapitre et renvoie le chemin de ``<sortie>/index.html``.
 
     ``largeur`` : largeur maximale des images (réduction seulement) ; ``fmt`` : ``webp`` ou ``png`` ;
@@ -627,7 +628,9 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
     liste complétée par les paquets écrits ; ``variante`` : variante(s) du chapitre (sinon celles de l'édition, sinon
     la capsule nue) — voir ``variantes.py`` ; ``images_edition`` : images du chapitre remplacées par celles de
     l'édition (``pptx_edition.produire``) ; ``images_langues`` : ``{langue: {image: image traduite}}``, diapositives
-    traduites (``pptx_edition.produire_langues``), montrées par le lecteur dans la langue des sous-titres.
+    traduites (``pptx_edition.produire_langues``), montrées par le lecteur dans la langue des sous-titres ;
+    ``pdf`` : ``{langue, contenu, notes}`` pour écrire aussi le PDF de la capsule (``pdf_capsule``), mis dans les
+    paquets et ouvert depuis le lecteur.
     """
     from PIL import Image
     chapitre_yaml = Path(chapitre_yaml)
@@ -827,6 +830,10 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                     x["duree_s"] = round(max(d, len(F.narration_pas(q).split()) * 60 / F.MOTS_PAR_MINUTE, 2.0), 1)
                 if not x["phrases"] and F.narration_pas(q, src).strip():
                     x["texte"] = F.narration_pas(q, src).strip()
+                    tt = {l: F.narration_pas(q, l).strip() for l in autres}          # texte dit sans horodatage, traduit
+                    tt = {l: t for l, t in tt.items() if t and t != x["texte"]}
+                    if tt:
+                        x["texte_tr"] = tt
                 horodatees = [ph for ph in q.get("phrases") or [] if ph.get("debut_s") is not None]
                 trad = {l: [ph["texte"].get(l, "") if isinstance(ph.get("texte"), dict) else "" for ph in horodatees] for l in autres}
                 x["trad"] = {l: t for l, t in trad.items() if any(t)}
@@ -897,6 +904,17 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                 .replace("__TITRE__", html.escape(d["titre"] or "Chapitre")).replace("__LANGUE__", langue))
     page = rendre(donnees)
     (sortie / "index.html").write_text(page, encoding="utf-8")
+    fichier_pdf = None
+    if pdf is not None:                                   # PDF fait à partir du lecteur construit (mêmes images, mêmes textes)
+        import pdf_capsule
+        nom_pdf = (nom_paquets or sortie.name) + (f"_{pdf['langue']}" if pdf.get("langue") and pdf["langue"] != src else "")
+        fichier_pdf = pdf_capsule.ecrire(donnees, sortie, nom_pdf, pdf.get("langue"), pdf.get("contenu") or ("texte",),
+                                         pdf.get("notes") or "aucune", journal)
+        if fichier_pdf:
+            donnees["pdf"] = fichier_pdf.name
+            donnees["ressources"] = list(donnees.get("ressources") or []) + [fichier_pdf.name]
+            page = rendre(donnees)
+            (sortie / "index.html").write_text(page, encoding="utf-8")
     utiles = [sortie / "index.html"] + [sortie / v for v in list(images.values()) + list(sons.values()) + list(videos.values())]
     taille = sum(f.stat().st_size for f in utiles if f.is_file())
     minutes = sum(x["duree_s"] for p in parties for s in p["sections"] for x in s["pas"]) / 60
@@ -941,4 +959,6 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                 journal(f"  parties hors de tout paquet par partie (appelées par aucune partie du tronc) : {', '.join(seules)}")
         for z in paquets:
             journal(f"  SCORM {'1.2' if scorm_version == '1.2' else '2004'} : {z} ({z.stat().st_size / 1e6:.1f} Mo)")
+    if fichier_pdf and paquets is not None:               # rangé avec les paquets dans la version d'une édition
+        paquets.append(fichier_pdf)
     return sortie / "index.html"

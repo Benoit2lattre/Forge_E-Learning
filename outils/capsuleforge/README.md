@@ -180,6 +180,18 @@ Réglages Moodle conseillés : méthode d'évaluation « Note la plus élevée �
 
 Une partie annexe appelée par aucune partie du tronc n'entre dans aucun paquet par partie (la construction le signale).
 
+#### PDF de la capsule (`--pdf`)
+
+```
+capsuleforge construire fiabilite --pdf                                   # diapositives et texte dit
+capsuleforge construire fiabilite --pdf --pdf-contenu texte,diapo --pdf-notes marge
+capsuleforge construire fiabilite --pdf --pdf-langue en --cours traction:ecole1-meca/2026
+```
+
+Le PDF est fait à partir du lecteur construit : mêmes images (habillage de l'édition, variantes, filigrane, diapositives traduites), mêmes textes. Une couverture (logo, titre, cours, code, école, année, promo, enseignant, mentions, licence), puis, partie par partie et section par section, chaque diapositive dans son dernier état ; dessous, selon `--pdf-contenu` : `texte` (le texte dit, défaut), `diapo` (le texte de la diapositive, formules comprises), ou `diapos` (les images seules). `--pdf-notes marge` laisse une colonne lignée à droite de chaque diapositive, `dessous` des lignes sous chacune. `--pdf-langue en` fait le PDF dans une autre langue de la capsule (titres, texte dit, texte et images des diapositives traduits). Pied de page et numéros de page ; un exercice est signalé, à faire dans la capsule en ligne. Le PDF est mis dans le paquet SCORM et s'ouvre par le bouton « PDF » du lecteur ; avec `--cours`, il est rangé avec la version (une version dont le PDF n'a pas pu être écrit n'est pas rangée).
+
+L'impression passe par Edge (présent sur Windows) ou Chrome, sans fenêtre ; une page `imprimer.html` est écrite à côté du lecteur. Sans navigateur trouvé (ou pour en choisir un autre : variable `FORGE_NAVIGATEUR`), ouvrir cette page et l'imprimer en PDF (Ctrl+P).
+
 #### Habiller la capsule pour une édition (`--cours`)
 
 ```

@@ -17,6 +17,9 @@ header{background:var(--navy);color:#fff;padding:8px 14px;display:flex;gap:12px;
 header h1{font-size:16px;margin:0;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 header button{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:4px 10px}
 header button:hover{background:rgba(255,255,255,.12)}
+#b-pdf{color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:4px 10px;text-decoration:none;font-size:13px}
+#b-pdf[hidden]{display:none}
+#b-pdf:hover{background:rgba(255,255,255,.12)}
 header label{font-size:13px;display:flex;gap:6px;align-items:center;white-space:nowrap}
 header label[hidden]{display:none}
 #synth{font-size:12px;color:var(--texte2);white-space:nowrap}
@@ -188,6 +191,7 @@ nav .exo-score{color:var(--navy2);white-space:nowrap}
   <label id="l-voix" hidden><span>Voix</span> <select id="voix" aria-label="Langue de la voix"></select></label>
   <label id="l-stl" hidden><span>Sous-titres</span> <select id="stl" aria-label="Langue des sous-titres et des titres"></select></label>
   <label id="l-parcours"><span>Parcours</span> <select id="parcours" aria-label="Parcours"></select></label>
+  <a id="b-pdf" hidden target="_blank" rel="noopener" title="Document PDF de la capsule (diapositives et textes, à imprimer)">PDF</a>
 </header>
 <main>
   <nav id="plan" aria-label="Plan du chapitre"></nav>
@@ -405,7 +409,7 @@ const UI = { en: {
   "Revoir la section": "Watch the section again", "Exercice terminé : {0}/100": "Exercise finished: {0}/100", " (meilleur score {0}/100)": " (best score {0}/100)",
   "Déjà fait : meilleur score {0}/100.": "Already done: best score {0}/100.", "Faites l'exercice jusqu'au bout pour l'enregistrer.": "Complete the exercise to record it.",
   "Recommencer l'exercice": "Restart the exercise", "Section déjà vue": "Section already viewed", ", questions faites.": ", questions done.", ", questions à faire.": ", questions to do.",
-  "▶ Revoir la section": "▶ Watch again", "▶ Reprendre": "▶ Resume", "▶ Commencer": "▶ Start", "{0} sur {1}": "{0} of {1}", "Texte de la section": "Section text", "Aéré": "Spaced", "Texte plus petit": "Smaller text", "Texte plus grand": "Larger text",
+  "▶ Revoir la section": "▶ Watch again", "▶ Reprendre": "▶ Resume", "▶ Commencer": "▶ Start", "{0} sur {1}": "{0} of {1}", "Texte de la section": "Section text", "Document PDF de la capsule (diapositives et textes, à imprimer)": "PDF document of the capsule (slides and text, to print)", "Aéré": "Spaced", "Texte plus petit": "Smaller text", "Texte plus grand": "Larger text",
   "Lettres et mots plus espacés (texte et sous-titres)": "Wider letter and word spacing (text and subtitles)",
   "Le son de ce passage est introuvable ou illisible ({0}).": "The audio for this passage is missing or unreadable ({0}).", "🔊 Son": "🔊 Sound", "🔇 Muet": "🔇 Muted", "👤 Caméo": "👤 Cameo", "👤 Sans caméo": "👤 No cameo", "Médaillon vidéo de l'enseignant (V)": "Teacher video inset (V)",
   "Ce chapitre n'a pas encore de section à lire.": "This chapter has no section to play yet.", " (synthèse)": " (synthetic)",
@@ -1071,7 +1075,7 @@ function texte() {
   S.s.pas.forEach((q, i) => { if (q.diapo && q.diapo.length) z.appendChild(blocsDiapo(q, i));
     const p = document.createElement("p"); p.className = "pas";
     if (q.phrases.length) q.phrases.forEach((ph, k) => { const s = document.createElement("span"); s.className = "ph"; s.dataset.k = i + "." + k; s.textContent = ph[2] + " "; s.onclick = () => aller(debutPas(i) + ph[0] + 0.01, true); p.appendChild(s); });
-    else p.textContent = q.texte || ""; if (p.textContent) { typoDom(p); z.appendChild(p); } });
+    else p.textContent = (stL !== LG.source && q.texte_tr && q.texte_tr[stL]) || q.texte || ""; if (p.textContent) { typoDom(p); z.appendChild(p); } });
   typoDom(ht); etatDiapo = ""; majDiapo(true); formules(z);
 }
 function boucle(maintenant) {
@@ -1147,7 +1151,7 @@ function libelles() {
     ["reculer", "aria-label", "Reculer de 10 secondes"], ["piste", "aria-label", "Position dans la section"], ["synth", "title", "Ce passage est lu par une voix de synthèse"],
     ["synth", "textContent", "🗣 voix de synthèse"], ["vitesse", "aria-label", "Vitesse de lecture"], ["vitesse", "title", "Vitesse"], ["b-son", "title", "Son : lire avec ou sans la voix (M)"], ["b-cameo", "title", "Médaillon vidéo de l'enseignant (V)"],
     ["b-st", "title", "Sous-titres (C)"], ["b-st", "textContent", "Sous-titres"], ["b-texte", "title", "Texte de la section (T)"], ["b-texte", "textContent", "Texte"],
-    ["b-ecran", "title", "Plein écran (F)"], ["b-ecran", "aria-label", "Plein écran"], ["exo-bande", "aria-label", "Exercice"], ["texte", "aria-label", "Texte de la section"]];
+    ["b-pdf", "title", "Document PDF de la capsule (diapositives et textes, à imprimer)"], ["b-ecran", "title", "Plein écran (F)"], ["b-ecran", "aria-label", "Plein écran"], ["exo-bande", "aria-label", "Exercice"], ["texte", "aria-label", "Texte de la section"]];
   for (const [id, att, k] of fixe) { const e = $(id); if (!e) continue; if (att === "textContent" || att === "title") e[att] = T(k); else e.setAttribute(att, T(k)); }
   for (const [id, k] of [["l-voix", "Voix"], ["l-stl", "Sous-titres"], ["l-parcours", "Parcours"]]) $(id).querySelector("span").textContent = T(k);
   document.querySelector(".aide").innerHTML = langueUI === "fr" ? AIDE_FR : T("aide");
@@ -1191,6 +1195,7 @@ if (C.parcours.length > 1) { const s = $("parcours"); C.parcours.forEach(p => { 
 $("vitesse").value = memo.lire("vitesse", "1"); if (!$("vitesse").value) $("vitesse").value = "1";
 if (memo.lire("son", true) === false) reglerSon(false);
 if (memo.lire("st", true) === false) $("b-st").setAttribute("aria-pressed", "false");
+if (C.pdf) { const a = $("b-pdf"); a.href = C.pdf; a.hidden = false; }                       /* PDF de la capsule (construire --pdf) */
 if (memo.lire("texte", false) === true) { $("b-texte").setAttribute("aria-pressed", "true"); $("texte").hidden = false; }
 reglerTexte(+(memo.lire("taille_texte", 1)) || 1, memo.lire("aere", false) === true);
 libelles(); plan(); taille();

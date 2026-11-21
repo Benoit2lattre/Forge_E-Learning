@@ -674,6 +674,18 @@ class Atelier:
             argv += ["--scorm", scorm, "--scorm-version", version]
         if p.get("audio") == "origine":
             argv += ["--audio", "origine"]
+        if p.get("pdf") and p.get("lecteur") != "1":           # PDF de la capsule (lecteur actuel seulement)
+            contenu = p.get("pdf_contenu") or "texte"
+            if contenu not in ("texte", "texte,diapo", "diapos"):
+                raise ValueError("contenu du PDF inconnu")
+            notes = p.get("pdf_notes") or "aucune"
+            if notes not in ("aucune", "marge", "dessous"):
+                raise ValueError("place des notes inconnue")
+            argv += ["--pdf", "--pdf-contenu", contenu, "--pdf-notes", notes]
+            if p.get("pdf_langue"):
+                if not re.fullmatch(r"[a-z]{2,3}", str(p["pdf_langue"])):
+                    raise ValueError("langue du PDF inconnue")
+                argv += ["--pdf-langue", p["pdf_langue"]]
         if p.get("lecteur") in ("1", "2"):
             argv += ["--lecteur", p["lecteur"]]
         elif (d / "capsule.yaml").is_file() and (d / "chapitre.yaml").is_file():
