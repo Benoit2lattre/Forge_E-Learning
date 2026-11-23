@@ -209,7 +209,10 @@ const quand = s => { if (!s) return "jamais"; const d = new Date(s * 1000), j = 
 const duree = s => s < 60 ? Math.round(s) + " s" : Math.floor(s / 60) + " min " + String(Math.round(s % 60)).padStart(2, "0") + " s";
 
 /* ---------- écrans ---------- */
-let ECRAN = "accueil", ETAT = null;
+let ECRAN = "accueil", ETAT = null, GEN = 0;
+/* zone de l'écran pour la page numéro g : la vraie si c'est toujours la page affichée, sinon une zone hors de la page
+   (un écran quitté pendant qu'il attendait le serveur n'ajoute rien à l'écran suivant) */
+const principal = g => g === GEN ? $("main") : document.createElement("div");
 const ecrans = { accueil, cours, questions, exercices, capsules, bilans, reglages };
 function aller(nom) { ECRAN = nom; document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-current", b.dataset.ecran === nom ? "page" : "false"));
   try { sessionStorage.setItem("forge-ecran", nom); } catch (e) {} ecrans[nom](); $("main").focus({ preventScroll: true }); }
@@ -221,24 +224,24 @@ function vider(...enfants) { const m = $("main"); m.replaceChildren(...enfants);
 const entete = (outil, titre) => el("div", { class: "entete" }, outil ? el("img", { src: `/static/identite/logos/${outil}_logo_jour.png`, alt: { quizforge: "QuizForge", exoforge: "ExoForge", capsuleforge: "CapsuleForge", diagforge: "DiagForge" }[outil] }) : null, el("h2", {}, titre));
 function bientot(outil, titre, lot) { vider(entete(outil, titre), el("p", { class: "chapeau" }, `Cet écran arrive avec le lot ${lot} de l'atelier. En attendant, la commande et l'assistant .bat restent disponibles.`)); }
 
-async function accueil() {
+async function accueil() { const g = ++GEN;   /* page en cours : une page quittée n'écrit plus dans l'écran */
   vider(el("h2", {}, "Accueil"), el("p", { class: "chapeau" }, "Chaque bouton lance une commande Forge ; son journal s'affiche en bas de la page. Rien à taper : les fichiers se choisissent dans des listes ou par « Parcourir… »."));
   const outils = [["questions", "quizforge", "Questions", "Valider un classeur de questions et le convertir pour Moodle.", true],
     ["exercices", "exoforge", "Exercices", "Construire un exercice guidé, l'essayer, retrouver son paquet SCORM.", true],
     ["capsules", "capsuleforge", "Capsules", "À partir d'un diaporama narré ou d'une vidéo : transcrire, relire, traduire, faire parler, construire.", true],
     ["bilans", "diagforge", "Bilans", "Analyser les résultats d'un test Moodle : notes, questions à revoir, erreurs types.", true]];
-  $("main").append(el("div", { class: "cartes" }, outils.map(([ecran, ic, nom, txt, pret]) => el("div", { class: "carte" },
+  principal(g).append(el("div", { class: "cartes" }, outils.map(([ecran, ic, nom, txt, pret]) => el("div", { class: "carte" },
     el("div", { class: "nom" }, el("img", { src: `/static/identite/icones/${ic}_icone_jour_64.png`, alt: "" }), nom),
     el("p", {}, txt), el("button", { class: pret ? "btn" : "btn second", type: "button", onclick: () => aller(ecran) }, pret ? "Ouvrir" : "Bientôt")))));
   const RC = await reglagesCours();
   if (RC) { const pro = RC.prochaine;
-    $("main").append(el("div", { class: "carte etroite" }, el("div", { class: "nom" }, "Cours choisi : " + RC.libelle),
+    principal(g).append(el("div", { class: "carte etroite" }, el("div", { class: "nom" }, "Cours choisi : " + RC.libelle),
       el("p", {}, [RC.profil ? "Profil " + RC.profil : "", RC.groupes.length ? "groupes " + RC.groupes.map(g => g.nom).join(", ") : "", RC.effectif ? RC.effectif + " étudiants" : ""].filter(Boolean).join(" · ") || "Aucune édition choisie."),
       el("p", {}, pro ? `Prochaine séance : n° ${pro.n}${pro.date ? " le " + new Date(pro.date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }) : ""}${pro.titre ? " — « " + pro.titre + " »" : ""}.` : "Aucune séance à venir dans l'édition."),
       el("div", { class: "actions" }, el("button", { class: "btn second", type: "button", onclick: () => aller("cours") }, "Voir le cours"),
         RC.exports ? el("button", { class: "btn second", type: "button", onclick: e => montrer(RC.exports, e.currentTarget) }, "Dossier des exports") : null))); }
-  $("main").append(el("h3", {}, "État de cet ordinateur"));
-  const zone = el("div", { class: "vide" }, "Lecture…"); $("main").append(zone);
+  principal(g).append(el("h3", {}, "État de cet ordinateur"));
+  const zone = el("div", { class: "vide" }, "Lecture…"); principal(g).append(zone);
   ETAT = await api("/api/etat");
   if (!ETAT.ok) { zone.textContent = ETAT.message || "Lecture impossible."; return; }
   $("version").textContent = "version " + ETAT.version; $("racine").textContent = typo("Dépôt : " + ETAT.racine);
@@ -250,16 +253,16 @@ async function accueil() {
 
 /* ---------- Exercices (ExoForge) ---------- */
 let FILTRE = "", PROFIL = "";
-async function exercices() {
+async function exercices() { const g = ++GEN;   /* page en cours : une page quittée n'écrit plus dans l'écran */
   vider(entete("exoforge", "Exercices"), el("p", { class: "chapeau" }, "Les fiches des exemples publiés et de data/exoforge. « Construire » produit l'exercice et son paquet SCORM 1.2 dans dist/exoforge ; « Essayer » l'ouvre dans un nouvel onglet."));
   if (!ETAT) ETAT = await api("/api/etat");
   const profil = el("select", { id: "profil", "aria-label": "Profil" }, el("option", { value: "" }, "profil de la fiche"), (ETAT.profils || []).map(p => el("option", { value: p }, p)));
   const R = await reglagesAtelier(), RC = await reglagesCours(); PROFIL = opt("profil", (RC && RC.profil) || R.profil || "");
   profil.value = PROFIL; if (profil.selectedIndex < 0) profil.selectedIndex = 0; profil.onchange = () => { PROFIL = profil.value; garder("profil", PROFIL); };
   const filtre = el("input", { type: "search", placeholder: "Filtrer par titre ou fichier", "aria-label": "Filtrer les fiches", value: FILTRE });
-  $("main").append(el("div", { class: "barre" }, el("label", {}, "Profil", profil), filtre,
+  principal(g).append(el("div", { class: "barre" }, el("label", {}, "Profil", profil), filtre,
     el("button", { class: "btn second", type: "button", onclick: autreFiche }, "Autre fiche…")));
-  const zone = el("div", {}, el("div", { class: "vide" }, "Recherche des fiches…")); $("main").append(zone);
+  const zone = el("div", {}, el("div", { class: "vide" }, "Recherche des fiches…")); principal(g).append(zone);
   const d = await api("/api/exoforge/fiches");
   if (!d.ok) { zone.replaceChildren(el("div", { class: "vide" }, d.message || "Lecture impossible.")); return; }
   const dessiner = () => {
@@ -312,17 +315,17 @@ const caseA = (k, libelle) => { const c = el("input", { type: "checkbox" }); c.c
 function pastilleEtat(e, titre) { if (!e || !e.total) return el("span", { class: "pastille p-neutre", title: titre || "sans objet" }, "–");
   const plein = e.fait >= e.total; return el("span", { class: "pastille " + (plein ? "p-ok" : e.fait ? "p-sable" : "p-ko"), title: titre || "" }, plein ? "✓" : `${e.fait}/${e.total}`); }
 const minsec = s => !s ? "–" : `${Math.floor(s / 60)} min ${String(Math.round(s % 60)).padStart(2, "0")}`;
-async function capsules() {
+async function capsules() { const g = ++GEN;   /* page en cours : une page quittée n'écrit plus dans l'écran */
   vider(entete("capsuleforge", "Capsules"), el("p", { class: "chapeau" }, "Les capsules de data/capsuleforge. Choisissez une capsule : son état s'affiche section par section, et chaque étape de la préparation se lance ici, de la reprise du diaporama au paquet SCORM."));
   const l = await api("/api/capsules");
-  if (!l.ok) return $("main").append(el("div", { class: "vide" }, l.message || "Lecture impossible."));
+  if (!l.ok) return principal(g).append(el("div", { class: "vide" }, l.message || "Lecture impossible."));
   const nouvelleB = el("button", { class: "btn", type: "button", onclick: () => formulaireNouvelle() }, "Nouvelle capsule…");
-  if (!l.capsules.length) return $("main").append(el("div", { class: "barre" }, nouvelleB), el("div", { class: "vide" }, "Aucune capsule pour l'instant."));
+  if (!l.capsules.length) return principal(g).append(el("div", { class: "barre" }, nouvelleB), el("div", { class: "vide" }, "Aucune capsule pour l'instant."));
   const sel = el("select", { "aria-label": "Capsule", class: "large" }, l.capsules.map(c => el("option", { value: c.nom }, `${c.titre} (${c.nom})`)));
   sel.value = opt("capsule", l.capsules[0].nom); if (sel.selectedIndex < 0) sel.selectedIndex = 0;
   const zone = el("div", {}, el("div", { class: "vide" }, "Lecture de la capsule…"));
   sel.onchange = () => { garder("capsule", sel.value); COCHEES.clear(); detailCapsule(zone, sel.value); };
-  $("main").append(el("div", { class: "barre" }, el("label", {}, "Capsule", sel), nouvelleB), zone);
+  principal(g).append(el("div", { class: "barre" }, el("label", {}, "Capsule", sel), nouvelleB), zone);
   detailCapsule(zone, sel.value);
 }
 async function detailCapsule(zone, nom) {
@@ -596,18 +599,18 @@ function noteCours() {
   return el("p", { class: "note-cours" }, el("span", { class: "pastille p-sable" }, l), " Liste limitée à ce cours ; « Tous les cours » en haut de la page pour tout voir.");
 }
 const listeLignes = v => (v || []).join("\n");
-async function cours() {
+async function cours() { const g = ++GEN;   /* page en cours : une page quittée n'écrit plus dans l'écran */
   vider(el("div", { class: "entete" }, el("h2", {}, "Cours")), el("p", { class: "chapeau" }, "Un cours regroupe ses classeurs, fiches, capsules et diaporamas sans les déplacer ; ses déclinaisons (une école, ses campus, un parcours) et leurs éditions (une année) gardent leurs réglages. Le cours choisi en haut de la page limite les listes des autres écrans."));
   await chargerCours();
   const nouveau = el("button", { class: "btn", type: "button", onclick: formulaireCours }, "Nouveau cours…");
   const ranger = el("button", { class: "btn second", type: "button", onclick: () => sansCours() }, "À ranger…");
-  if (!COURS.cours.length) return $("main").append(el("div", { class: "barre" }, nouveau, ranger), el("div", { class: "vide" }, "Aucun cours pour l'instant : « Nouveau cours… » le crée à partir des dossiers existants ou de rien."));
+  if (!COURS.cours.length) return principal(g).append(el("div", { class: "barre" }, nouveau, ranger), el("div", { class: "vide" }, "Aucun cours pour l'instant : « Nouveau cours… » le crée à partir des dossiers existants ou de rien."));
   const actif = COURS.actif && COURS.actif.cours && COURS.actif.cours !== "_sans" ? COURS.actif.cours : null;
   const sel = el("select", { "aria-label": "Cours à afficher", class: "large" }, COURS.cours.map(c => el("option", { value: c.nom }, `${c.titre} (${c.nom})${c.public ? " — démonstration" : ""}`)));
   sel.value = actif || opt("cours_vu", COURS.cours[0].nom); if (sel.selectedIndex < 0) sel.selectedIndex = 0;
   const zone = el("div", {});
   sel.onchange = () => { garder("cours_vu", sel.value); ficheCours(zone, sel.value); };
-  $("main").append(el("div", { class: "barre" }, el("label", {}, "Cours", sel), nouveau, ranger), zone);
+  principal(g).append(el("div", { class: "barre" }, el("label", {}, "Cours", sel), nouveau, ranger), zone);
   ficheCours(zone, sel.value);
 }
 async function actionCours(params, ok) {
@@ -718,7 +721,7 @@ function formulaireCours() {
     "Créer le cours", async () => {
       const sources = trouvees.filter(l => l.firstChild.checked).map(l => l.firstChild._x);
       const r = await actionCours({ action: "nouveau", nom: nom.value, titre: titre.value, domaine: domaine.value, langues: langue.value.split(","), sources, standard: standard.checked }, "Cours créé ; il est maintenant le cours choisi.");
-      if (!r) return false; garder("cours_vu", r.nom); cours(); });
+      if (!r) return false; garder("cours_vu", r.nom); if (ECRAN === "cours") cours(); });
 }
 // Ce que le profil de l'école dit des cours (profil_cours.py) : vocabulaire, campus, parcours, formations,
 // gabarits des codes et de la promo ; sinon les réglages génériques.
@@ -838,14 +841,14 @@ function formulaireEdition(nomCours, dc, apres, ex) {
         ex ? "Édition enregistrée." : "Édition créée.");
       if (!r) return false; apres(); });
 }
-async function sansCours() {
+async function sansCours() { const g = ++GEN;   /* page en cours : une page quittée n'écrit plus dans l'écran */
   vider(el("div", { class: "entete" }, el("h2", {}, "À ranger")), el("p", { class: "chapeau" }, "Les classeurs, fiches, capsules et dossiers d'exports qu'aucun cours ne désigne (les exemples publiés ne sont pas listés). « Ranger » ajoute l'objet aux sources du cours choisi, sans le déplacer."));
-  const d = await api("/api/cours_sans"); if (!d.ok) return $("main").append(el("div", { class: "vide" }, d.message || "Lecture impossible."));
+  const d = await api("/api/cours_sans"); if (!d.ok) return principal(g).append(el("div", { class: "vide" }, d.message || "Lecture impossible."));
   const blocs = Object.entries(d.objets).filter(([, l]) => l.length);
-  $("main").append(el("div", { class: "barre" }, el("button", { class: "btn second", type: "button", onclick: () => aller("cours") }, "← Retour aux cours")));
-  if (!blocs.length) return $("main").append(el("div", { class: "vide" }, "Tout est rangé."));
-  if (!d.cours.length) return $("main").append(el("div", { class: "vide" }, "Créez d'abord un cours."));
-  for (const [t, l] of blocs) $("main").append(el("h3", {}, d.types[t]), el("table", {}, el("tbody", {}, l.map(o => {
+  principal(g).append(el("div", { class: "barre" }, el("button", { class: "btn second", type: "button", onclick: () => aller("cours") }, "← Retour aux cours")));
+  if (!blocs.length) return principal(g).append(el("div", { class: "vide" }, "Tout est rangé."));
+  if (!d.cours.length) return principal(g).append(el("div", { class: "vide" }, "Créez d'abord un cours."));
+  for (const [t, l] of blocs) principal(g).append(el("h3", {}, d.types[t]), el("table", {}, el("tbody", {}, l.map(o => {
     const s = el("select", {}, d.cours.map(c => el("option", { value: c.nom }, c.titre)));
     const b = el("button", { class: "btn second petit", type: "button", onclick: async () => { if (await actionCours({ action: "ranger", nom: s.value, type: t, chemin: o.chemin }, "Rangé.")) { b.closest("tr").remove(); chargerCours(); } } }, "Ranger");
     return el("tr", {}, el("td", {}, el("b", {}, o.libelle), el("span", { class: "sous" }, o.chemin)), el("td", {}, el("div", { class: "actions" }, s, b)));
@@ -885,14 +888,14 @@ async function registreDialog(q, titre) {
 }
 
 /* ---------- Questions (QuizForge) ---------- */
-async function questions() {
+async function questions() { const g = ++GEN;   /* page en cours : une page quittée n'écrit plus dans l'écran */
   vider(entete("quizforge", "Questions"), el("p", { class: "chapeau" }, "Les classeurs de questions de data/quizforge et le modèle. « Valider » relit les questions sans rien écrire (points d'écriture à vérifier, score au hasard) ; « Convertir » écrit le Moodle XML (et le GIFT) dans le dossier <classeur>_QuizForge, avec, si on le demande, le plan du quiz d'une séance."));
   const profil = await choixProfil("profil par défaut");
-  $("main").append(el("div", { class: "barre" }, champ("Profil", profil),
+  principal(g).append(el("div", { class: "barre" }, champ("Profil", profil),
     el("button", { class: "btn", type: "button", onclick: nouveauClasseur }, "Nouveau classeur…"),
     el("button", { class: "btn second", type: "button", onclick: autreClasseur }, "Autre classeur…"),
     el("button", { class: "btn second", type: "button", onclick: () => fusion(null) }, "Réunir un classeur et sa traduction…")));
-  const zone = el("div", {}, el("div", { class: "vide" }, "Recherche des classeurs…")); $("main").append(zone);
+  const zone = el("div", {}, el("div", { class: "vide" }, "Recherche des classeurs…")); principal(g).append(zone);
   const d = await api("/api/quizforge/classeurs");
   if (!d.ok) return zone.replaceChildren(el("div", { class: "vide" }, d.message || "Lecture impossible."));
   if (!d.classeurs.length) return zone.replaceChildren(el("div", { class: "vide" }, "Aucun classeur : « Nouveau classeur… » en crée un à partir du modèle."));
@@ -909,7 +912,7 @@ async function questions() {
         el("button", { class: "btn second", type: "button", onclick: () => lancerTache("quiz.valider", { classeur: x.classeur }) }, "Valider"),
         el("button", { class: "btn", type: "button", onclick: () => convertir(x.classeur, x.nom) }, "Convertir…"),
         el("button", { class: "btn second", type: "button", disabled: !(x.versions || x.sortie), onclick: e => montrer(x.versions ? x.versions.dossier : x.sortie, e.currentTarget) }, "Sorties"),
-        x.origine === "ajoute" ? el("button", { class: "btn second", type: "button", title: "Retirer de la liste (le fichier n'est pas touché)", onclick: async () => { const r = await api("/api/reglages", { reglages: { retirer_classeur: x.classeur } }); if (r.ok) { REGLAGES = r.reglages; questions(); } } }, "Retirer") : null)))))));
+        x.origine === "ajoute" ? el("button", { class: "btn second", type: "button", title: "Retirer de la liste (le fichier n'est pas touché)", onclick: async () => { const r = await api("/api/reglages", { reglages: { retirer_classeur: x.classeur } }); if (r.ok) { REGLAGES = r.reglages; if (ECRAN === "questions") questions(); } } }, "Retirer") : null)))))));
 }
 async function convertir(classeur, nom) {
   const RC = await reglagesCours(), pro = RC && RC.prochaine;
@@ -950,7 +953,7 @@ async function autreClasseur() {
   if (!c) return;
   const r = await api("/api/reglages", { reglages: { ajouter_classeur: c } });
   if (!r.ok) return message(r.message || "Ajout impossible.", true);
-  REGLAGES = r.reglages; message("Classeur ajouté à la liste."); questions();
+  REGLAGES = r.reglages; message("Classeur ajouté à la liste."); if (ECRAN === "questions") questions();
 }
 async function fusion() {
   let fr = null, tr = null; const nf = el("span", { class: "sous" }, "aucun"), nt = el("span", { class: "sous" }, "aucun");
@@ -963,17 +966,17 @@ async function fusion() {
 }
 
 /* ---------- Bilans (DiagForge) ---------- */
-async function bilans() {
+async function bilans() { const g = ++GEN;   /* page en cours : une page quittée n'écrit plus dans l'écran */
   vider(entete("diagforge", "Bilans"), el("p", { class: "chapeau" }, "Les dossiers d'exports Moodle de data/diagforge et les exemples. Un dossier contient au moins l'export « Notes » et l'export « Réponses » d'un test, et si possible l'export XML des questions. Le bilan écrit, dans le même dossier, un classeur d'analyse, la fiche du professeur et des images pour les étudiants."));
   const profil = await choixProfil("profil par défaut");
-  $("main").append(el("div", { class: "barre" }, champ("Profil", profil),
+  principal(g).append(el("div", { class: "barre" }, champ("Profil", profil),
     champ("Tentatives", choix("tentatives", [["toutes", "toutes (comme Moodle)"], ["premiere", "la première de chaque étudiant"], ["derniere", "la dernière"], ["meilleure", "la meilleure"]], "toutes")),
     caseA("sans_images", "sans images"),
     el("button", { class: "btn second", type: "button", onclick: autreDossier }, "Autre dossier…")));
   const RC = await reglagesCours();
-  if (RC && RC.exports) $("main").append(el("div", { class: "barre" }, el("span", {}, "Exports de l'édition : ", el("b", {}, RC.exports)),
+  if (RC && RC.exports) principal(g).append(el("div", { class: "barre" }, el("span", {}, "Exports de l'édition : ", el("b", {}, RC.exports)),
     el("button", { class: "btn second", type: "button", title: "Déposez-y les exports Moodle d'un test (un dossier par test), puis rouvrez cet écran", onclick: e => montrer(RC.exports, e.currentTarget) }, "Ouvrir le dossier")));
-  const zone = el("div", {}, el("div", { class: "vide" }, "Recherche des exports…")); $("main").append(zone);
+  const zone = el("div", {}, el("div", { class: "vide" }, "Recherche des exports…")); principal(g).append(zone);
   const d = await api("/api/diagforge/dossiers");
   if (!d.ok) return zone.replaceChildren(el("div", { class: "vide" }, d.message || "Lecture impossible."));
   if (!d.dossiers.length) return zone.replaceChildren(el("div", { class: "vide" }, RC && RC.exports ? "Aucun export pour ce cours : déposez les exports Moodle d'un test dans un dossier à lui, sous le dossier des exports de l'édition (« Ouvrir le dossier »), puis rouvrez cet écran." : "Aucun export : déposez les exports Moodle d'un test dans un dossier de data/diagforge."));
@@ -1008,7 +1011,7 @@ async function autreDossier() {
 }
 
 /* ---------- Réglages ---------- */
-async function reglages() {
+async function reglages() { const g = ++GEN;   /* page en cours : une page quittée n'écrit plus dans l'écran */
   vider(el("div", { class: "entete" }, el("h2", {}, "Réglages")), el("p", { class: "chapeau" }, "Réglages de l'atelier, gardés dans data/_atelier/reglages.json. Chaque écran garde aussi les derniers choix de la séance."));
   if (!ETAT) ETAT = await api("/api/etat");
   REGLAGES = null; const R = await reglagesAtelier();
@@ -1018,16 +1021,16 @@ async function reglages() {
   const app = el("select", {}, el("option", { value: "auto" }, "comme Windows"), el("option", { value: "jour" }, "jour (fond clair)"), el("option", { value: "nuit" }, "nuit (fond sombre)"));
   app.value = R.apparence || THEME;
   app.onchange = async () => { choisirTheme(app.value); const r = await api("/api/reglages", { reglages: { apparence: app.value } }); if (r.ok) REGLAGES = r.reglages; };
-  $("main").append(el("div", { class: "carte etroite" }, el("div", { class: "nom" }, "Apparence"), el("p", {}, "Aussi par le bouton ☾ / ☀ en haut de la page."), champ("Apparence", app)));
-  $("main").append(el("div", { class: "carte etroite" }, el("div", { class: "nom" }, "Classeurs ajoutés"),
+  principal(g).append(el("div", { class: "carte etroite" }, el("div", { class: "nom" }, "Apparence"), el("p", {}, "Aussi par le bouton ☾ / ☀ en haut de la page."), champ("Apparence", app)));
+  principal(g).append(el("div", { class: "carte etroite" }, el("div", { class: "nom" }, "Classeurs ajoutés"),
     cls.length ? el("ul", { class: "sous" }, cls.map(c => el("li", {}, c))) : el("p", {}, "Aucun : « Autre classeur… » (écran Questions) en ajoute un pris hors de data/quizforge."),
-    cls.length ? el("button", { class: "btn second", type: "button", onclick: async () => { await api("/api/reglages", { reglages: { classeurs: [] } }); reglages(); } }, "Retirer ces classeurs de la liste") : null));
-  $("main").append(el("div", { class: "carte etroite" },
+    cls.length ? el("button", { class: "btn second", type: "button", onclick: async () => { await api("/api/reglages", { reglages: { classeurs: [] } }); if (ECRAN === "reglages") reglages(); } }, "Retirer ces classeurs de la liste") : null));
+  principal(g).append(el("div", { class: "carte etroite" },
     el("div", { class: "nom" }, "Profil d'établissement"), el("p", {}, "Proposé d'office dans les écrans Exercices, Questions et Bilans (couleurs, barème, tirage des quiz)."),
     champ("Profil", profil), el("button", { class: "btn", type: "button", onclick: async () => { const r = await api("/api/reglages", { reglages: { profil: profil.value } }); if (r.ok) { REGLAGES = r.reglages; garder("profil", profil.value); message("Profil enregistré."); } else message(r.message, true); } }, "Enregistrer")),
     el("div", { class: "carte etroite" }, el("div", { class: "nom" }, "Diaporamas retrouvés"),
       dia.length ? el("ul", { class: "sous" }, dia.map(([n, c]) => el("li", {}, `${n} → ${c}`))) : el("p", {}, "Aucun : l'atelier cherche les diaporamas dans data/capsuleforge et dans le dossier e_learning voisin du dépôt."),
-      dia.length ? el("button", { class: "btn second", type: "button", onclick: async () => { await api("/api/reglages", { reglages: { diaporamas: {} } }); reglages(); } }, "Oublier ces chemins") : null),
+      dia.length ? el("button", { class: "btn second", type: "button", onclick: async () => { await api("/api/reglages", { reglages: { diaporamas: {} } }); if (ECRAN === "reglages") reglages(); } }, "Oublier ces chemins") : null),
     el("div", { class: "carte etroite" }, el("div", { class: "nom" }, "Journal des tâches"), el("p", {}, "Toutes les tâches lancées par l'atelier sont notées dans data/_atelier/journal.jsonl (date, commande, état, durée)."),
       el("button", { class: "btn second", type: "button", onclick: e => montrer("data/_atelier", e.currentTarget) }, "Dossier de l'atelier")));
 }
