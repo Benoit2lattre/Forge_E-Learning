@@ -358,6 +358,8 @@ async function detailCapsule(zone, nom) {
     d.diaporamas.length ? d.diaporamas.map(x => el("div", { class: "diaporama" }, el("b", {}, x.fichier), el("span", { class: "sous" }, `${pl(x.sections.length, "section")} : ${x.sections.join(", ")}` + (x.chemin ? "" : " · fichier à retrouver")),
       el("button", { class: "btn", type: "button", onclick: () => reprendre(nom, x) }, "Reprendre le diaporama"))) : el("p", {}, "Aucun diaporama cité par les sections."),
     caseA("sans_images", "sans images (sans PowerPoint)"),
+    el("label", { title: "Taille des vidéos insérées dans les diapositives (retenue pour la capsule)" }, "Vidéos insérées ",
+      choix("video_pptx", [["fine", "fines (1,5 × la zone)"], ["standard", "à la taille de la zone"], ["source", "définition de la source"]], d.video_pptx || "fine")),
     el("button", { class: "btn second", type: "button", onclick: () => formulaireVideo(nom, d) }, "Importer une vidéo…"),
     el("button", { class: "btn second", type: "button", onclick: () => formulaireFilmer(nom, d) }, "Filmer l'écran…"));
   const texteDit = el("div", { class: "carte" }, el("div", { class: "nom" }, "2. Texte dit"),
@@ -513,7 +515,7 @@ async function reprendre(nom, x) {
     if (!r.ok) return message(r.message || "Dialogue impossible.", true);
     if (!r.chemin) return; chemin = r.chemin;
   }
-  lancerTache("capsule.pptx", { capsule: nom, chemin, fichier: x.fichier, sans_images: opt("sans_images", false) });
+  lancerTache("capsule.pptx", { capsule: nom, chemin, fichier: x.fichier, sans_images: opt("sans_images", false), video: opt("video_pptx", "fine") });
 }
 async function formulaireVideo(nom, d) {
   const dlg = el("dialog", { class: "formulaire" });

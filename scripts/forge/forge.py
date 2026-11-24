@@ -613,6 +613,10 @@ class Atelier:
         connus[f.name] = str(f)
         C.garder_reglage("diaporamas", connus)
         argv = C.argv_base(PY, "pptx") + [str(f), "--chapitre", str(d)] + self._profil_reglage()
+        if p.get("video"):
+            if p["video"] not in ("standard", "fine", "source"):
+                raise ValueError("taille de vidéo inconnue")
+            argv += ["--video", p["video"]]
         if p.get("sans_images"):
             argv.append("--sans-images")
         return self._tache_cap(d, f"Reprendre « {f.name} » dans « {t} »", argv)

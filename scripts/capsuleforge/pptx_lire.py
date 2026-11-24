@@ -506,6 +506,92 @@ def _etats(racine, ignorer: set | None = None) -> tuple[list[list], bool]:
     return out, par_paragraphe
 
 
+P14 = "{http://schemas.microsoft.com/office/powerpoint/2010/main}"
+
+
+def _videos(racine, rels: dict, etats: list) -> list[dict]:
+    """Vidéos posées sur une diapositive : fichier, recadrage, place, état où elle apparaît et options de lecture.
+
+    Options lues dans l'animation : ``plein_ecran`` (lire en plein écran), ``masquer`` (masquer pendant la
+    non-lecture), ``boucle`` (en boucle jusqu'à l'arrêt), ``rembobiner`` (revenir au début après la lecture).
+    """
+    out = []
+    reglages = {}                                                   # options par forme, lues dans <p:video>
+    for v in racine.iter(P + "video"):
+        cm = v.find(P + "cMediaNode")
+        if cm is None:
+            continue
+        cible = cm.find(P + "tgtEl/" + P + "spTgt")
+        if cible is None:
+            continue
+        ctn = cm.find(P + "cTn")
+        reglages[int(cible.get("spid"))] = {
+            "plein_ecran": v.get("fullScrn") in ("1", "true"),
+            "masquer": cm.get("showWhenStopped") in ("0", "false"),
+            "boucle": ctn is not None and ctn.get("repeatCount") == "indefinite",
+            "rembobiner": ctn is not None and ctn.get("fill") == "remove",
+            "volume": round(int(cm.get("vol", "100000")) / 100000, 2)}
+    for pic in racine.iter(P + "pic"):
+        nv = pic.find("p:nvPicPr/p:nvPr", NS)
+        if nv is None:
+            continue
+        vf = nv.find("{%s}videoFile" % NS["a"])
+        if vf is None:
+            continue
+        c = pic.find("p:nvPicPr/p:cNvPr", NS)
+        spid = int(c.get("id"))
+        media = None
+        m14 = nv.find(".//" + P14 + "media")
+        for rid in ([m14.get("{%s}embed" % NS["r"])] if m14 is not None else []) + [vf.get("{%s}link" % NS["r"])]:
+            if rid and rid in rels:
+                media = rels[rid][1]
+                break
+        rect = pic.find("p:blipFill/a:srcRect", NS)
+        rec = {k: int(rect.get(k, "0")) / 100000 for k in ("l", "t", "r", "b")} if rect is not None else {"l": 0, "t": 0, "r": 0, "b": 0}
+        blip = pic.find("p:blipFill/a:blip", NS)
+        affiche = rels.get(blip.get("{%s}embed" % NS["r"]), (None, None))[1] if blip is not None else None
+        off, ext = pic.find("p:spPr/a:xfrm/a:off", NS), pic.find("p:spPr/a:xfrm/a:ext", NS)
+        cadre = [int(off.get("x")), int(off.get("y")), int(ext.get("cx")), int(ext.get("cy"))] if off is not None and ext is not None else None
+        out.append({"spid": spid, "nom": c.get("name") or "", "media": media, "affiche_pptx": affiche, "recadrage": rec,
+                    "cadre_emu": cadre, "etat": _etat_de([spid], None, etats), **reglages.get(spid, {})})
+    return out
+
+
+def _clics(racine, ignorer: set | None = None) -> list[tuple]:
+    """Clics de la séquence principale, dans l'ordre : ``("e", k)`` fait apparaître l'état ``k`` ;
+    ``("v", spid)`` ne fait que lancer une vidéo. Une vidéo lancée dans le même clic qu'un état est notée
+    ``("e", k, [spid…])``."""
+    seq = next((n for n in racine.iter(P + "cTn") if n.get("nodeType") == "mainSeq"), None)
+    if seq is None:
+        return []
+    out, k = [], 0
+    enfants = seq.find(P + "childTnLst")
+    for i, par in enumerate(enfants if enfants is not None else []):
+        ctn = par.find(P + "cTn")
+        if ctn is None:
+            continue
+        auto = any(c.get("evt") == "onBegin" for c in ctn.iter(P + "cond"))
+        vis, lance = False, []
+        for e in ctn.iter(P + "cTn"):
+            if e.get("presetClass") in ("entr", "exit"):
+                if any(int(t.get("spid")) not in (ignorer or ()) for t in e.iter(P + "spTgt")):
+                    vis = True
+            elif e.get("presetClass") == "mediacall":
+                cmd = next((x.get("cmd") or "" for x in e.iter(P + "cmd")), "")
+                if cmd.startswith("playFrom") or cmd == "play":
+                    lance += [int(t.get("spid")) for t in e.iter(P + "spTgt")]
+        if auto and i == 0:
+            if lance:
+                out.append(("e", 0, lance))
+            continue
+        if vis:
+            k += 1
+            out.append(("e", k, lance) if lance else ("e", k))
+        elif lance:
+            out += [("v", sp) for sp in lance]
+    return out
+
+
 def _tri(cachees) -> list:
     """Renvoie les éléments cachés triés, les paragraphes sous forme de listes."""
     return [list(c) if isinstance(c, tuple) else c for c in sorted(cachees, key=lambda c: (c if isinstance(c, tuple) else (c, -1, -1)))]
@@ -555,6 +641,10 @@ def lire(fichier: Path) -> dict:
             etats, par_par = _etats(racine, {f["spid"] for f in formes})
             d = {"n": n, "titre": titre, "notes": notes, "duree_s": round(int(m.group(1)) / 1000, 1) if m else None,
                  "audio": audio, "etats": etats, "medias": medias}
+            videos = _videos(racine, r, etats)
+            if videos:
+                d["videos"] = videos
+                d["clics"] = _clics(racine, {f["spid"] for f in formes})
             if formes:
                 d["formes"] = formes
             if notes_cf:
@@ -717,7 +807,7 @@ def masque_chapitre(chap: dict) -> str:
 
 
 def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None = None, images: bool = True,
-              profil: dict | None = None) -> dict:
+              profil: dict | None = None, video: str | None = None) -> dict:
     """Reprend le diaporama ``src`` dans les sections du chapitre ``y`` qui y renvoient ; renvoie le chapitre écrit.
 
     Les sections visées sont celles dont ``source.fichier`` est le nom du diaporama et dont ``source.diapos``
@@ -733,6 +823,11 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
     retirées (les clics restent répartis sur la durée, à caler après la transcription). Le diagnostic du diaporama
     est écrit au journal.
 
+    Vidéo insérée : extraite, recadrée et mise à la taille ``video`` (``standard``, ``fine``, ``source`` ; réglage
+    ``powerpoint: {video: …}`` du chapitre, ``fine`` par défaut) par ``pptx_video`` ; elle devient un objet ``video``
+    du pas (place, état où elle apparaît, départ, durée, première et dernière images, options de lecture). Le clic
+    qui la lance est une action comme les autres (balise ``[clic]``, accroche).
+
     Écrit les images avec PowerPoint (``pptx_images``, sauf si ``images`` est faux), ``pptx_journal.txt``, une copie
     de l'ancien chapitre dans ``sauvegardes/`` et le nouveau ``chapitre.yaml``. ``largeur`` : largeur des images
     (par défaut celle de l'écran du chapitre, sinon 1440).
@@ -747,6 +842,10 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
     chap = F.lire(y)
     lu = lire(src)
     delims = SC.delimiteurs(profil, chap)
+    import pptx_video as PV
+    if video:
+        chap.setdefault("powerpoint", {})["video"] = PV.qualite_chapitre(chap, video)
+    qualite_video = PV.qualite_chapitre(chap)
     reg = CAL.reglages(chap)
     debit_src = CAL.debit(chap)
     voulues = set(plage(diapos, len(lu["diapos"])))
@@ -820,6 +919,11 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
                  "narration": (vieux or {}).get("narration") or d["notes"] or ""}
             notes = SC.lire_notes(d["notes"] or q["narration"], delims, debit_src)
             accr = []
+            # actions de la diapositive, dans l'ordre des clics : états (e1…) et départs de vidéo (v20…)
+            if d.get("videos"):
+                actions = [f"e{c[1]}" if c[0] == "e" else f"v{c[1]}" for c in d.get("clics") or [] if c[:2] != ("e", 0)]
+            else:
+                actions = [f"e{k}" for k in range(1, K)]
             empreinte = _empreinte_phrases(notes["phrases"])
             vieilles = (vieux or {}).get("phrases")
             de_notes = vieilles and ((vieux or {}).get("source") or {}).get("phrases_notes") == _empreinte_phrases(
@@ -841,7 +945,7 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
                 q["phrases"] = [{"texte": t, **({"pause_s": notes["pauses"][i + 1]} if i + 1 in notes["pauses"] else {})}
                                 for i, t in enumerate(notes["phrases"])]
                 q["source"]["phrases_notes"] = empreinte
-                accr, rem = SC.accroches(K - 1, notes, float(reg["decalage_s"]))
+                accr, rem = SC.accroches(len(actions), notes, float(reg["decalage_s"]))
                 for x in rem:
                     noter(f"  diapositive {n} : {x}")
             else:
@@ -867,11 +971,58 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
                 ancien = deja.get(f"e{k}") or {}
                 if ancien.get("phrase") is not None and vieilles:
                     o.update({c: ancien[c] for c in CAL.CLES if c in ancien})   # accroche déjà réglée : gardée
-                elif k - 1 < len(accr):
-                    o.update(accr[k - 1])                # accroche lue dans les notes
+                elif f"e{k}" in actions and actions.index(f"e{k}") < len(accr):
+                    o.update(accr[actions.index(f"e{k}")])   # accroche lue dans les notes
+                objets.append(F.ordonner(o, F.ORDRE_OBJET))
+            k_emu = largeur / lu["largeur_emu"]
+            for v in d.get("videos") or []:             # vidéo insérée : un objet du pas, lancé par son clic
+                vid = f"v{v['spid']}"
+                if not v.get("media"):
+                    noter(f"  diapositive {n} : vidéo « {v['nom']} » sans fichier lisible (liée hors du diaporama ?), non reprise")
+                    continue
+                if not v.get("cadre_emu"):
+                    noter(f"  diapositive {n} : vidéo « {v['nom']} » sans position lisible (dans un groupe ?), non reprise")
+                    continue
+                cadre = [round(x * k_emu) for x in v["cadre_emu"]]
+                rel_v, rel_d, rel_f = f"videos/d{n:02d}_{vid}.mp4", f"images/d{n:02d}_{vid}_debut.png", f"images/d{n:02d}_{vid}_fin.png"
+                try:
+                    inf = PV.extraire(src, v["media"], v["recadrage"], cadre[2], qualite_video, dossier / rel_v,
+                                      dossier / rel_d, dossier / rel_f)
+                except Exception as e:                  # module vidéo absent, fichier illisible
+                    noter(f"  diapositive {n} : vidéo « {v['nom']} » non extraite ({type(e).__name__} : {e})")
+                    continue
+                noter(f"  diapositive {n} : vidéo « {v['nom']} » {inf['largeur']}×{inf['hauteur']}, {inf['duree_s']} s, "
+                      f"qualité {qualite_video}" + ("" if inf["refaite"] else " (déjà faite)"))
+                o = {"id": vid, "type": "video", "origine": "pptx", "fichier": rel_v, "cadre": cadre}
+                if v.get("etat"):
+                    o["apparait"] = f"e{v['etat']}"
+                ancien = deja.get(vid) or {}
+                lance = next((c for c in d.get("clics") or [] if c[0] == "e" and len(c) > 2 and v["spid"] in c[2]), None)
+                if vid in actions:                      # lancée par son propre clic
+                    i = actions.index(vid)
+                    avant_ = next((x for x in objets if x.get("id") == (actions[i - 1] if i else None)), None)
+                    apres_ = next((x for x in objets if x.get("id") == (actions[i + 1] if i + 1 < len(actions) else None)), None)
+                    t0 = avant_["debut_s"] if avant_ else 0.0
+                    t1 = apres_["debut_s"] if apres_ else (duree or t0 + 4.0)
+                    o["debut_s"] = round((t0 + t1) / 2, 1)
+                    if ancien.get("phrase") is not None and vieilles:
+                        o.update({c: ancien[c] for c in CAL.CLES if c in ancien})
+                    elif i < len(accr):
+                        o.update(accr[i])
+                else:                                   # lancée avec un état, ou au clic sur elle : avec son apparition
+                    e = f"e{lance[1]}" if lance else o.get("apparait")
+                    x = next((x for x in objets if x.get("id") == e), None)
+                    o["debut_s"] = x["debut_s"] if x else 0.0
+                    o["avec"] = e or "debut"
+                if ancien.get("debut_s") is not None and ancien.get("phrase") is None and not o.get("phrase"):
+                    o["debut_s"] = ancien["debut_s"]    # réglé à la main : gardé
+                o["duree_s"] = inf["duree_s"]
+                o.update({"affiche": rel_d, "finale": rel_f})
+                for opt in ("boucle", "plein_ecran", "masquer", "rembobiner"):
+                    if v.get(opt):
+                        o[opt] = True
                 objets.append(F.ordonner(o, F.ORDRE_OBJET))
             # annotations dessinées dans PowerPoint (formes « cf … ») : géométrie relue, réglages de temps gardés
-            k_emu = largeur / lu["largeur_emu"]
             formes = d.get("formes") or []
             manuels = [o for o in (vieux or {}).get("objets") or [] if o.get("type") == "cache" and o.get("origine") != "pptx"]
 

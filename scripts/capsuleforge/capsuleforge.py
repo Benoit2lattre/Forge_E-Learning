@@ -398,7 +398,7 @@ def cmd_pptx(a):
         raise SystemExit(f"Pas de chapitre : {y}")
     import scenario
     chap = L.reprendre(src, y, a.diapos, largeur=a.largeur, images=not a.sans_images,
-                       profil=scenario.profil_nomme(a.profil))
+                       profil=scenario.profil_nomme(a.profil), video=a.video)
     _rapport2(chap, y.parent)
 
 
@@ -749,6 +749,8 @@ def main(argv=None):
     px.add_argument("--largeur", type=int, help="largeur des images en pixels (défaut : celle du chapitre)")
     px.add_argument("--sans-images", action="store_true", help="ne pas piloter PowerPoint (structure et audio seulement)")
     px.add_argument("--profil", help="profil de l'école (délimiteurs des balises des notes)")
+    px.add_argument("--video", choices=["standard", "fine", "source"],
+                    help="taille des vidéos insérées : zone du lecteur, 1,5 fois (défaut), ou définition de la source ; retenue pour le chapitre")
     dg = sp.add_parser("diagnostic", help="degré de préparation d'un diaporama (guide « Préparer son diaporama »)")
     dg.add_argument("fichier"); dg.add_argument("--profil", help="profil de l'école (niveaux des dispositions)")
     tr = sp.add_parser("transcrire", help="transcrire l'audio des pas (premier jet de scénario)"); tr.add_argument("chapitre")

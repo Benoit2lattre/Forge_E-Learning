@@ -122,6 +122,10 @@ powerpoint:
 
 Les trois réglages se changent par chapitre. Le débit se règle aussi pour une voix enregistrée, quand elle n'est pas de synthèse.
 
+## Les vidéos insérées
+
+Une vidéo posée sur une diapositive (Insertion, Vidéo) est reprise avec son recadrage, sa place et ses options de lecture. Le clic qui la lance est une action comme les autres : au degré 4, il lui faut sa balise `[clic]`. Ses options PowerPoint sont suivies : « En boucle jusqu'à l'arrêt » (jusqu'à la fin du pas), « Lire en plein écran » (à la place de la diapositive pendant la lecture), « Masquer pendant la non-lecture » (rien n'est montré avant le départ), « Rembobiner après la lecture » (la première image revient à la fin). Avant le départ, c'est sa première image qui est montrée ; après la lecture, et dans le PDF, sa dernière.
+
 ## Les formules
 
 Les équations natives de PowerPoint (Insertion, Équation) et les équations IguanaTeX sont lues avec le texte de la diapositive : elles s'affichent dans le volet « Texte » du lecteur et dans le PDF. Les équations natives s'ouvrent sans complément : ce sont celles des exemples.

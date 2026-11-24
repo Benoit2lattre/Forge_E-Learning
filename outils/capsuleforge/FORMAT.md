@@ -105,7 +105,7 @@ Un pas de didacticiel porte en plus les gestes attendus et les retours :
 
 ## Référence des champs
 
-**Chapitre** : `format`, `titre`, `langues` (`source`, `autres`), `ecran` (`largeur`, `hauteur`, `echelle`), `vue`, `source`, `reglages` (`modes`, `essais`, `trajectoire`, `retours`), `calage` (`decalage_s`, `pause_s`, `debit_mots_min`, `ancre` : voir « Accrocher les objets aux phrases » ci-dessous), `masques`, `affichage` (format de la zone d'image du lecteur, `16:9` par défaut ; les fonds y sont calés sans déformation), `latex` (`fichiers` : préambule des équations du texte des diapositives, `ppt_commandes.tex` par défaut, cherché à côté du chapitre, dans `style/latex` et les profils ; `macros` : macros ajoutées ; le jeu de couleurs du profil de l'école remplace celui du préambule), `powerpoint` (`masque` : `nu` par défaut, les formes du masque et les pieds de page sans champ sont cachés sur les images des diapositives ; `garder` pour un masque neutre, montré partout ; voir « Habiller dans PowerPoint » dans le [mode d'emploi](README.md)), `parcours`, `variantes`, `parties`, `image_finale`, `cameo` (`position` : `bas-droite` par défaut, `bas-gauche`, `haut-droite`, `haut-gauche`, ou `aucune` : webcam gardée mais non montrée ; `taille` : part de la largeur de l'image, 0,22 par défaut ; `forme` : `rond` ou `rectangle` ; écrit par `capsuleforge cameo`).
+**Chapitre** : `format`, `titre`, `langues` (`source`, `autres`), `ecran` (`largeur`, `hauteur`, `echelle`), `vue`, `source`, `reglages` (`modes`, `essais`, `trajectoire`, `retours`), `calage` (`decalage_s`, `pause_s`, `debit_mots_min`, `ancre` : voir « Accrocher les objets aux phrases » ci-dessous), `masques`, `affichage` (format de la zone d'image du lecteur, `16:9` par défaut ; les fonds y sont calés sans déformation), `latex` (`fichiers` : préambule des équations du texte des diapositives, `ppt_commandes.tex` par défaut, cherché à côté du chapitre, dans `style/latex` et les profils ; `macros` : macros ajoutées ; le jeu de couleurs du profil de l'école remplace celui du préambule), `powerpoint` (`video` : taille des vidéos insérées, voir plus bas ; `masque` : `nu` par défaut, les formes du masque et les pieds de page sans champ sont cachés sur les images des diapositives ; `garder` pour un masque neutre, montré partout ; voir « Habiller dans PowerPoint » dans le [mode d'emploi](README.md)), `parcours`, `variantes`, `parties`, `image_finale`, `cameo` (`position` : `bas-droite` par défaut, `bas-gauche`, `haut-droite`, `haut-gauche`, ou `aucune` : webcam gardée mais non montrée ; `taille` : part de la largeur de l'image, 0,22 par défaut ; `forme` : `rond` ou `rectangle` ; écrit par `capsuleforge cameo`).
 
 **Parcours** : `id`, `titre`, `annexes` (`aucune`, `a_la_demande`, `integrees`), `questions` (`aucune`, `proposees`, `obligatoires`), `exercices`.
 
@@ -139,6 +139,18 @@ Un texte (titre, narration, bulle, retour) est une chaîne dans la langue source
 | `{zone: [x, y, l, h], variantes: […]}` ou `sauf` | masque | zone floutée selon la variante |
 
 Une phrase retirée coupe son extrait de narration (de son début au début de la suivante) dans le son du pas et dans les voix de synthèse des autres langues ; les phrases, apparitions et objets qui suivent sont recalés. Un pas vidéo garde son film : seuls ses sous-titres changent. Dans l'écran de relecture, le bouton « Public » de chaque phrase règle `variantes`, `sauf` et `pour`.
+
+### Vidéo insérée dans une diapositive
+
+Une vidéo posée sur une diapositive (Insertion, Vidéo) devient, à la reprise, un objet `video` du pas :
+
+```yaml
+- {id: v20, type: video, origine: pptx, fichier: videos/d07_v20.mp4, cadre: [297, 477, 1114, 458],
+   apparait: e5, phrase: 6, debut_s: 66.1, duree_s: 10.0,
+   affiche: images/d07_v20_debut.png, finale: images/d07_v20_fin.png}
+```
+
+`cadre` : sa place sur la diapositive (pixels de l'écran du chapitre) ; `apparait` : l'apparition avec laquelle elle se montre (absente : dès le début du pas) ; `debut_s` : son départ, une action comme un clic d'animation (accrochable à une ligne) ; `avec` : lancée dans le même clic qu'une apparition, ou `debut` ; `duree_s` : sa durée ; `affiche` : sa première image, montrée avant le départ ; `finale` : sa dernière image, montrée après la lecture et dans le PDF. Options de lecture reprises de PowerPoint : `boucle` (en boucle jusqu'à la fin du pas), `plein_ecran` (lue en plein écran, à la place de la diapositive ; le PDF garde l'image dans sa zone), `masquer` (rien n'est montré avant le départ), `rembobiner` (après la lecture, la première image au lieu de la dernière). Le fond et les images d'apparition sont exportés sans la vidéo. La vidéo est recadrée comme dans PowerPoint, sans son, à la taille du réglage `powerpoint: {video: standard | fine | source}` (`fine` par défaut : 1,5 fois la zone ; `standard` : la zone ; `source` : toute la définition de la vidéo recadrée).
 
 ### Accrocher les objets aux phrases
 

@@ -189,6 +189,7 @@ def detail(nom: str) -> dict:
             "langue": source, "autres": autres, "noms_langues": LANGUES, "duree_s": total_s,
             "parties": parties, "erreurs": err, "avertissements": av, "traductions": trad,
             "diaporamas": [{"fichier": f, "sections": secs, "chemin": _diaporama(f, connus)} for f, secs in diaporamas.items()],
+            "video_pptx": ((chap.get("powerpoint") or {}).get("video")) or "fine",
             "construit": _date(SORTIES / nom / "index.html"),
             "lecteur": f"/dist/capsuleforge/{nom}/index.html" if (SORTIES / nom / "index.html").is_file() else None,
             "paquets": paquets(nom), "voix": voix_disponibles(),

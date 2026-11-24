@@ -41,7 +41,7 @@ ORDRE_PAS = ["ecarte", "raison", "id", "fond", "video", "camera", "vue", "source
              "a_vous", "retours"]
 ORDRE_GESTE = ["type", "zone", "point", "arrivee", "crans", "texte", "accepte", "tolerance", "touches", "cible",
                "trajectoire", "trajet"]
-ORDRE_OBJET = ["id", "type", "forme", "texte", "position", "cadre", "ouvre", "trajet", "fichier", "couleur", "phrase", "ancre", "decalage_s", "debut_s", "duree_s", "origine", "modes",
+ORDRE_OBJET = ["id", "type", "forme", "texte", "position", "cadre", "ouvre", "trajet", "fichier", "couleur", "apparait", "avec", "phrase", "ancre", "decalage_s", "debut_s", "duree_s", "affiche", "finale", "boucle", "plein_ecran", "masquer", "rembobiner", "origine", "modes",
                "parcours"]
 
 
@@ -470,6 +470,12 @@ def _verifier_pas(q, N, dossier, ids_pas, ids_parties, appelees, err, av):
     for o in q.get("objets") or []:
         if o.get("fichier") and not (dossier / o["fichier"]).is_file():
             err.append(f"{nom} : fichier introuvable {o['fichier']} (objet {o.get('id')})")
+        if o.get("type") == "video" and o.get("origine") == "pptx":
+            for k in ("affiche", "finale"):
+                if o.get(k) and not (dossier / o[k]).is_file():
+                    err.append(f"{nom} : image {k} de la vidéo {o.get('id')} introuvable {o[k]}")
+            if not (isinstance(o.get("cadre"), list) and len(o["cadre"]) == 4):
+                err.append(f"{nom} : vidéo {o.get('id')} sans cadre [x, y, largeur, hauteur]")
         if o.get("type") not in TYPES_OBJET:
             err.append(f"{nom} : objet de type inconnu « {o.get('type')} »")
         if o.get("type") == "bouton" and o.get("ouvre"):
