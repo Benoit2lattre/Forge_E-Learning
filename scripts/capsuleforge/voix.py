@@ -139,6 +139,35 @@ def _silences(pas: dict, n: int) -> tuple[float, list[float], float]:
     return 0.5, [0.4] * max(0, n - 1), 0.8
 
 
+def silences_pas(pas: dict, chap: dict, n: int, langue: str, src: str) -> tuple[float, list[float], float]:
+    """Silences de la voix d'un pas : la pause de chaque phrase (``pause_s``, sinon celle du chapitre).
+
+    Langue source : avant la première phrase et entre les phrases, les réglages de calage ; après la dernière, sa
+    pause si elle est plus longue que la fin habituelle. Autre langue : les silences de la voix d'origine, sauf
+    là où une pause est donnée (elle est rendue telle quelle).
+    """
+    reg = CAL.reglages(chap)
+    pauses = [ph.get("pause_s") for ph in (pas.get("phrases") or [])][:n]
+    pauses += [None] * (n - len(pauses))
+    if langue == src:
+        avant = float(reg["avant_s"])
+        entre = [float(p) if p is not None else float(reg["pause_s"]) for p in pauses[:max(0, n - 1)]]
+        apres = 0.8
+    else:
+        avant, entre, apres = _silences(pas, n)
+        entre = [float(pauses[k]) if pauses[k] is not None else e for k, e in enumerate(entre)]
+    if n and pauses[-1] is not None:
+        apres = max(apres, float(pauses[-1]))
+    return avant, entre, apres
+
+
+def _pauses(pas: dict, chap: dict) -> str:
+    """Pauses qui comptent dans l'empreinte d'une voix (vide s'il n'y en a pas : les anciennes voix restent bonnes)."""
+    p = [ph.get("pause_s") for ph in pas.get("phrases") or []]
+    defaut = (chap.get("calage") or {}).get("pause_s")
+    return "" if all(x is None for x in p) and defaut is None else f"|pauses:{p}|{defaut}"
+
+
 def synthetiser(textes: list[str], moteur, silences) -> tuple[np.ndarray, int, list[list[float]]]:
     """Synthétise les phrases une à une et les met bout à bout, séparées par les silences donnés.
 
@@ -163,8 +192,8 @@ def synthetiser(textes: list[str], moteur, silences) -> tuple[np.ndarray, int, l
     return np.concatenate(tout), taux, temps
 
 
-def _empreinte(textes: list[str], moteur: str, nom: str, vitesse: float) -> str:
-    return hashlib.sha1(("\n".join(textes) + f"|{moteur}|{nom}|{vitesse}").encode("utf-8")).hexdigest()[:12]
+def _empreinte(textes: list[str], moteur: str, nom: str, vitesse: float, pauses: str = "") -> str:
+    return hashlib.sha1(("\n".join(textes) + f"|{moteur}|{nom}|{vitesse}" + pauses).encode("utf-8")).hexdigest()[:12]
 
 
 def voix_chapitre(yaml_chap: Path, langue: str, moteur: str = "piper", nom: str | None = None, vitesse: float = 1.0,
@@ -204,12 +233,12 @@ def voix_chapitre(yaml_chap: Path, langue: str, moteur: str = "piper", nom: str 
                     if langue != src and q.get("phrases"):
                         manque.append(q.get("id"))
                     continue
-                emp = _empreinte(textes, moteur, nom or "", vitesse)
+                emp = _empreinte(textes, moteur, nom or "", vitesse, _pauses(q, chap))
                 deja = q.get("audio") if langue == src else ((q.get("voix") or {}).get(langue) or {}).get("audio")
                 ancienne = source.get("voix_empreinte") if langue == src else ((q.get("voix") or {}).get(langue) or {}).get("empreinte")
                 if deja and (dossier / deja).is_file() and ancienne == emp and not refaire:
                     continue
-                sil = _silences(q, len(textes)) if langue != src else (0.5, [0.4] * (len(textes) - 1), 0.8)
+                sil = silences_pas(q, chap, len(textes), langue, src)
                 a, taux, temps = synthetiser(textes, m, sil)
                 rel = f"audio/voix/{q['id']}.{langue}.wav"
                 S.ecrire_wav(dossier / rel, a, taux)
