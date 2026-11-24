@@ -164,7 +164,7 @@ def accrocher_pas(pas: dict, chap: dict, remplacer: bool = False) -> int:
         return 0
     reg, t, n = reglages(chap), temps(pas, chap), 0
     for o in pas.get("objets") or []:
-        if o.get("debut_s") is None or (o.get("phrase") is not None and not remplacer):
+        if o.get("debut_s") is None or o.get("type") == "cache" or (o.get("phrase") is not None and not remplacer):
             continue
         accrocher_objet(o, float(o["debut_s"]), t, reg)
         n += 1

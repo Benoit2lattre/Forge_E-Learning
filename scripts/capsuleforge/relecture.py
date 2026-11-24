@@ -116,17 +116,23 @@ class SeanceRelecture:
                 "section": f"{N.get(('section', partie.get('id'), sec.get('id')), '')} {F.texte(sec.get('titre'))}".strip(),
                 "titre": (pas.get("source") or {}).get("titre") or "",
                 "fond": pas.get("fond"), "audio": pas.get("audio"), "duree_s": pas.get("duree_s"),
-                "phrases": [{"debut_s": ph.get("debut_s"), "fin_s": ph.get("fin_s"), "texte": F.texte(ph.get("texte")),
-                             **{k: ph[k] for k in ("variantes", "sauf", "pour") if ph.get(k)}}
+                "phrases": [{"debut_s": ph.get("debut_s") if pas.get("audio") else None,
+                             "fin_s": ph.get("fin_s") if pas.get("audio") else None, "texte": F.texte(ph.get("texte")),
+                             **{k: ph[k] for k in ("variantes", "sauf", "pour", "pause_s") if ph.get(k) is not None and ph.get(k) != ""}}
                             for ph in phrases],
-                "apparitions": [{"id": o["id"], "fichier": o.get("fichier"), "debut_s": o.get("debut_s") or 0}
+                "apparitions": [{"id": o["id"], "fichier": o.get("fichier"), "debut_s": o.get("debut_s") or 0,
+                                 **{k: o[k] for k in CAL.CLES if o.get(k) is not None}}
                                 for o in pas.get("objets") or [] if o.get("type") == "apparition"],
-                "objets": [{k: o[k] for k in ("id", "type", "forme", "cadre", "position", "trajet", "couleur", "debut_s", "duree_s", "origine") if k in o}
+                "objets": [{k: o[k] for k in ("id", "type", "forme", "cadre", "position", "trajet", "couleur", "debut_s", "duree_s", "origine",
+                                              *CAL.CLES) if k in o}
                            for o in pas.get("objets") or [] if o.get("type") in AJOUTS],
                 "mots": mots, "prepare": prepare, "relu": (pas.get("source") or {}).get("relu") or "",
             })
         par_pas, generales = self.remarques(chap)
+        reg = CAL.reglages(chap)
         return {"ok": True, "titre": F.texte(chap.get("titre")), "dossier": self.dossier.name,
+                "calage": {"decalage_s": reg["decalage_s"], "pause_s": reg["pause_s"], "avant_s": reg["avant_s"],
+                           "debit": CAL.debit(chap)},
                 "variantes": [{"id": v.get("id"), "titre": F.texte(v.get("titre")) or v.get("id")}
                               for v in chap.get("variantes") or [] if v.get("id")],
                 "ecran": chap.get("ecran") or {}, "pas": out, "remarques": par_pas, "generales": generales}
@@ -184,13 +190,34 @@ class SeanceRelecture:
                             x["pause_s"] = round(min(max(float(pause), 0.0), 30.0), 2)
                         phrases.append(x)
                     if phrases:
-                        CAL.suivre_decoupage(pas, chap, phrases)   # coupe, fusion : les accroches suivent
+                        if not m.get("accroches"):               # la page n'envoie pas les accroches : elles suivent ici
+                            CAL.suivre_decoupage(pas, chap, phrases)
                         pas["phrases"] = phrases
                         pas.pop("narration", None)          # une seule source du texte dit : les phrases
                     else:
                         pas.pop("phrases", None)
                 reg, t_ph = CAL.reglages(chap), CAL.temps(pas, chap)
+                n_ph = len(pas.get("phrases") or [])
+
+                def accroche_page(o, v):
+                    """Accroche envoyée par la page (phrase, ancre, décalage) ; ``None`` : instant fixe."""
+                    for k in CAL.CLES:
+                        o.pop(k, None)
+                    k = v.get("phrase")
+                    if k is None or not n_ph:
+                        return
+                    o["phrase"] = min(max(int(k), 1), n_ph)
+                    if v.get("ancre") == "fin":
+                        o["ancre"] = "fin"
+                    if v.get("decalage_s") is not None:
+                        o["decalage_s"] = round(min(max(float(v["decalage_s"]), -30.0), 30.0), 2)
                 for o in pas.get("objets") or []:
+                    v = (m.get("apparitions") or {}).get(o.get("id")) if o.get("type") == "apparition" else None
+                    if isinstance(v, dict):                    # page à jour : instant et accroche
+                        accroche_page(o, v)
+                        t = CAL.instant(o, t_ph, reg) if o.get("phrase") is not None else None
+                        o["debut_s"] = t if t is not None else round(float(v.get("debut_s") or 0), 1)
+                        continue
                     if o.get("type") == "apparition" and o.get("id") in (m.get("apparitions") or {}):
                         t = round(float(m["apparitions"][o["id"]]), 2)
                         if o.get("phrase") is not None and t_ph and abs(t - (CAL.instant(o, t_ph, reg) or 0)) > 0.05:
@@ -222,6 +249,13 @@ class SeanceRelecture:
                             x["couleur"] = str(o["couleur"])[:9]
                         x["debut_s"] = round(float(o.get("debut_s") or 0), 1)
                         x["duree_s"] = round(max(0.1, float(o.get("duree_s") or 0)), 1)
+                        if m.get("accroches") and o["type"] != "cache":   # page à jour : son accroche
+                            accroche_page(x, o)
+                            t = CAL.instant(x, t_ph, reg) if x.get("phrase") is not None else None
+                            if t is not None:
+                                x["debut_s"] = t
+                            gardes.append(F.ordonner(x, F.ORDRE_OBJET))
+                            continue
                         vieux = accroches.get(x["id"])
                         if vieux is not None and t_ph:            # objet accroché : il le reste
                             x.update({k: vieux[k] for k in CAL.CLES if k in vieux})

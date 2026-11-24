@@ -93,6 +93,11 @@ h2{font-size:13px;margin:6px 0 0;color:var(--texte2);font-weight:600;text-transf
 .phrase .outils>div{display:flex;flex-direction:column;gap:2px}
 .phrase .outils button{white-space:nowrap;text-align:left}
 .phrase .outils select{font-size:12px;padding:1px 2px;width:100%;color:var(--ko)}
+.phrase .outils .pause{font-size:12px;color:var(--texte2);white-space:nowrap}
+.phrase .outils .pause input{width:52px;font-size:12px;padding:1px 3px}
+.accroche{font-size:12px;color:var(--texte2);white-space:nowrap}
+.accroche select,.accroche input{font-size:12px;padding:1px 2px}
+.accroche input{width:56px}
 .phrase .duree{grid-column:1;font-size:11px;color:var(--texte2);text-align:center}
 .phrase .public{grid-column:2/4;display:flex;flex-wrap:wrap;gap:4px}
 .phrase .public[hidden]{display:none}
@@ -165,7 +170,34 @@ label.coche{display:flex;gap:5px;align-items:center;white-space:nowrap}
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
-const son = $("son");
+const audio = $("son");
+/* horloge muette : un pas sans son se lit quand même, au débit estimé de la langue (mêmes gestes qu'avec le son) */
+const muette = { _t: 0, _t0: 0, _d: 0, _l: false, playbackRate: 1, duration: NaN, onplay: null, onpause: null, onseeked: null,
+  get currentTime() { return this._l ? Math.min(duree(), this._t0 + (performance.now() - this._d) / 1000 * this.playbackRate) : this._t; },
+  set currentTime(v) { this._t = Math.max(0, +v || 0); if (this._l) { this._t0 = this._t; this._d = performance.now(); } if (this.onseeked) this.onseeked(); },
+  get paused() { return !this._l; },
+  play() { if (!this._l) { if (this._t >= duree() - 0.05) this._t = 0; this._t0 = this._t; this._d = performance.now(); this._l = true; if (this.onplay) this.onplay(); } return Promise.resolve(); },
+  pause() { if (this._l) { this._t = this.currentTime; this._l = false; if (this.onpause) this.onpause(); } } };
+let son = audio;
+let CAL = { decalage_s: -0.4, pause_s: 0.4, avant_s: 0.5, debit: 150 };
+const muet = () => P && !P.audio;
+/* instants estimés des phrases d'un pas sans son (même règle que calage.py) */
+function estimer(p) {
+  if (p.audio) return; let t = CAL.avant_s;
+  for (const ph of p.phrases) { const n = ph.texte.split(/\s+/).filter(Boolean).length, d = Math.max(0.8, n * 60 / CAL.debit);
+    ph.debut_s = +t.toFixed(2); ph.fin_s = +(t + d).toFixed(2); t += d + (ph.pause_s != null ? ph.pause_s : CAL.pause_s); }
+  p.duree_s = p.phrases.length ? +t.toFixed(2) : (p.duree_s || 1);
+}
+/* objets accrochés à une phrase : leur instant suit la phrase */
+const accroches = () => [...P.apparitions, ...P.objets].filter(o => o.phrase != null && o.type !== "cache");
+function base(o) { const ph = P.phrases[Math.min(Math.max(o.phrase - 1, 0), P.phrases.length - 1)];
+  return ph && horodatee(ph) ? (o.ancre === "fin" ? ph.fin_s : ph.debut_s) : null; }
+const decalageDe = o => o.decalage_s != null ? o.decalage_s : CAL.decalage_s;
+function resoudre() { for (const o of accroches()) { const b = base(o); if (b != null) o.debut_s = +Math.max(0, b + decalageDe(o)).toFixed(2); } }
+function garderAccroche(o) { if (o.phrase == null) return; const b = base(o); if (b == null) return;
+  const d = +(o.debut_s - b).toFixed(2); if (Math.abs(d - CAL.decalage_s) < 0.005) delete o.decalage_s; else o.decalage_s = d; }
+function accrocher(o, i) { if (i == null) { delete o.phrase; delete o.ancre; delete o.decalage_s; return; } o.phrase = i + 1; delete o.ancre; }
+const nomAccroche = o => o.phrase == null ? "" : " · phrase " + o.phrase + (o.ancre === "fin" ? " (fin)" : "") + " " + (decalageDe(o) >= 0 ? "+" : "−") + Math.abs(decalageDe(o)).toFixed(1).replace(".", ",") + " s";
 let C = null, P = null, rang = 0, arretA = null, pile = [], preparees = 0, outil = null, choisi = null, phraseChoisie = -1, fini = false;
 const NOMS = { spot: "Spot", cadre: "Cadre", pointeur: "Pointeur", cache: "Cache" };
 const modifies = new Set();
@@ -182,7 +214,7 @@ function memoriser() { pile.push({ id: P.id, phrases: JSON.parse(JSON.stringify(
 async function charger() {
   const r = await (await fetch("/api/chapitre")).json();
   if (!r.ok) return message(r.message || "Lecture impossible", true);
-  C = r; $("titre").textContent = r.titre + " — " + r.dossier; document.title = "Relecture — " + r.dossier;
+  C = r; if (r.calage) CAL = Object.assign(CAL, r.calage); $("titre").textContent = r.titre + " — " + r.dossier; document.title = "Relecture — " + r.dossier;
   for (const p of C.pas) p.objets = p.objets || [];
   for (const p of C.pas) if (p.prepare) { modifies.add(p.id); preparees++; }
   const voulu = decodeURIComponent(location.hash.slice(1));
@@ -221,21 +253,22 @@ function listePas() {
 function ouvrir(i) {
   rang = Math.max(0, Math.min(C.pas.length - 1, i)); P = C.pas[rang]; afficherRemarques();
   son.pause(); arretA = null; choisi = null; phraseChoisie = -1; choisirOutil(null);
-  if (P.audio) { son.src = "/media/" + P.audio; son.playbackRate = +$("vitesse").value; } else son.removeAttribute("src");
+  son = P.audio ? audio : muette;
+  if (P.audio) { audio.src = "/media/" + P.audio; audio.playbackRate = +$("vitesse").value; } else { audio.removeAttribute("src"); muette._t = 0; muette.playbackRate = +$("vitesse").value; }
   $("pas").value = rang; $("relu").checked = !!P.relu; location.hash = P.id;
   $("precedent").disabled = rang === 0; $("suivant").disabled = rang === C.pas.length - 1;
-  $("lecture").disabled = !P.audio;
+  $("lecture").disabled = !P.audio && !P.phrases.length;
   for (const a of P.apparitions) { const im = new Image(); im.src = "/media/" + a.fichier; }
   dessiner(); suivre(true);
 }
 
-function dessiner() { dessinerPhrases(); dessinerPiste(); dessinerApparitions(); dessinerObjets(); calque(true); info(); }
+function dessiner() { if (muet()) estimer(P); resoudre(); dessinerPhrases(); dessinerPiste(); dessinerApparitions(); dessinerObjets(); calque(true); info(); }
 
 function info() {
   const mots = P.phrases.reduce((n, ph) => n + ph.texte.split(/\s+/).filter(Boolean).length, 0);
   const d = duree();
   $("info").textContent = P.phrases.length + " phrases, " + mots + " mots" + (P.audio ? ", " + Math.round(mots * 60 / d) + " mots/min" : "") +
-    (P.audio ? "" : " — pas de son pour ce pas");
+    (P.audio ? "" : " — pas de son : lecture muette, instants estimés à " + Math.round(CAL.debit) + " mots/min");
 }
 
 function hauteur(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight + 2) + "px"; }
@@ -243,10 +276,10 @@ function hauteur(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight 
 function dessinerPhrases() {
   const z = $("phrases"); z.textContent = "";
   const app = [...P.apparitions].sort((a, b) => a.debut_s - b.debut_s); let k = 0;
-  const marque = a => { const m = document.createElement("div"); m.className = "marque"; m.textContent = "▣ apparition " + a.id + " à " + fmt(a.debut_s); z.appendChild(m); };
+  const marque = a => { const m = document.createElement("div"); m.className = "marque"; m.textContent = "▣ apparition " + a.id + " à " + (muet() ? "≈ " : "") + fmt(a.debut_s) + nomAccroche(a); z.appendChild(m); };
   const obj = [...P.objets].sort((a, b) => instant(a) - instant(b)); let ko = 0;
   const marqueO = o => { const m = document.createElement("div"); m.className = "marque objet"; m.style.cursor = "pointer";
-    m.textContent = o.type === "cache" ? "◧ cache " + o.id + " levé à " + fmt(instant(o)) : "◎ " + NOMS[o.type].toLowerCase() + " " + o.id + " à " + fmt(o.debut_s) + " (" + o.duree_s.toFixed(1).replace(".", ",") + " s)";
+    m.textContent = o.type === "cache" ? "◧ cache " + o.id + " levé à " + fmt(instant(o)) : "◎ " + NOMS[o.type].toLowerCase() + " " + o.id + " à " + fmt(o.debut_s) + " (" + o.duree_s.toFixed(1).replace(".", ",") + " s)" + nomAccroche(o);
     m.onclick = () => choisir(o.id); z.appendChild(m); };
   P.phrases.forEach((ph, i) => {
     while (k < app.length && horodatee(ph) && app[k].debut_s <= ph.debut_s + 0.05) marque(app[k++]);
@@ -254,14 +287,14 @@ function dessinerPhrases() {
     const l = document.createElement("div"); l.className = "phrase"; l.dataset.i = i;
     const long = horodatee(ph) && ph.fin_s - ph.debut_s > 12; if (long) l.classList.add("longue");
     const g = document.createElement("div");
-    const j = document.createElement("button"); j.className = "jouer"; j.textContent = horodatee(ph) ? "▶ " + fmt(ph.debut_s) : "—";
-    j.disabled = !horodatee(ph) || !P.audio; j.title = "Écouter cette phrase"; j.onclick = () => jouerPhrase(i);
+    const j = document.createElement("button"); j.className = "jouer"; j.textContent = horodatee(ph) ? "▶ " + (muet() ? "≈" : "") + fmt(ph.debut_s) : "—";
+    j.disabled = !horodatee(ph); j.title = muet() ? "Lire cette phrase (lecture muette, instants estimés)" : "Écouter cette phrase"; j.onclick = () => jouerPhrase(i);
     const du = document.createElement("div"); du.className = "duree"; du.textContent = horodatee(ph) ? (ph.fin_s - ph.debut_s).toFixed(1).replace(".", ",") + " s" : "";
     if (long) du.title = "Phrase longue pour un sous-titre : à couper";
     g.append(j, du);
     const t = document.createElement("textarea"); t.value = ph.texte; t.rows = 1; t.spellcheck = true; t.lang = "fr";
-    t.oninput = () => { ph.texte = t.value; hauteur(t); marquer(); info(); };
-    t.onfocus = () => { if (son.paused && horodatee(ph) && P.audio && phraseA(son.currentTime || 0) !== i) { arretA = null; son.currentTime = ph.debut_s + 0.01; suivre(true); } infoAjout(); };
+    t.oninput = () => { ph.texte = t.value; hauteur(t); marquer(); info(); if (muet()) { estimer(P); resoudre(); dessinerPiste(); suivre(true); } };
+    t.onfocus = () => { if (son.paused && horodatee(ph) && phraseA(son.currentTime || 0) !== i) { arretA = null; son.currentTime = ph.debut_s + 0.01; suivre(true); } infoAjout(); };
     t.onkeydown = e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); couper(i, t.selectionStart); } else if (e.key === "Enter") e.preventDefault(); };
     const o = document.createElement("div"); o.className = "outils";
     const o1 = document.createElement("div");
@@ -269,6 +302,13 @@ function dessinerPhrases() {
     const bf = bouton("Fusionner ↓", "Fusionner avec la phrase suivante", () => fusionner(i)); bf.disabled = i === P.phrases.length - 1;
     const bd = bouton("Début ici", "Faire commencer cette phrase à l'instant de lecture", () => debutIci(i)); bd.disabled = !P.audio;
     o1.append(bc, bf, bd); o.append(o1);
+    {                                                                                        /* pause après la phrase */
+      const pz = document.createElement("label"); pz.className = "pause"; pz.title = "Silence après cette phrase, en secondes (vide : " + String(CAL.pause_s).replace(".", ",") + " s par défaut)" + (P.audio ? " — rendu à la prochaine génération de la voix" : "");
+      const c = document.createElement("input"); c.type = "number"; c.step = "0.1"; c.min = "0"; c.max = "30"; c.placeholder = String(CAL.pause_s).replace(".", ",");
+      c.value = ph.pause_s != null ? ph.pause_s : ""; c.setAttribute("aria-label", "Pause après la phrase " + (i + 1) + ", en secondes");
+      c.onchange = () => { memoriser(); if (c.value === "") delete ph.pause_s; else ph.pause_s = Math.min(30, Math.max(0, +c.value)); marquer(); dessiner(); suivre(true); };
+      pz.append("pause ", c, " s"); o.append(pz);
+    }
     {                                                                                        /* public de la phrase */
       const resume = () => ph.variantes ? "Seulement : " + ph.variantes.join(", ") : ph.sauf ? "Sauf : " + ph.sauf.join(", ") : ph.pour ? "Remplacée pour " + Object.keys(ph.pour).join(", ") : "Public : tous";
       const bp = bouton(resume(), "Pour quelles variantes de la capsule cette phrase est dite (une école, un client)", () => { panneau.hidden = !panneau.hidden; });
@@ -291,10 +331,11 @@ function dessinerPhrases() {
       panneau.append(pourV, pourT, listeV);
       o.append(bp); l.append(panneau);
     }
-    if (P.apparitions.length && horodatee(ph)) {
-      const s = document.createElement("select"); s.title = "Poser une apparition au début de cette phrase";
-      s.innerHTML = "<option value=''>▣ apparition…</option>" + P.apparitions.map(a => `<option value="${a.id}">${a.id}</option>`).join("");
-      s.onchange = () => { if (s.value) poser(s.value, ph.debut_s); };
+    if (P.apparitions.length) {
+      const s = document.createElement("select"); s.title = "Accrocher une apparition au début de cette phrase : elle la suivra si la voix change";
+      s.innerHTML = "<option value=''>▣ accrocher…</option>" + P.apparitions.map(a => `<option value="${a.id}">${a.id}${a.phrase === i + 1 ? " ✓" : ""}</option>`).join("");
+      s.onchange = () => { const a = P.apparitions.find(x => x.id === s.value); if (!a) return; memoriser(); accrocher(a, i); delete a.decalage_s; marquer(); dessiner(); suivre(true);
+        message("Apparition " + a.id + " accrochée au début de la phrase " + (i + 1)); };
       o.append(s);
     }
     l.prepend(g, t, o); z.appendChild(l); hauteur(t);
@@ -315,12 +356,12 @@ function dessinerPiste() {
     e.title = "Apparition " + a.id + " : " + fmt(a.debut_s);
     e.onpointerdown = ev => { ev.stopPropagation(); ev.preventDefault(); e.setPointerCapture(ev.pointerId); memoriser(); let bouge = false;
       e.onpointermove = m => { const r = z.getBoundingClientRect(); a.debut_s = Math.round(10 * Math.max(0, Math.min(d, d * (m.clientX - r.left) / r.width))) / 10; e.style.left = 100 * a.debut_s / d + "%"; bouge = true; image(); };
-      e.onpointerup = () => { e.onpointermove = e.onpointerup = null; if (bouge) { marquer(); dessiner(); } else pile.pop(); etat(); };
+      e.onpointerup = () => { e.onpointermove = e.onpointerup = null; if (bouge) { garderAccroche(a); marquer(); dessiner(); } else pile.pop(); etat(); };
     };
     z.appendChild(e);
   }
 }
-$("piste").onpointerdown = e => { if (!P.audio) return; if (choisi) { choisi = null; dessinerObjets(); } const r = $("piste").getBoundingClientRect(); arretA = null; son.currentTime = duree() * Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); suivre(); };
+$("piste").onpointerdown = e => { if (!P.audio && !P.phrases.length) return; if (choisi) { choisi = null; dessinerObjets(); } const r = $("piste").getBoundingClientRect(); arretA = null; son.currentTime = duree() * Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); suivre(); };
 
 function etatImage(t) { let f = P.fond, td = -1; for (const a of P.apparitions) if (a.debut_s <= t && a.debut_s >= td) { td = a.debut_s; f = a.fichier; } return f; }
 function image() { const f = etatImage(son.currentTime || 0); const im = $("image"); if (f && im.dataset.f !== f) { im.dataset.f = f; im.src = "/media/" + f; } }
@@ -335,14 +376,27 @@ function dessinerApparitions() {
     const c = document.createElement("input"); c.type = "number"; c.step = "0.1"; c.min = "0"; c.value = a.debut_s; c.setAttribute("aria-label", "Instant de l'apparition " + a.id + " en secondes");
     c.onchange = () => { if (c.value !== "") poser(a.id, +c.value); };
     const u = document.createElement("span"); u.textContent = "s";
-    const b = bouton("Poser à l'instant de lecture", "L'apparition " + a.id + " se fera à l'instant où se trouve la lecture", () => poser(a.id, son.currentTime)); b.disabled = !P.audio;
-    const e = bouton("▶ Voir", "Écouter à partir de 2 s avant l'apparition", () => { arretA = a.debut_s + 3; son.currentTime = Math.max(0, a.debut_s - 2); son.play(); });
-    e.disabled = !P.audio;
-    l.append(n, im, c, u, b, e); z.appendChild(l);
+    const b = bouton("Poser à l'instant de lecture", "L'apparition " + a.id + " se fera à l'instant où se trouve la lecture", () => poser(a.id, son.currentTime)); b.disabled = !P.audio && !P.phrases.length;
+    const e = bouton("▶ Voir", "Lire à partir de 2 s avant l'apparition", () => { arretA = a.debut_s + 3; son.currentTime = Math.max(0, a.debut_s - 2); son.play(); });
+    e.disabled = !P.audio && !P.phrases.length;
+    /* accroche : phrase, début ou fin, décalage */
+    const acc = document.createElement("span"); acc.className = "accroche";
+    const sp = document.createElement("select"); sp.title = "Phrase à laquelle l'apparition est accrochée (elle la suit si la voix change)"; sp.setAttribute("aria-label", "Phrase de l'apparition " + a.id);
+    sp.innerHTML = "<option value=''>instant fixe</option>" + P.phrases.map((ph, i) => `<option value="${i}">phrase ${i + 1}</option>`).join("");
+    sp.value = a.phrase != null ? String(a.phrase - 1) : "";
+    const sa = document.createElement("select"); sa.title = "Au début ou à la fin de la phrase"; sa.setAttribute("aria-label", "Début ou fin de la phrase");
+    sa.innerHTML = "<option value='debut'>début</option><option value='fin'>fin</option>"; sa.value = a.ancre === "fin" ? "fin" : "debut";
+    const sd = document.createElement("input"); sd.type = "number"; sd.step = "0.1"; sd.title = "Décalage en secondes (négatif : avant)"; sd.setAttribute("aria-label", "Décalage de l'apparition " + a.id);
+    sd.value = a.phrase != null ? decalageDe(a) : ""; sa.disabled = sd.disabled = a.phrase == null;
+    sp.onchange = () => { memoriser(); const t = a.debut_s; accrocher(a, sp.value === "" ? null : +sp.value); if (a.phrase != null) { delete a.decalage_s; } else a.debut_s = t; marquer(); dessiner(); suivre(true); };
+    sa.onchange = () => { memoriser(); if (sa.value === "fin") a.ancre = "fin"; else delete a.ancre; marquer(); dessiner(); suivre(true); };
+    sd.onchange = () => { if (sd.value === "") return; memoriser(); a.decalage_s = Math.max(-30, Math.min(30, +sd.value)); if (Math.abs(a.decalage_s - CAL.decalage_s) < 0.005) delete a.decalage_s; marquer(); dessiner(); suivre(true); };
+    acc.append("→ ", sp, sa, sd, " s");
+    l.append(n, im, c, u, acc, b, e); z.appendChild(l);
   }
 }
 
-function poser(id, t) { const a = P.apparitions.find(x => x.id === id); if (!a) return; memoriser(); a.debut_s = Math.round(10 * Math.max(0, t)) / 10; marquer(); dessiner(); suivre(true); message("Apparition " + id + " à " + fmt(a.debut_s)); }
+function poser(id, t) { const a = P.apparitions.find(x => x.id === id); if (!a) return; memoriser(); a.debut_s = Math.round(10 * Math.max(0, t)) / 10; garderAccroche(a); marquer(); dessiner(); suivre(true); message("Apparition " + id + " à " + fmt(a.debut_s) + nomAccroche(a)); }
 
 /* instant de coupe : les mots reconnus dans l'intervalle de la phrase donnent l'instant du mot où l'on coupe */
 function instantCoupe(ph, gauche, droite) {
@@ -357,15 +411,36 @@ function couper(i, pos) {
   if (!g || !d) return message("Placer le curseur à l'intérieur de la phrase, là où elle doit être coupée");
   memoriser();
   const a = { texte: g }, b = { texte: d.charAt(0).toUpperCase() === d.charAt(0) ? d : d };
-  if (horodatee(ph)) { const [f, s] = instantCoupe(ph, g, d); a.debut_s = ph.debut_s; a.fin_s = +Math.max(ph.debut_s, f).toFixed(2); b.debut_s = +Math.min(ph.fin_s, Math.max(s, a.fin_s)).toFixed(2); b.fin_s = ph.fin_s; }
-  P.phrases.splice(i, 1, a, b); marquer(); dessiner(); suivre(true);
+  if (horodatee(ph) && !muet()) { const [f, s] = instantCoupe(ph, g, d); a.debut_s = ph.debut_s; a.fin_s = +Math.max(ph.debut_s, f).toFixed(2); b.debut_s = +Math.min(ph.fin_s, Math.max(s, a.fin_s)).toFixed(2); b.fin_s = ph.fin_s; }
+  if (ph.pause_s != null) b.pause_s = ph.pause_s;
+  const avant = new Map(accroches().map(o => [o, o.debut_s]));
+  const d0 = ph.debut_s, d1 = ph.fin_s, ng = g.split(/\s+/).filter(Boolean).length, nt = ng + d.split(/\s+/).filter(Boolean).length;
+  P.phrases.splice(i, 1, a, b); if (muet()) estimer(P);
+  for (const [o, t] of avant) {                     /* l'objet suit le morceau où il tombait */
+    if (o.phrase - 1 > i) o.phrase++;
+    else if (o.phrase - 1 === i && o.ancre === "fin") o.phrase = i + 2;
+    else if (o.phrase - 1 === i && horodatee(b)) {
+      const frac = d1 > d0 ? (t - d0) / (d1 - d0) : 0, coupe = ng / Math.max(1, nt);
+      if (muet() && (o.decalage_s || 0) > 0 && Math.abs(frac - coupe) < 0.15) { o.phrase = i + 2; delete o.decalage_s; }   /* coupé là où il tombait : il annonce le second morceau */
+      else if (t >= b.debut_s - 0.05) { o.phrase = i + 2; o.decalage_s = +(t - b.debut_s).toFixed(2); }
+    }
+  }
+  marquer(); dessiner(); suivre(true);
   const t = $("phrases").querySelector(`.phrase[data-i="${i + 1}"] textarea`); if (t) { t.focus(); t.setSelectionRange(0, 0); }
 }
 function fusionner(i) {
   if (i >= P.phrases.length - 1) return; memoriser();
   const a = P.phrases[i], b = P.phrases[i + 1]; const n = { texte: (a.texte.trim() + " " + b.texte.trim()).trim() };
-  if (horodatee(a) || horodatee(b)) { n.debut_s = horodatee(a) ? a.debut_s : b.debut_s; n.fin_s = horodatee(b) ? b.fin_s : a.fin_s; }
-  P.phrases.splice(i, 2, n); marquer(); dessiner(); suivre(true);
+  if ((horodatee(a) || horodatee(b)) && !muet()) { n.debut_s = horodatee(a) ? a.debut_s : b.debut_s; n.fin_s = horodatee(b) ? b.fin_s : a.fin_s; }
+  if (b.pause_s != null) n.pause_s = b.pause_s;
+  const avant = new Map(accroches().map(o => [o, o.debut_s]));
+  P.phrases.splice(i, 2, n); if (muet()) estimer(P);
+  for (const [o, t] of avant) {                     /* les objets de la phrase fondue gardent leur instant */
+    if (o.phrase - 1 > i + 1) o.phrase--;
+    else if (o.phrase - 1 === i + 1) { o.phrase = i + 1; if (o.ancre !== "fin") o.decalage_s = +(t - n.debut_s).toFixed(2); }
+    else if (o.phrase - 1 === i && o.ancre === "fin") { delete o.ancre; o.decalage_s = +(t - n.debut_s).toFixed(2); }
+  }
+  marquer(); dessiner(); suivre(true);
   const t = $("phrases").querySelector(`.phrase[data-i="${i}"] textarea`); if (t) { t.focus(); t.setSelectionRange(a.texte.trim().length, a.texte.trim().length); }
 }
 function debutIci(i) {
@@ -435,6 +510,7 @@ $("calque").onpointerdown = ev => {
   const z = $("calque"), cible = ev.target.closest(".o"), [x0, y0] = pointImage(ev); ev.preventDefault();
   if (outil) {
     memoriser(); const type = outil, o = Object.assign({ id: nouvelId(), type }, tempsPour(type));
+    { const k = phraseA(son.currentTime || 0); if (type !== "cache" && k >= 0) { o.phrase = k + 1; o.decalage_s = 0; } }   /* calé sur la phrase : il la suit */
     if (type === "pointeur") { o.position = [Math.round(x0), Math.round(y0)]; P.objets.push(o); choisi = o.id; choisirOutil(null); marquer(); dessiner(); return; }
     o.cadre = [Math.round(x0), Math.round(y0), 1, 1]; P.objets.push(o); choisi = o.id; calque(true); z.setPointerCapture(ev.pointerId);
     z.onpointermove = m => { const [x, y] = pointImage(m); o.cadre = [Math.round(Math.min(x0, x)), Math.round(Math.min(y0, y)), Math.round(Math.abs(x - x0)), Math.round(Math.abs(y - y0))]; calque(true); };
@@ -466,15 +542,15 @@ function dessinerObjets() {
     const n = document.createElement("span"); n.className = "nom"; n.textContent = NOMS[o.type] + " " + o.id + (o.trajet ? " (mobile)" : "");
     if (o.origine === "pptx") n.title = "Dessiné dans PowerPoint : sa forme se modifie dans le diaporama, puis « capsuleforge pptx »";
     const champ = (v, titre, f) => { const c = document.createElement("input"); c.type = "number"; c.step = "0.1"; c.min = "0"; c.value = v; c.setAttribute("aria-label", titre); c.title = titre;
-      c.onchange = () => { if (c.value === "") return; memoriser(); f(Math.max(0, +c.value)); marquer(); dessiner(); suivre(true); }; return c; };
+      c.onchange = () => { if (c.value === "") return; memoriser(); f(Math.max(0, +c.value)); garderAccroche(o); marquer(); dessiner(); suivre(true); }; return c; };
     const txt = t => { const s = document.createElement("span"); s.textContent = t; return s; };
     if (o.type === "spot" || o.type === "cadre") { const f = document.createElement("select"); f.title = "Forme"; f.setAttribute("aria-label", "Forme");
       f.innerHTML = "<option value=''>rectangle</option><option value='ellipse'>ellipse</option>"; f.value = o.forme === "ellipse" ? "ellipse" : "";
       f.onchange = () => { memoriser(); if (f.value) o.forme = "ellipse"; else delete o.forme; marquer(); dessiner(); }; n.append(" ", f); }
     if (o.type === "cache") l.append(n, txt("levé à"), champ(o.duree_s, "Instant où le cache est levé, en secondes", v => { o.debut_s = 0; o.duree_s = Math.max(0.1, v); }), txt("s"));
     else l.append(n, txt("à"), champ(o.debut_s, "Début en secondes", v => o.debut_s = v), txt("s pendant"), champ(o.duree_s, "Durée en secondes", v => o.duree_s = Math.max(0.1, v)), txt("s"));
-    const cal = bouton("Caler sur la phrase", "Reprend le début et la durée de la phrase surlignée (celle de l'instant de lecture)", () => { const ph = phraseRef(); if (!ph) return message("Se placer d'abord dans une phrase (clic sur la piste ou sur son bouton ▶)"); memoriser(); Object.assign(o, tempsPour(o.type)); marquer(); dessiner(); suivre(true); });
-    const ici = bouton("Instant de lecture", o.type === "cache" ? "Le cache est levé à l'instant de lecture" : "L'objet commence à l'instant de lecture", () => { memoriser(); const t = +(son.currentTime || 0).toFixed(1); if (o.type === "cache") { o.debut_s = 0; o.duree_s = Math.max(0.1, t); } else o.debut_s = t; marquer(); dessiner(); suivre(true); });
+    const cal = bouton("Caler sur la phrase", "Reprend le début et la durée de la phrase surlignée (celle de l'instant de lecture)", () => { const ph = phraseRef(); if (!ph) return message("Se placer d'abord dans une phrase (clic sur la piste ou sur son bouton ▶)"); memoriser(); Object.assign(o, tempsPour(o.type)); if (o.type !== "cache") { o.phrase = phraseA(son.currentTime || 0) + 1; delete o.ancre; o.decalage_s = 0; } marquer(); dessiner(); suivre(true); });
+    const ici = bouton("Instant de lecture", o.type === "cache" ? "Le cache est levé à l'instant de lecture" : "L'objet commence à l'instant de lecture", () => { memoriser(); const t = +(son.currentTime || 0).toFixed(1); if (o.type === "cache") { o.debut_s = 0; o.duree_s = Math.max(0.1, t); } else { o.debut_s = t; garderAccroche(o); } marquer(); dessiner(); suivre(true); });
     const voir = bouton("▶ Voir", "Écouter le passage", () => { choisi = null; const a = instant(o); arretA = (o.type === "cache" ? a : o.debut_s + o.duree_s) + 1.5; son.currentTime = Math.max(0, a - 2); son.play(); dessinerObjets(); calque(true); }); voir.disabled = !P.audio;
     const sup = bouton("Supprimer", "Supprimer cet ajout (touche Suppr quand il est choisi)", () => supprimerObjet(o.id));
     l.append(cal, ici, voir, sup); z.appendChild(l);
@@ -483,7 +559,7 @@ function dessinerObjets() {
 }
 
 function phraseA(t) { let k = -1; P.phrases.forEach((ph, i) => { if (horodatee(ph) && ph.debut_s <= t + 0.02) k = i; }); return k; }
-function jouerPhrase(i) { const ph = P.phrases[i]; if (!ph || !horodatee(ph) || !P.audio) return; son.currentTime = ph.debut_s; arretA = ph.fin_s + 0.15; son.play(); suivre(true); }
+function jouerPhrase(i) { const ph = P.phrases[i]; if (!ph || !horodatee(ph)) return; son.currentTime = ph.debut_s; arretA = ph.fin_s + 0.15; son.play(); suivre(true); }
 
 let actif = -2;
 function suivre(force) {
@@ -504,15 +580,16 @@ function suivre(force) {
   let vue = null, td = -1; for (const a of P.apparitions) if (a.debut_s <= t && a.debut_s >= td) { td = a.debut_s; vue = a.id; }
   document.querySelectorAll("#apparitions .ligne").forEach(e => e.classList.toggle("vue", e.dataset.id === vue));
 }
-function boucle() { if (P && !son.paused) { if (arretA != null && son.currentTime >= arretA) { son.pause(); arretA = null; } suivre(); } requestAnimationFrame(boucle); }
+function boucle() { if (P && !son.paused) { if (arretA != null && son.currentTime >= arretA) { son.pause(); arretA = null; }
+  if (son === muette && son.currentTime >= duree() - 0.001) son.pause(); suivre(); } requestAnimationFrame(boucle); }
 
-son.onplay = son.onpause = () => { $("lecture").textContent = son.paused ? "▶ Lire" : "⏸ Pause";
+audio.onplay = audio.onpause = muette.onplay = muette.onpause = () => { $("lecture").textContent = son.paused ? "▶ Lire" : "⏸ Pause";
   if (!son.paused && choisi) { choisi = null; dessinerObjets(); calque(true); } };      // en lecture, rien n'est montré hors de son temps
-son.onloadedmetadata = () => { dessinerPiste(); dessinerApparitions(); info(); suivre(true); };
-son.onseeked = () => { suivre(); infoAjout(); };
-son.onerror = () => { if (P && P.audio) message("Son illisible : " + P.audio, true); };
+audio.onloadedmetadata = () => { dessinerPiste(); dessinerApparitions(); info(); suivre(true); };
+audio.onseeked = muette.onseeked = () => { suivre(); infoAjout(); };
+audio.onerror = () => { if (P && P.audio) message("Son illisible : " + P.audio, true); };
 $("lecture").onclick = () => { if (son.paused) { arretA = null; son.play(); } else son.pause(); };
-$("vitesse").onchange = () => son.playbackRate = +$("vitesse").value;
+$("vitesse").onchange = () => { const t = son.currentTime; son.playbackRate = +$("vitesse").value; if (son === muette) son.currentTime = t; };
 $("st").onchange = () => suivre(true);
 $("pas").onchange = () => ouvrir(+$("pas").value);
 $("precedent").onclick = () => ouvrir(rang - 1);
@@ -531,7 +608,11 @@ function annuler() {
 async function enregistrer() {
   if (!modifies.size) { message("Rien à enregistrer"); return true; }
   const envoi = {};
-  for (const id of modifies) { const p = C.pas.find(x => x.id === id); envoi[id] = { phrases: p.phrases, apparitions: Object.fromEntries(p.apparitions.map(a => [a.id, a.debut_s])), objets: p.objets }; if (p.reluChange) envoi[id].relu = !!p.relu; }
+  const acc = o => o.phrase != null ? { phrase: o.phrase, ancre: o.ancre || null, decalage_s: o.decalage_s != null ? o.decalage_s : null } : { phrase: null };
+  for (const id of modifies) { const p = C.pas.find(x => x.id === id);
+    const phrases = p.audio ? p.phrases : p.phrases.map(({ debut_s, fin_s, ...x }) => x);   /* instants estimés : jamais écrits */
+    envoi[id] = { phrases, accroches: true, apparitions: Object.fromEntries(p.apparitions.map(a => [a.id, { debut_s: a.debut_s, ...acc(a) }])),
+                  objets: p.objets.map(o => ({ ...o, ...acc(o) })) }; if (p.reluChange) envoi[id].relu = !!p.relu; }
   try {
     const r = await (await fetch("/api/pas", { method: "POST", body: JSON.stringify(envoi) })).json();
     if (!r.ok) { message(r.message || "Enregistrement impossible", true); return false; }
@@ -554,7 +635,7 @@ document.addEventListener("keydown", e => {
   const dansTexte = e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT";
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); enregistrer(); }
   else if (e.key === "Escape" && outil) { e.preventDefault(); choisirOutil(null); }
-  else if (e.key === "Escape" || ((e.ctrlKey || e.metaKey) && e.code === "Space")) { e.preventDefault(); if (P.audio) $("lecture").click(); }
+  else if (e.key === "Escape" || ((e.ctrlKey || e.metaKey) && e.code === "Space")) { e.preventDefault(); if (!$("lecture").disabled) $("lecture").click(); }
   else if ((e.key === "Delete" || e.key === "Backspace") && choisi && !dansTexte) { e.preventDefault(); supprimerObjet(choisi); }
   else if (e.code === "Space" && !dansTexte && e.target.tagName !== "BUTTON" && e.target.tagName !== "SELECT") { e.preventDefault(); $("lecture").click(); }
   else if (e.altKey && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
