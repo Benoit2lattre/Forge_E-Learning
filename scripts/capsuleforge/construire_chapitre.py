@@ -38,6 +38,7 @@ import sys
 import zipfile
 from pathlib import Path
 
+import calage as CAL
 import format_chapitre as F
 import voix as voix_mod
 
@@ -790,6 +791,7 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
             for q in s.get("pas") or []:
                 if q.get("ecarte"):
                     continue
+                CAL.appliquer_pas(q, chap)                   # objets accrochés aux phrases : instants de la voix
                 objets = q.get("objets") or []
                 x = {"id": q["id"], "nom": N.get(("pas", q["id"]), q["id"]), "fond": image(q.get("fond")),
                      "audio": son(q.get("audio")), "duree_s": q.get("duree_s"),
@@ -827,7 +829,10 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                                   "fin": float(v.get("fin_s") or (v.get("debut_s") or 0) + (q.get("duree_s") or 0))}
                 if not x["duree_s"]:
                     d, _ = F.duree_pas_s(q, None, W)
-                    x["duree_s"] = round(max(d, len(F.narration_pas(q).split()) * 60 / F.MOTS_PAR_MINUTE, 2.0), 1)
+                    estime = CAL.temps(q, chap)              # sans voix : instants estimés au débit de la langue
+                    fin_estimee = estime[-1][1] + CAL.reglages(chap)["pause_s"] if estime else 0
+                    x["duree_s"] = round(max(d, len(F.narration_pas(q).split()) * 60 / F.MOTS_PAR_MINUTE, 2.0,
+                                             fin_estimee), 1)
                 if not x["phrases"] and F.narration_pas(q, src).strip():
                     x["texte"] = F.narration_pas(q, src).strip()
                     tt = {l: F.narration_pas(q, l).strip() for l in autres}          # texte dit sans horodatage, traduit
@@ -845,11 +850,24 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                         continue
                     t0 = [[a, b] for a, b, _ in x["phrases"]]
                     rc = lambda t: round(voix_mod.recaler(t, t0, v["phrases"], x["duree_s"], v["duree_s"]), 2)
+                    acc = CAL.instants_langue(q, chap, l)     # objets accrochés : instants de la voix de la langue
+
+                    def t_l(o):
+                        return acc[o.get("id")] if acc.get(o.get("id")) is not None else rc(o.get("debut_s") or 0)
+
+                    def d_l(o):
+                        d0 = o.get("debut_s") or 0
+                        if acc.get(o.get("id")) is not None:
+                            return o.get("duree_s") or 0
+                        return round(rc(d0 + (o.get("duree_s") or 0)) - rc(d0), 2)
                     x["voix"][l] = {"audio": son(v["audio"]), "duree_s": v["duree_s"], "temps": v["phrases"], "synthese": True,
-                                    "apparitions": [[rc(a[0]), a[1]] for a in x["apparitions"]],
-                                    "objets": [dict(o, debut_s=rc(o.get("debut_s") or 0),
-                                                    duree_s=round(rc((o.get("debut_s") or 0) + (o.get("duree_s") or 0)) - rc(o.get("debut_s") or 0), 2))
-                                               for o in x["objets"]]}
+                                    "apparitions": sorted(([t_l(o), image(o.get("fichier"))] for o in objets
+                                                           if o.get("type") == "apparition" and o.get("fichier")),
+                                                          key=lambda a: a[0]),
+                                    "objets": [dict({k: o[k] for k in ("type", "forme", "cadre", "position", "trajet",
+                                                                        "couleur", "debut_s", "duree_s") if k in o},
+                                                    debut_s=t_l(o), duree_s=d_l(o))
+                                               for o in objets if o.get("type") in OBJETS]}
                 pas.append(x)
             lots = questions_section(s, dossier, banques, journal)
             for lot in lots:

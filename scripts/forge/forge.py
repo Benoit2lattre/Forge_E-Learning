@@ -219,6 +219,7 @@ class Atelier:
         self.actions = {"exoforge.construire": self.a_exo_construire, "capsule.pptx": self.a_cap_pptx,
                         "capsule.transcrire": self.a_cap_transcrire, "capsule.relire": self.a_cap_relire,
                         "capsule.traduire": self.a_cap_traduire, "capsule.voix": self.a_cap_voix,
+                        "capsule.accrocher": self.a_cap_accrocher,
                         "capsule.verifier": self.a_cap_simple("verifier", "Vérifier"),
                         "capsule.convertir": self.a_cap_simple("convertir", "Mettre à jour pour le lecteur actuel"),
                         "capsule.construire": self.a_cap_construire, "capsule.video": self.a_cap_video,
@@ -626,6 +627,16 @@ class Atelier:
     def a_cap_relire(self, p: dict) -> Tache:
         d, t = self._cap(p)
         return self._tache_cap(d, f"Relire « {t} »", C.argv_base(PY, "relire") + [str(d), "--sans-navigateur"])
+
+    def a_cap_accrocher(self, p: dict) -> Tache:
+        d, t = self._cap(p)
+        argv = C.argv_base(PY, "accrocher") + [str(d)]
+        if p.get("remplacer"):
+            argv.append("--remplacer")
+        secs = C.sections_valides(d, p.get("sections"))
+        if secs:
+            argv += ["--sections", ",".join(secs)]
+        return self._tache_cap(d, f"Accrocher les objets aux phrases dans « {t} »", argv)
 
     def a_cap_traduire(self, p: dict) -> Tache:
         d, t = self._cap(p)

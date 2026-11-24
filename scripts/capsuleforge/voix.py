@@ -32,6 +32,7 @@ from pathlib import Path
 
 import numpy as np
 
+import calage as CAL
 import format_chapitre as F
 import sons as S
 
@@ -217,6 +218,7 @@ def voix_chapitre(yaml_chap: Path, langue: str, moteur: str = "piper", nom: str 
                     q["audio"], q["duree_s"] = rel, duree
                     for ph, (d, f) in zip(q["phrases"], temps):
                         ph["debut_s"], ph["fin_s"] = d, f
+                    CAL.appliquer_pas(q, chap)                  # les objets accrochés suivent la nouvelle voix
                     q.pop("narration", None)
                     source.update({"voix": "synthese", "voix_moteur": moteur, "voix_nom": nom or moteur, "voix_empreinte": emp})
                 else:

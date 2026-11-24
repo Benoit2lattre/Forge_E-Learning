@@ -32,7 +32,7 @@ QUESTIONS = ("aucune", "proposees", "obligatoires")
 MOTS_PAR_MINUTE = 150
 DUREE_MAX_SECTION_S = 360
 
-ORDRE_CHAPITRE = ["format", "titre", "langues", "ecran", "vue", "source", "reglages", "masques", "parcours",
+ORDRE_CHAPITRE = ["format", "titre", "langues", "ecran", "vue", "source", "reglages", "calage", "masques", "parcours",
                   "variantes", "parties", "image_finale"]
 ORDRE_PARTIE = ["id", "titre", "type", "place", "prerequis", "parcours", "variantes", "exercice", "sections"]
 ORDRE_SECTION = ["id", "titre", "objectif", "source", "narration", "audio", "arret", "ouverture", "questions",
@@ -41,7 +41,7 @@ ORDRE_PAS = ["ecarte", "raison", "id", "fond", "video", "camera", "vue", "source
              "a_vous", "retours"]
 ORDRE_GESTE = ["type", "zone", "point", "arrivee", "crans", "texte", "accepte", "tolerance", "touches", "cible",
                "trajectoire", "trajet"]
-ORDRE_OBJET = ["id", "type", "forme", "texte", "position", "cadre", "ouvre", "trajet", "fichier", "couleur", "debut_s", "duree_s", "origine", "modes",
+ORDRE_OBJET = ["id", "type", "forme", "texte", "position", "cadre", "ouvre", "trajet", "fichier", "couleur", "phrase", "ancre", "decalage_s", "debut_s", "duree_s", "origine", "modes",
                "parcours"]
 
 
@@ -334,6 +334,20 @@ def verifier(chap: dict, dossier: Path) -> tuple[list[str], list[str]]:
     dossier = Path(dossier)
     if chap.get("format") != FORMAT:
         err.append(f"format « {chap.get('format')} » (attendu {FORMAT})")
+    cal = chap.get("calage") or {}
+    for k in ("decalage_s", "pause_s"):
+        v = cal.get(k)
+        if v is not None and (not isinstance(v, (int, float)) or isinstance(v, bool) or abs(v) > 30):
+            err.append(f"calage.{k} « {v} » (attendu un nombre de secondes)")
+    deb = cal.get("debit_mots_min")
+    if deb is not None and not (isinstance(deb, (int, float)) and deb > 0 or isinstance(deb, dict)
+                                and all(isinstance(x, (int, float)) and x > 0 for x in deb.values())):
+        err.append(f"calage.debit_mots_min « {deb} » (attendu un nombre, ou un nombre par langue : {{fr: 150, en: 160}})")
+    for k in cal:
+        if k not in ("decalage_s", "pause_s", "debit_mots_min", "ancre"):
+            av.append(f"calage.{k} : clé inconnue")
+    if cal.get("ancre", "debut") not in ("debut", "fin"):
+        err.append(f"calage.ancre « {cal.get('ancre')} » (attendu debut ou fin)")
     ecran = chap.get("ecran") or {}
     if not ecran.get("largeur") or not ecran.get("hauteur"):
         err.append("ecran.largeur et ecran.hauteur sont obligatoires")
@@ -448,6 +462,11 @@ def _verifier_pas(q, N, dossier, ids_pas, ids_parties, appelees, err, av):
         if q.get("duree_s") and d > q["duree_s"] + 0.5:
             av.append(f"{nom} : phrase {i} après la fin du pas ({d} s)")
         avant = d
+    for i, ph in enumerate(q.get("phrases") or [], 1):
+        p = ph.get("pause_s")
+        if p is not None and (not isinstance(p, (int, float)) or isinstance(p, bool) or not 0 <= p <= 30):
+            err.append(f"{nom} : phrase {i}, pause_s « {p} » (attendu un nombre de secondes entre 0 et 30)")
+    n_ph = len(q.get("phrases") or [])
     for o in q.get("objets") or []:
         if o.get("fichier") and not (dossier / o["fichier"]).is_file():
             err.append(f"{nom} : fichier introuvable {o['fichier']} (objet {o.get('id')})")
@@ -457,6 +476,19 @@ def _verifier_pas(q, N, dossier, ids_pas, ids_parties, appelees, err, av):
             if o["ouvre"] not in ids_parties:
                 err.append(f"{nom} : le bouton ouvre une partie inconnue « {o['ouvre']} »")
             appelees.add(o["ouvre"])
+        if o.get("phrase") is not None:
+            k = o["phrase"]
+            if not isinstance(k, int) or isinstance(k, bool) or not 1 <= k <= max(n_ph, 1):
+                err.append(f"{nom} : objet {o.get('id')} accroché à la phrase « {k} » (le pas en a {n_ph})")
+            elif not n_ph:
+                err.append(f"{nom} : objet {o.get('id')} accroché à une phrase, mais le pas n'a pas de phrases")
+            if o.get("ancre", "debut") not in ("debut", "fin"):
+                err.append(f"{nom} : objet {o.get('id')}, ancre « {o.get('ancre')} » (attendu debut ou fin)")
+            dec = o.get("decalage_s")
+            if dec is not None and (not isinstance(dec, (int, float)) or isinstance(dec, bool) or abs(dec) > 30):
+                err.append(f"{nom} : objet {o.get('id')}, decalage_s « {dec} » (attendu un nombre de secondes)")
+        elif o.get("ancre") is not None or o.get("decalage_s") is not None:
+            av.append(f"{nom} : objet {o.get('id')} avec ancre ou decalage_s mais sans phrase (ignorés)")
         for m in o.get("modes") or []:
             if m not in MODES:
                 err.append(f"{nom} : mode inconnu « {m} » sur un objet")

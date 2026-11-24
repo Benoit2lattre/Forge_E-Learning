@@ -69,10 +69,11 @@ parties:
             source: {type: pptx, diapo: 11, etat: 3}
             phrases:                        # cours : le texte dit, phrase par phrase, calé sur le son
               - {debut_s: 0.85, fin_s: 11.2, texte: "Pour calculer cette probabilité de défaillance…"}
-              - {debut_s: 12.2, fin_s: 20.2, texte: "Nous retenons des distributions gaussiennes."}
+              - {debut_s: 12.2, fin_s: 20.2, texte: "Nous retenons des distributions gaussiennes.", pause_s: 1.5}
             duree_s: 12.5                   # durée en mode « regarder » ; absente = calculée
             objets:                         # chacun avec son début et sa durée dans le pas
               - {id: o1, type: spot, cadre: [620, 410, 240, 120], debut_s: 3.2, duree_s: 4}
+              - {id: e1, type: apparition, fichier: images/d11_e4.png, phrase: 2, debut_s: 11.8}   # suit la phrase 2
               - {id: o2, type: bulle, texte: "L'aire commune mesure le risque : $P_f$", position: [700, 560]}
               - {id: o3, type: bouton, texte: "Voir le calcul", ouvre: lois_normales, parcours: [detaillee]}
   - id: lois_normales
@@ -104,7 +105,7 @@ Un pas de didacticiel porte en plus les gestes attendus et les retours :
 
 ## Référence des champs
 
-**Chapitre** : `format`, `titre`, `langues` (`source`, `autres`), `ecran` (`largeur`, `hauteur`, `echelle`), `vue`, `source`, `reglages` (`modes`, `essais`, `trajectoire`, `retours`), `masques`, `affichage` (format de la zone d'image du lecteur, `16:9` par défaut ; les fonds y sont calés sans déformation), `latex` (`fichiers` : préambule des équations du texte des diapositives, `ppt_commandes.tex` par défaut, cherché à côté du chapitre, dans `style/latex` et les profils ; `macros` : macros ajoutées ; le jeu de couleurs du profil de l'école remplace celui du préambule), `powerpoint` (`masque` : `nu` par défaut, les formes du masque et les pieds de page sans champ sont cachés sur les images des diapositives ; `garder` pour un masque neutre, montré partout ; voir « Habiller dans PowerPoint » dans le [mode d'emploi](README.md)), `parcours`, `variantes`, `parties`, `image_finale`, `cameo` (`position` : `bas-droite` par défaut, `bas-gauche`, `haut-droite`, `haut-gauche`, ou `aucune` : webcam gardée mais non montrée ; `taille` : part de la largeur de l'image, 0,22 par défaut ; `forme` : `rond` ou `rectangle` ; écrit par `capsuleforge cameo`).
+**Chapitre** : `format`, `titre`, `langues` (`source`, `autres`), `ecran` (`largeur`, `hauteur`, `echelle`), `vue`, `source`, `reglages` (`modes`, `essais`, `trajectoire`, `retours`), `calage` (`decalage_s`, `pause_s`, `debit_mots_min`, `ancre` : voir « Accrocher les objets aux phrases » ci-dessous), `masques`, `affichage` (format de la zone d'image du lecteur, `16:9` par défaut ; les fonds y sont calés sans déformation), `latex` (`fichiers` : préambule des équations du texte des diapositives, `ppt_commandes.tex` par défaut, cherché à côté du chapitre, dans `style/latex` et les profils ; `macros` : macros ajoutées ; le jeu de couleurs du profil de l'école remplace celui du préambule), `powerpoint` (`masque` : `nu` par défaut, les formes du masque et les pieds de page sans champ sont cachés sur les images des diapositives ; `garder` pour un masque neutre, montré partout ; voir « Habiller dans PowerPoint » dans le [mode d'emploi](README.md)), `parcours`, `variantes`, `parties`, `image_finale`, `cameo` (`position` : `bas-droite` par défaut, `bas-gauche`, `haut-droite`, `haut-gauche`, ou `aucune` : webcam gardée mais non montrée ; `taille` : part de la largeur de l'image, 0,22 par défaut ; `forme` : `rond` ou `rectangle` ; écrit par `capsuleforge cameo`).
 
 **Parcours** : `id`, `titre`, `annexes` (`aucune`, `a_la_demande`, `integrees`), `questions` (`aucune`, `proposees`, `obligatoires`), `exercices`.
 
@@ -114,13 +115,13 @@ Un pas de didacticiel porte en plus les gestes attendus et les retours :
 
 **Section** : `id`, `titre`, `objectif`, `source` (`fichier`, `diapos`, `duree_s` ; `chemin` : où le diaporama a été repris, relatif au chapitre, pour le retrouver à la construction d'une édition), `narration`, `audio`, `arret`, `ouverture`, `questions`, `annexes`, `variantes`, `sauf`, `pas`.
 
-**Pas** : `id`, `fond`, `fond_pour`, `vue`, `source`, `narration`, `phrases` (`debut_s`, `fin_s`, `texte`, `variantes`, `sauf`, `pour`, `audio_pour`), `variantes`, `sauf`, `audio`, `duree_s`, `voix`, `texte_diapo` (texte de la diapositive, écrit par `capsuleforge pptx` : blocs `{texte, titre: true}`, `{texte, niveau}`, `{formule}` en LaTeX, `{cellules: [[{texte}…]…]}` ; `liens` : `[{texte, url}]` d'un paragraphe ; `etat` : clic à partir duquel le bloc est visible ; `cas` et `publics` : bloc d'une forme « cf édition » ou « cf nu » ; textes traduisibles `{fr: …, en: …}`), `objets`, `gestes`, `a_vous` (`observer`, `indice`), `retours` (`juste`, `faux`), `ecarte`, `raison`.
+**Pas** : `id`, `fond`, `fond_pour`, `vue`, `source`, `narration`, `phrases` (`debut_s`, `fin_s`, `texte`, `pause_s`, `variantes`, `sauf`, `pour`, `audio_pour`), `variantes`, `sauf`, `audio`, `duree_s`, `voix`, `texte_diapo` (texte de la diapositive, écrit par `capsuleforge pptx` : blocs `{texte, titre: true}`, `{texte, niveau}`, `{formule}` en LaTeX, `{cellules: [[{texte}…]…]}` ; `liens` : `[{texte, url}]` d'un paragraphe ; `etat` : clic à partir duquel le bloc est visible ; `cas` et `publics` : bloc d'une forme « cf édition » ou « cf nu » ; textes traduisibles `{fr: …, en: …}`), `objets`, `gestes`, `a_vous` (`observer`, `indice`), `retours` (`juste`, `faux`), `ecarte`, `raison`.
 
 **Pas vidéo** : `video` = `{fichier: videos/<nom>.mp4, debut_s, fin_s}` (extrait de la vidéo joué pendant le pas) ; le pas garde `fond` (image d'affiche), `audio` (son de l'extrait, horloge du pas), `duree_s`, `phrases` et `objets` comme une diapositive ; `source: {type: video, fichier, debut_s, fin_s}` (instants dans le fichier d'origine). Écrit par `capsuleforge video`. `camera` = `{fichier: videos/<nom>_camera.mp4, debut_s, fin_s}` : webcam filmée en même temps (caméo), même découpage que `video` (écrit par `capsuleforge filmer --webcam`) ; le lecteur la montre en médaillon, calée sur la vidéo (bouton « Caméo », touche V) ; `position`, `taille` et `forme` sur un pas remplacent ceux du chapitre.
 
 **Langues** : tout texte (titre, objectif, ouverture, texte d'une phrase, narration, texte d'un objet) peut être une chaîne (langue source) ou `{fr: …, en: …}` ; `langues.autres` liste les langues traduites (écrit par `traduire --importer`). `voix.<langue>` d'un pas (écrit par `capsuleforge voix`) : `audio`, `duree_s`, `phrases` (une paire [début, fin] par phrase du pas, dans le son synthétisé), `moteur`, `nom`, `empreinte` (texte + voix : refait si elle change), `date`. Un pas dont le son source est synthétisé porte `source.voix: synthese` (et `voix_moteur`, `voix_nom`, `voix_empreinte`).
 
-**Objet** : `id`, `type`, `forme` (`ellipse` pour un spot ou un cadre ; rectangle sinon), `texte`, `position`, `cadre`, `trajet`, `ouvre`, `fichier`, `couleur`, `debut_s`, `duree_s`, `origine`, `modes`, `parcours`. Types : `bulle`, `texte`, `formule`, `cadre`, `spot`, `fleche`, `pointeur`, `image`, `video`, `bouton`, `apparition`, `cache`.
+**Objet** : `id`, `type`, `forme` (`ellipse` pour un spot ou un cadre ; rectangle sinon), `texte`, `position`, `cadre`, `trajet`, `ouvre`, `fichier`, `couleur`, `phrase`, `ancre`, `decalage_s`, `debut_s`, `duree_s`, `origine`, `modes`, `parcours`. Types : `bulle`, `texte`, `formule`, `cadre`, `spot`, `fleche`, `pointeur`, `image`, `video`, `bouton`, `apparition`, `cache`.
 
 **Geste** : `type`, `zone`, `point`, `arrivee`, `crans`, `texte`, `accepte`, `tolerance`, `touches`, `cible` (`nom`, `type`, `origine`, `dans`), `trajectoire`, `trajet`. Types : `clic`, `double_clic`, `clic_droit`, `clic_milieu`, `glisser`, `molette`, `saisie`, `touche`.
 
@@ -138,6 +139,23 @@ Un texte (titre, narration, bulle, retour) est une chaîne dans la langue source
 | `{zone: [x, y, l, h], variantes: […]}` ou `sauf` | masque | zone floutée selon la variante |
 
 Une phrase retirée coupe son extrait de narration (de son début au début de la suivante) dans le son du pas et dans les voix de synthèse des autres langues ; les phrases, apparitions et objets qui suivent sont recalés. Un pas vidéo garde son film : seuls ses sous-titres changent. Dans l'écran de relecture, le bouton « Public » de chaque phrase règle `variantes`, `sauf` et `pour`.
+
+### Accrocher les objets aux phrases
+
+Un objet (apparition, spot, cadre, pointeur…) peut être accroché à une phrase du texte dit au lieu d'un instant fixe : `phrase` (numéro de la phrase dans le pas, à partir de 1), `ancre` (`debut`, par défaut, ou `fin` de la phrase) et `decalage_s` (en secondes, négatif pour avancer ; réglage du chapitre s'il est absent). Son instant suit alors la phrase : une nouvelle voix, une phrase coupée ou fondue dans une autre, une pause ajoutée le déplacent sans rien retoucher. `debut_s` reste écrit, recalculé à la construction, à la voix de synthèse et à la relecture ; un objet sans `phrase` garde son `debut_s`. Dans une autre langue, l'objet suit la même phrase dans la voix de cette langue.
+
+Une phrase peut porter `pause_s` : le silence à laisser après elle. Sans voix, les instants des phrases sont estimés d'après le débit de la langue.
+
+Réglages par défaut, modifiables par chapitre :
+
+```yaml
+calage:
+  decalage_s: -0.4             # l'objet apparaît juste avant d'être nommé
+  pause_s: 0.4                 # silence après chaque phrase
+  debit_mots_min: {fr: 150, en: 160}   # sans voix ; aussi pour une voix enregistrée
+```
+
+`capsuleforge accrocher <chapitre>` accroche les objets d'un chapitre existant : chaque objet est rattaché à la phrase qu'il annonce (elle commence dans la seconde qui suit) ou, à défaut, à celle qu'il illustre (elle est en cours), avec le décalage observé. Il faut que les phrases aient des instants (voix ou transcription). `--essai` montre le résultat sans rien écrire, `--sections` limite à des parties ou sections, `--remplacer` refait les accroches existantes.
 
 ## Règles
 
@@ -158,6 +176,7 @@ capsuleforge convertir tuto1                  capsule.yaml -> chapitre.yaml (l'o
 capsuleforge plan fiabilite                   plan par parcours : noms, durées, annexes, questions
 capsuleforge plan fiabilite --parcours immersive --variante ecole1
 capsuleforge relire fiabilite                 relecture dans le navigateur : son, texte phrase par phrase, apparitions
+capsuleforge accrocher fiabilite --essai      accrocher les objets aux phrases (essai : rien n'est écrit)
 capsuleforge verifier fiabilite               contrôles des deux formats
 ```
 

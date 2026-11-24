@@ -241,7 +241,7 @@ def empreinte_capsule(y: Path, reglages: dict) -> str:
             if fiche:
                 h.update(fiche.read_bytes())
     lecteur = hashlib.md5(b"".join((ICI / n).read_bytes() for n in ("lecteur_chapitre.html", "construire_chapitre.py",
-                                                                  "habillage.py", "variantes.py", "pdf_capsule.py"))).hexdigest()
+                                                                  "habillage.py", "variantes.py", "pdf_capsule.py", "calage.py"))).hexdigest()
     return registre.empreinte(y, {**reglages, "medias": h.hexdigest(), "lecteur": lecteur})
 
 
@@ -528,6 +528,54 @@ def cmd_cameo(a):
           f"({n} pas avec webcam)" + ("  — refaire « construire » pour le voir dans le lecteur" if neuf else ""))
 
 
+def cmd_accrocher(a):
+    """Accroche aux phrases les objets des pas (commande ``accrocher``) : leurs instants suivront la voix.
+
+    Chaque objet est rattaché à la phrase qu'il annonce (dans la seconde qui suit) ou qu'il illustre, avec le décalage observé ; seuls les pas
+    dont les phrases ont des instants (voix ou transcription) sont traités. ``--remplacer`` refait les accroches
+    existantes ; ``--essai`` montre le résultat sans rien écrire. Le chapitre est sauvegardé dans
+    ``sauvegardes/`` avant d'être réécrit.
+    """
+    import shutil
+    import time
+    import calage as CAL
+    import format_chapitre as F
+    y = trouver_chapitre(a.chapitre)
+    if not y.is_file():
+        raise SystemExit(f"Pas de chapitre : {y}")
+    chap = F.lire(y)
+    N = F.noms(chap)
+    voulus = {x.strip() for x in (a.sections or "").split(",") if x.strip()}
+    total, sans = 0, []
+    for p in chap.get("parties") or []:
+        for s in p.get("sections") or []:
+            if voulus and not voulus & {p.get("id"), s.get("id")}:
+                continue
+            for q in s.get("pas") or []:
+                if q.get("ecarte") or not any(o.get("debut_s") is not None for o in q.get("objets") or []):
+                    continue
+                n = CAL.accrocher_pas(q, chap, remplacer=a.remplacer)
+                if not n and not any(o.get("phrase") is not None for o in q.get("objets") or []):
+                    sans.append(N.get(("pas", q.get("id")), q.get("id")))
+                    continue
+                total += n
+                if n or a.essai:
+                    lignes = [f"{o.get('id')} → phrase {o['phrase']}"
+                              + (f" ({o['decalage_s']:+.2f} s)" if o.get("decalage_s") is not None else "")
+                              for o in q.get("objets") or [] if o.get("phrase") is not None]
+                    print(f"  {N.get(('pas', q.get('id')), q.get('id'))} : " + " ; ".join(lignes))
+    if sans:
+        print(f"  {len(sans)} pas sans instants de phrases (voix ou transcription), non accrochés : "
+              + ", ".join(sans[:12]) + (" …" if len(sans) > 12 else ""))
+    if a.essai or not total:
+        print(f"{total} objet(s) à accrocher" + (" (essai : rien n'est écrit)" if a.essai and total else ""))
+        return
+    (y.parent / "sauvegardes").mkdir(exist_ok=True)
+    shutil.copy2(y, y.parent / "sauvegardes" / f"chapitre_{time.strftime('%Y%m%d_%H%M%S')}.yaml")
+    F.ecrire(chap, y)
+    print(f"{total} objet(s) accroché(s) : leurs instants suivront désormais les phrases (refaire « construire »)")
+
+
 def cmd_voix(a):
     """Produit la voix de synthèse d'un chapitre, phrase par phrase (commande ``voix``)."""
     import voix
@@ -742,12 +790,17 @@ def main(argv=None):
     cm = sp.add_parser("cameo", help="placer le médaillon de la webcam (caméo) dans le lecteur"); cm.add_argument("chapitre")
     cm.add_argument("--position", choices=POSITIONS_CAMEO); cm.add_argument("--taille", type=float, help="part de la largeur (0.08 à 0.5 ; défaut 0.22)")
     cm.add_argument("--forme", choices=["rond", "rectangle"])
+    ac = sp.add_parser("accrocher", help="accrocher les objets des pas aux phrases (leurs instants suivront la voix)")
+    ac.add_argument("chapitre")
+    ac.add_argument("--sections", help="identifiants de parties ou de sections, séparés par des virgules")
+    ac.add_argument("--remplacer", action="store_true", help="refaire aussi les accroches existantes")
+    ac.add_argument("--essai", action="store_true", help="montrer le résultat sans rien écrire")
     sp.add_parser("assistant", help="menu pas à pas")
     a = p.parse_args(argv)
     if not a.cmd:
         p.print_help(); return 0
     return {"enregistrer": cmd_enregistrer, "editer": cmd_editer, "construire": cmd_construire, "traduire": cmd_traduire, "voix": cmd_voix, "video": cmd_video, "filmer": cmd_filmer, "convertir": cmd_convertir, "plan": cmd_plan, "pptx": cmd_pptx, "transcrire": cmd_transcrire, "relire": cmd_relire, "verifier": cmd_verifier,
-            "assembler": cmd_assembler, "approj": cmd_approj, "nouvelle": cmd_nouvelle, "cameo": cmd_cameo, "assistant": cmd_assistant}[a.cmd](a) or 0
+            "assembler": cmd_assembler, "approj": cmd_approj, "nouvelle": cmd_nouvelle, "cameo": cmd_cameo, "accrocher": cmd_accrocher, "assistant": cmd_assistant}[a.cmd](a) or 0
 
 
 if __name__ == "__main__":

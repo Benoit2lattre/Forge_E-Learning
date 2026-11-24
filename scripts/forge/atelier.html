@@ -365,7 +365,10 @@ async function detailCapsule(zone, nom) {
     el("label", {}, "Transcription ", choix("modele", [["small", "rapide"], ["medium", "plus juste, plus lente"]], "small")),
     caseA("refaire_tr", "retranscrire aussi le texte déjà là"),
     el("div", { class: "actions" }, el("button", { class: "btn second", type: "button", onclick: () => lancer("capsule.transcrire", { modele: opt("modele", "small"), refaire: opt("refaire_tr", false), sections: portee() }) }, "Transcrire"),
-      el("button", { class: "btn", type: "button", onclick: () => lancerAvecEcran("capsule.relire", { capsule: nom }) }, "Relire")));
+      el("button", { class: "btn", type: "button", onclick: () => lancerAvecEcran("capsule.relire", { capsule: nom }) }, "Relire")),
+    el("p", { class: "sous" }, typo("Accrocher : chaque apparition suit ensuite sa phrase, quand la voix change ou qu'une phrase est coupée.")),
+    caseA("remplacer_acc", "refaire aussi les accroches existantes"),
+    el("div", { class: "actions" }, el("button", { class: "btn second", type: "button", onclick: () => lancer("capsule.accrocher", { remplacer: opt("remplacer_acc", false), sections: portee() }) }, "Accrocher aux phrases")));
   const langues = [...d.autres, ...Object.keys(d.noms_langues).filter(l => l !== d.langue && !d.autres.includes(l))];
   const selLangue = choix("langue_trad", langues.map(l => [l, (d.noms_langues[l] || l) + (d.autres.includes(l) ? "" : " (nouvelle)")]), d.autres[0] || "en");
   const etatTrad = el("span", { class: "sous" });

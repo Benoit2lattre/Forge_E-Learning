@@ -30,6 +30,7 @@ import time
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
+import calage as CAL
 import format_chapitre as F
 import serveur_local as S
 import transcription as T
@@ -97,6 +98,7 @@ class SeanceRelecture:
         for partie, sec, pas in self._pas(chap):
             if pas.get("ecarte"):
                 continue
+            CAL.appliquer_pas(pas, chap)                   # objets accrochés : instants d'après les phrases
             prepare = False
             phrases = pas.get("phrases")
             if not phrases:
@@ -177,16 +179,25 @@ class SeanceRelecture:
                                 nouvelles.append(v)
                         if txt in anciennes and anciennes[txt].get("audio_pour"):
                             x["audio_pour"] = anciennes[txt]["audio_pour"]
+                        pause = ph.get("pause_s", (anciennes.get(txt) or {}).get("pause_s"))
+                        if pause is not None and str(pause).strip() != "":
+                            x["pause_s"] = round(min(max(float(pause), 0.0), 30.0), 2)
                         phrases.append(x)
                     if phrases:
+                        CAL.suivre_decoupage(pas, chap, phrases)   # coupe, fusion : les accroches suivent
                         pas["phrases"] = phrases
                         pas.pop("narration", None)          # une seule source du texte dit : les phrases
                     else:
                         pas.pop("phrases", None)
+                reg, t_ph = CAL.reglages(chap), CAL.temps(pas, chap)
                 for o in pas.get("objets") or []:
                     if o.get("type") == "apparition" and o.get("id") in (m.get("apparitions") or {}):
-                        o["debut_s"] = round(float(m["apparitions"][o["id"]]), 1)
+                        t = round(float(m["apparitions"][o["id"]]), 2)
+                        if o.get("phrase") is not None and t_ph and abs(t - (CAL.instant(o, t_ph, reg) or 0)) > 0.05:
+                            CAL.decalage(o, t, t_ph, reg)      # posé à la main : l'accroche garde ce réglage
+                        o["debut_s"] = round(t, 1) if o.get("phrase") is None else CAL.instant(o, t_ph, reg) or t
                 if "objets" in m:
+                    accroches = {o.get("id"): o for o in pas.get("objets") or [] if o.get("phrase") is not None}
                     gardes = [o for o in pas.get("objets") or [] if o.get("type") not in AJOUTS]
                     pris = {o.get("id") for o in gardes}
                     for o in m["objets"]:
@@ -211,6 +222,11 @@ class SeanceRelecture:
                             x["couleur"] = str(o["couleur"])[:9]
                         x["debut_s"] = round(float(o.get("debut_s") or 0), 1)
                         x["duree_s"] = round(max(0.1, float(o.get("duree_s") or 0)), 1)
+                        vieux = accroches.get(x["id"])
+                        if vieux is not None and t_ph:            # objet accroché : il le reste
+                            x.update({k: vieux[k] for k in CAL.CLES if k in vieux})
+                            if abs(x["debut_s"] - (CAL.instant(x, t_ph, reg) or 0)) > 0.05:
+                                CAL.decalage(x, x["debut_s"], t_ph, reg)
                         gardes.append(F.ordonner(x, F.ORDRE_OBJET))
                     if gardes:
                         pas["objets"] = gardes

@@ -119,6 +119,7 @@ Forge E-Learning 0.2 réunit quatre outils libres pour passer d'un cours existan
 - Analyse du tirage des questions : mode observé, équité entre étudiants, rétention.
 - Seuils de lecture des indicateurs (discrimination, fiabilité, leurres non fonctionnels) tirés de la bibliographie.
 - Relecture sans voix, étape R−1 : guide « Préparer son diaporama pour CapsuleForge » (six degrés de préparation, du diaporama brut au diaporama enregistré ; niveaux de la capsule dans PowerPoint ; parties et sections ; niveau des dispositions de titre déclaré dans le profil ; balises des notes `[clic]`, `[pause]`, `[note]` ; accroche, pause et débit par défaut) et cinq diaporamas d'exemple, un par degré (`outils/capsuleforge/exemples/diaporamas/`) ; le contrôle du dépôt accepte les `.pptx` des dossiers `exemples/` des outils.
+- Relecture sans voix, étape R1 : un objet peut être accroché à une phrase du texte dit (`phrase`, `ancre`, `decalage_s`) au lieu d'un instant fixe ; son instant suit la voix (nouvelle voix de synthèse, autre langue), les phrases coupées ou fondues à la relecture et les pauses (`pause_s` d'une phrase). Réglages par chapitre (`calage` : décalage −0,4 s, pause 0,4 s, débit par langue) ; sans voix, instants estimés au débit. Commande `accrocher` et bouton « Accrocher aux phrases » de l'atelier pour les capsules existantes. Corrige les apparitions restées aux anciennes secondes après une nouvelle voix.
 
 ### CapsuleForge 0.8 (0.2 à 0.7.1 dans l'historique de développement)
 
