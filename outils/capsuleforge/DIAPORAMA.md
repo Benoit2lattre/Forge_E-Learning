@@ -77,7 +77,7 @@ Deux façons de faire, au choix :
 Les notes de la diapositive sont le texte dit du pas, celui que lira la voix de synthèse, que montreront les sous-titres et le volet « Texte » du lecteur, et qu'imprimera le PDF. Elles s'écrivent pour l'oreille :
 
 - **une idée par phrase** : chaque phrase devient une phrase de la voix et un sous-titre ;
-- **les formules en toutes lettres** : « sigma égale F sur S » plutôt que « σ = F/S » ;
+- **les formules en toutes lettres** : « la variance, l'espérance du carré de l'écart à la moyenne » plutôt que « σ² = E[(X − μ)²] » ;
 - **pas d'abréviations** que la voix lirait mal.
 
 ## Les balises des notes
@@ -93,12 +93,12 @@ Les balises s'écrivent entre crochets dans les notes. Elles règlent la capsule
 
 Une balise inconnue est signalée par le diagnostic de la reprise, et retirée comme les autres.
 
-Exemple, pour la diapositive de l'éprouvette :
+Exemple, pour la diapositive de la densité :
 
 ```text
-Voici l'éprouvette, un barreau de section constante. [clic] On la tire à ses deux
-extrémités avec une force F. [pause 1 s] [clic] Sa section, notée S, est supposée
-constante pendant l'essai. [note]En salle : faire passer une vraie éprouvette.[/note]
+La loi normale, ou loi de Gauss, [clic] a la forme d'une cloche. Elle est centrée sur sa
+moyenne, notée mu. [pause] [clic] Son écart-type, noté sigma, règle sa largeur.
+[note]En salle : faire varier sigma dans un tableur.[/note]
 ```
 
 Sans balise `[clic]`, les actions sont accrochées aux phrases dans l'ordre : la première action à la première phrase, la deuxième à la deuxième, et ainsi de suite.
@@ -126,15 +126,15 @@ La reprise indique le degré atteint par le diaporama, ce qu'elle a produit et c
 
 ## Les exemples
 
-Le dossier `outils/capsuleforge/exemples/diaporamas/` du dépôt contient un même petit cours, « Essai de traction », à chaque degré :
+Le dossier `outils/capsuleforge/exemples/diaporamas/` du dépôt contient un même petit cours de mathématiques, « La loi normale et ses moments », à chaque degré. Les formules y sont écrites en texte, pour qu'il s'ouvre sans complément :
 
 | Degré | Fichier |
 |---|---|
-| 0 | `traction_degre0_brut.pptx` |
-| 1 | `traction_degre1_structure.pptx` |
-| 2 | `traction_degre2_anime.pptx` |
-| 3 | `traction_degre3_commente.pptx` |
-| 4 | `traction_degre4_balise.pptx` |
+| 0 | `gaussienne_degre0_brut.pptx` |
+| 1 | `gaussienne_degre1_structure.pptx` |
+| 2 | `gaussienne_degre2_anime.pptx` |
+| 3 | `gaussienne_degre3_commente.pptx` |
+| 4 | `gaussienne_degre4_balise.pptx` |
 | 5 | À enregistrer soi-même à partir du degré 4 (Diaporama, Enregistrer), en lisant les notes |
 
 Ouvrir deux degrés voisins côte à côte montre ce qui change de l'un à l'autre.
