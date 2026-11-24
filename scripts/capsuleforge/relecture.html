@@ -99,6 +99,7 @@ h2{font-size:13px;margin:6px 0 0;color:var(--texte2);font-weight:600;text-transf
 .accroche select,.accroche input{font-size:12px;padding:1px 2px}
 .accroche input{width:56px}
 .phrase .duree{grid-column:1;font-size:11px;color:var(--texte2);text-align:center}
+.phrase .num{font-size:12px;font-weight:600;color:var(--navy2);text-align:center}
 .phrase .public{grid-column:2/4;display:flex;flex-wrap:wrap;gap:4px}
 .phrase .public[hidden]{display:none}
 .phrase .public input{flex:1;min-width:180px;font:inherit;font-size:13px;padding:3px 6px;border:1px solid var(--bord);border-radius:6px}
@@ -197,7 +198,7 @@ function resoudre() { for (const o of accroches()) { const b = base(o); if (b !=
 function garderAccroche(o) { if (o.phrase == null) return; const b = base(o); if (b == null) return;
   const d = +(o.debut_s - b).toFixed(2); if (Math.abs(d - CAL.decalage_s) < 0.005) delete o.decalage_s; else o.decalage_s = d; }
 function accrocher(o, i) { if (i == null) { delete o.phrase; delete o.ancre; delete o.decalage_s; return; } o.phrase = i + 1; delete o.ancre; }
-const nomAccroche = o => o.phrase == null ? "" : " · phrase " + o.phrase + (o.ancre === "fin" ? " (fin)" : "") + " " + (decalageDe(o) >= 0 ? "+" : "−") + Math.abs(decalageDe(o)).toFixed(1).replace(".", ",") + " s";
+const nomAccroche = o => o.phrase == null ? "" : " · L" + o.phrase + (o.ancre === "fin" ? " (fin)" : "") + " " + (decalageDe(o) >= 0 ? "+" : "−") + Math.abs(decalageDe(o)).toFixed(1).replace(".", ",") + " s";
 let C = null, P = null, rang = 0, arretA = null, pile = [], preparees = 0, outil = null, choisi = null, phraseChoisie = -1, fini = false;
 const NOMS = { spot: "Spot", cadre: "Cadre", pointeur: "Pointeur", cache: "Cache" };
 const modifies = new Set();
@@ -291,7 +292,9 @@ function dessinerPhrases() {
     j.disabled = !horodatee(ph); j.title = muet() ? "Lire cette phrase (lecture muette, instants estimés)" : "Écouter cette phrase"; j.onclick = () => jouerPhrase(i);
     const du = document.createElement("div"); du.className = "duree"; du.textContent = horodatee(ph) ? (ph.fin_s - ph.debut_s).toFixed(1).replace(".", ",") + " s" : "";
     if (long) du.title = "Phrase longue pour un sous-titre : à couper";
-    g.append(j, du);
+    const num = document.createElement("div"); num.className = "num"; num.textContent = "L" + (i + 1);
+    num.title = "Ligne " + (i + 1) + " : les apparitions et les ajouts s'y accrochent par ce numéro";
+    g.append(j, du, num);
     const t = document.createElement("textarea"); t.value = ph.texte; t.rows = 1; t.spellcheck = true; t.lang = "fr";
     t.oninput = () => { ph.texte = t.value; hauteur(t); marquer(); info(); if (muet()) { estimer(P); resoudre(); dessinerPiste(); suivre(true); } };
     t.onfocus = () => { if (son.paused && horodatee(ph) && phraseA(son.currentTime || 0) !== i) { arretA = null; son.currentTime = ph.debut_s + 0.01; suivre(true); } infoAjout(); };
@@ -332,10 +335,10 @@ function dessinerPhrases() {
       o.append(bp); l.append(panneau);
     }
     if (P.apparitions.length) {
-      const s = document.createElement("select"); s.title = "Accrocher une apparition au début de cette phrase : elle la suivra si la voix change";
+      const s = document.createElement("select"); s.title = "Accrocher une apparition au début de cette ligne : elle la suivra si la voix change";
       s.innerHTML = "<option value=''>▣ accrocher…</option>" + P.apparitions.map(a => `<option value="${a.id}">${a.id}${a.phrase === i + 1 ? " ✓" : ""}</option>`).join("");
       s.onchange = () => { const a = P.apparitions.find(x => x.id === s.value); if (!a) return; memoriser(); accrocher(a, i); delete a.decalage_s; marquer(); dessiner(); suivre(true);
-        message("Apparition " + a.id + " accrochée au début de la phrase " + (i + 1)); };
+        message("Apparition " + a.id + " accrochée au début de L" + (i + 1)); };
       o.append(s);
     }
     l.prepend(g, t, o); z.appendChild(l); hauteur(t);
@@ -381,10 +384,10 @@ function dessinerApparitions() {
     e.disabled = !P.audio && !P.phrases.length;
     /* accroche : phrase, début ou fin, décalage */
     const acc = document.createElement("span"); acc.className = "accroche";
-    const sp = document.createElement("select"); sp.title = "Phrase à laquelle l'apparition est accrochée (elle la suit si la voix change)"; sp.setAttribute("aria-label", "Phrase de l'apparition " + a.id);
-    sp.innerHTML = "<option value=''>instant fixe</option>" + P.phrases.map((ph, i) => `<option value="${i}">phrase ${i + 1}</option>`).join("");
+    const sp = document.createElement("select"); sp.title = "Ligne à laquelle l'apparition est accrochée (elle la suit si la voix change)"; sp.setAttribute("aria-label", "Ligne de l'apparition " + a.id);
+    sp.innerHTML = "<option value=''>instant fixe</option>" + P.phrases.map((ph, i) => `<option value="${i}">L${i + 1}</option>`).join("");
     sp.value = a.phrase != null ? String(a.phrase - 1) : "";
-    const sa = document.createElement("select"); sa.title = "Au début ou à la fin de la phrase"; sa.setAttribute("aria-label", "Début ou fin de la phrase");
+    const sa = document.createElement("select"); sa.title = "Au début ou à la fin de la ligne"; sa.setAttribute("aria-label", "Début ou fin de la ligne");
     sa.innerHTML = "<option value='debut'>début</option><option value='fin'>fin</option>"; sa.value = a.ancre === "fin" ? "fin" : "debut";
     const sd = document.createElement("input"); sd.type = "number"; sd.step = "0.1"; sd.title = "Décalage en secondes (négatif : avant)"; sd.setAttribute("aria-label", "Décalage de l'apparition " + a.id);
     sd.value = a.phrase != null ? decalageDe(a) : ""; sa.disabled = sd.disabled = a.phrase == null;
