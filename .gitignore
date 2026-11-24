@@ -48,6 +48,7 @@ desktop.ini
 
 # Exceptions : médias d'exemple courts, autorisés dossier par dossier
 !outils/*/exemples/**/*.mp3
+!outils/*/exemples/**/*.pptx
 
 # ExoForge : script d'enregistrement régénéré à chaque construction
 script_enregistrement.md

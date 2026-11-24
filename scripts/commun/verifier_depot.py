@@ -9,7 +9,8 @@ Refuse :
 
 - tout fichier sous un dossier local (``data/``, ``_legacy/``, ``_brouillons/``, ``_pilotage/``, ``.venv/``…, voir ``LOCAUX``) ;
 - tout fichier de plus de 5 Mo ;
-- les types lourds ou personnels (``.pptx``, ``.mp4``, ``.mov``, ``.aup3``, ``.approj``, ``.wav``, ``.m4a``) ;
+- les types lourds ou personnels (``.pptx``, ``.mp4``, ``.mov``, ``.aup3``, ``.approj``, ``.wav``, ``.m4a``),
+  sauf les diaporamas d'exemple des outils (``outils/<outil>/exemples/``, voir ``EXEMPLES``) ;
 - toute adresse de courriel qui n'est pas fictive (domaines autorisés dans ``DOMAINES_FICTIFS``).
 
 Code de sortie 1 s'il y a un problème : le commit est alors annulé.
@@ -22,6 +23,7 @@ from pathlib import Path
 RACINE = Path(__file__).resolve().parents[2]
 LOCAUX = ("data/", "_legacy/", "_brouillons/", "_pilotage/", "Claude outputs/", ".venv/")
 TYPES_INTERDITS = (".pptx", ".mp4", ".mov", ".aup3", ".approj", ".wav", ".m4a")
+EXEMPLES = re.compile(r"^outils/[^/]+/exemples/.+\.pptx$")   # diaporamas d'exemple, publics et légers
 TAILLE_MAX = 5 * 1024 * 1024
 DOMAINES_FICTIFS = ("exemple.fr", "exemple.com", "example.com", "example.org", "moodle.a",
                     "users.noreply.github.com", "noreply.github.com")
@@ -59,7 +61,7 @@ def controler(chemins):
             continue
         if not p.is_file():
             continue
-        if p.suffix.lower() in TYPES_INTERDITS:
+        if p.suffix.lower() in TYPES_INTERDITS and not EXEMPLES.match(c):
             problemes.append(f"{c} : type de fichier exclu ({p.suffix})")
         taille = p.stat().st_size
         if taille > TAILLE_MAX:

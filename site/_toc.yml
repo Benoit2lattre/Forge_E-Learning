@@ -18,6 +18,7 @@ parts:
       - file: outils/capsuleforge/README
         sections:
           - file: outils/capsuleforge/FORMAT
+          - file: outils/capsuleforge/DIAPORAMA
       - file: outils/diagforge/README
       - file: site/communs
         sections:

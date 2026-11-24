@@ -118,6 +118,7 @@ Forge E-Learning 0.2 réunit quatre outils libres pour passer d'un cours existan
 - Lecture des banques QuizForge : erreur type par réponse, onglet « Par erreur ».
 - Analyse du tirage des questions : mode observé, équité entre étudiants, rétention.
 - Seuils de lecture des indicateurs (discrimination, fiabilité, leurres non fonctionnels) tirés de la bibliographie.
+- Relecture sans voix, étape R−1 : guide « Préparer son diaporama pour CapsuleForge » (six degrés de préparation, du diaporama brut au diaporama enregistré ; niveaux de la capsule dans PowerPoint ; parties et sections ; niveau des dispositions de titre déclaré dans le profil ; balises des notes `[clic]`, `[pause]`, `[note]` ; accroche, pause et débit par défaut) et cinq diaporamas d'exemple, un par degré (`outils/capsuleforge/exemples/diaporamas/`) ; le contrôle du dépôt accepte les `.pptx` des dossiers `exemples/` des outils.
 
 ### CapsuleForge 0.8 (0.2 à 0.7.1 dans l'historique de développement)
 
