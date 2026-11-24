@@ -6,9 +6,29 @@ CapsuleForge produit des **capsules** : des cours et des didacticiels interactif
 
 Une capsule est découpée en parties et en sections de quelques minutes, avec plusieurs parcours, des questions en fin de section et des exercices ; elle se lit dans un lecteur HTML ou se dépose dans Moodle en paquet SCORM. Un didacticiel montre une manipulation puis la fait faire (« Regarder » puis « À vous ») : il remplace le mode « simulation interactive » d'ActivePresenter sans son défaut principal (une diapositive par action, à la durée de l'enregistrement). Les premiers didacticiels étaient écrits pour un ancien lecteur (`capsule.yaml`) ; AtelierForge les met à jour pour le lecteur actuel (dernière partie de cette page).
 
-Statut : outil en développement, utilisé sur un chapitre pilote. Essayés en conditions réelles : reprise d'un diaporama narré, transcription, relecture, lecteur de chapitre, questions et exercices, paquets SCORM 2004 et 1.2 dans Moodle, traduction et voix de synthèse, import de vidéo, enregistrement d'écran. Pas encore : caméo dans le lecteur, éditeur d'assemblage, simulation ActivePresenter dans le chapitre, export H5P. L'état détaillé est sur la page « État des outils » du site.
+Statut : outil en développement, utilisé sur un chapitre pilote. Essayés en conditions réelles : reprise d'un diaporama narré, transcription, relecture, lecteur de chapitre, questions et exercices, paquets SCORM 2004 et 1.2 dans Moodle, traduction et voix de synthèse, import de vidéo, enregistrement d'écran, et une capsule habillée pour plusieurs écoles (charte, modèle PowerPoint, variantes, texte et diapositives traduits, PDF, versions par édition). Pas encore : caméo dans le lecteur, relecture d'un diaporama sans voix, éditeur d'assemblage, simulation ActivePresenter dans le chapitre, export H5P. L'état détaillé est sur la page « État des outils » du site.
 
 Dans cette page, `capsuleforge …` abrège `python scripts/capsuleforge/capsuleforge.py …`, lancé depuis le dossier du dépôt. Un nom seul (`fiabilite`) désigne le dossier `data/capsuleforge/fiabilite/`. Sous Windows, le plus simple est **AtelierForge** (double-clic sur `Forge.bat`, à la racine du dépôt), écran « Capsules » : on choisit la capsule, son état s'affiche section par section (diapositives reprises, images, texte dit, relu, traduction, voix, questions) et chaque étape se lance par un bouton (reprendre un diaporama, importer une vidéo, transcrire, relire, traduire, faire la voix, vérifier, construire avec ou sans paquets SCORM), sans ligne de commande. Un double-clic sur `scripts/capsuleforge/CapsuleForge.bat` ouvre aussi un menu qui pose les questions une à une (enregistrer, construire, vérifier, reprendre un diaporama, relire…), sans ligne de commande.
+
+## Une capsule, plusieurs écoles
+
+Un même cours se donne dans plusieurs écoles, parcours ou années. CapsuleForge le prépare une fois, **nu** (sans rien qui désigne un établissement), puis le **rhabille** pour chaque édition d'un cours (école, déclinaison, année) au moment de construire. Le diaporama de l'auteur n'est jamais modifié.
+
+1. **Dans PowerPoint**, ce qui dépend de l'édition se prépare sur les diapositives : formes nommées `cf édition` (montrées dans les éditions) ou `cf édition ecole1` (pour cette école seulement), champs `{cours}`, `{code}`, `{promo}`… dans le texte (voir « Habiller dans PowerPoint » plus bas).
+2. **Reprise** (`capsuleforge pptx`) : les images de la capsule nue (formes d'édition cachées, champs vides, masque de l'auteur caché) et le texte de chaque diapositive, gardé comme texte.
+3. **Relecture** : chaque phrase dite peut être réservée à un public, retirée pour lui ou remplacée (bouton « Public ») : un renvoi au reste du cursus n'est dit que là où il a un sens.
+4. **Traduction** : le texte dit, les titres et le texte des diapositives ; les diapositives elles-mêmes sont réexportées dans la langue.
+5. **Construction pour une édition** (`construire --cours`, ou un cours choisi dans AtelierForge) : charte et logo de l'école, écran d'accueil, pied de page, filigrane si l'édition le demande ; PowerPoint applique le **modèle de l'école** (`.potx` de son profil) et remplit les champs ; à la demande, un **PDF** à imprimer. Le paquet SCORM et le PDF sont rangés comme version de l'édition.
+
+![Capsule construite pour une édition d'Ecole1 (école fictive) : bandeau aux couleurs de l'école, écran d'accueil (cours, code, année, promo, mentions), diapositive au modèle de l'école avec le cartouche « cf édition ecole1 », promo remplie et filigrane](../../_static/captures/capsuleforge/habillage_accueil.png)
+
+![Volet « Texte » du lecteur : le texte de chaque diapositive au fil des pas (ce qui apparaît au clic suivant est estompé), la formule en vraie formule aux couleurs de l'école, le texte dit ; boutons A−, A+ et « Aéré »](../../_static/captures/capsuleforge/lecteur_texte.png)
+
+![La même capsule en anglais : diapositive réexportée par PowerPoint avec ses textes traduits, sous-titres et voix de synthèse anglais](../../_static/captures/capsuleforge/diapositive_traduite.png)
+
+![Une page du PDF imprimé par Edge : la diapositive dans son dernier état, le texte dit, des lignes pour les notes, pied de page de l'édition](../../_static/captures/capsuleforge/pdf_page.png)
+
+Un modèle d'école change les polices et les couleurs des diapositives : un texte peut s'élargir et toucher une équation ou un schéma restés en place. À regarder dans le lecteur, diapositive par diapositive, à la première construction d'une édition.
 
 ## Préparer une capsule
 
@@ -190,6 +210,10 @@ capsuleforge construire fiabilite --pdf --pdf-langue en --cours traction:ecole1-
 
 Le PDF est fait à partir du lecteur construit : mêmes images (habillage de l'édition, variantes, filigrane, diapositives traduites), mêmes textes. Une couverture (logo, titre, cours, code, école, année, promo, enseignant, mentions, licence), puis, partie par partie et section par section, chaque diapositive dans son dernier état ; dessous, selon `--pdf-contenu` : `texte` (le texte dit, défaut), `diapo` (le texte de la diapositive, formules comprises), ou `diapos` (les images seules). `--pdf-notes marge` laisse une colonne lignée à droite de chaque diapositive, `dessous` des lignes sous chacune. `--pdf-langue en` fait le PDF dans une autre langue de la capsule (titres, texte dit, texte et images des diapositives traduits). Pied de page et numéros de page ; un exercice est signalé, à faire dans la capsule en ligne. Le PDF est mis dans le paquet SCORM et s'ouvre par le bouton « PDF » du lecteur ; avec `--cours`, il est rangé avec la version (une version dont le PDF n'a pas pu être écrit n'est pas rangée).
 
+Dans AtelierForge, la carte « 5. Construire » en donne les mêmes choix.
+
+![Carte « 5. Construire » de l'écran Capsules d'AtelierForge : paquets SCORM, format, case « PDF de la capsule », contenu, notes et langue du PDF](../../_static/captures/atelier/construire_pdf.png)
+
 L'impression passe par Edge (présent sur Windows) ou Chrome, sans fenêtre ; une page `imprimer.html` est écrite à côté du lecteur. Sans navigateur trouvé (ou pour en choisir un autre : variable `FORGE_NAVIGATEUR`), ouvrir cette page et l'imprimer en PDF (Ctrl+P).
 
 #### Habiller la capsule pour une édition (`--cours`)
@@ -210,7 +234,7 @@ La capsule source reste nue : elle ne nomme aucun établissement. Avec `--cours`
 
 Le lecteur va dans `dist/capsuleforge/<capsule>_<déclinaison>_<année>/` ; les paquets sont recopiés dans l'édition (`capsules/<capsule>/v1/`, avec `version.yaml`) et inscrits au registre, comme les versions de quiz et d'exercices ([Versions et registre](../atelier/FORMAT_registre.md)). Reconstruire sans rien changer (capsule, médias, habillage, options) ne crée pas de version.
 
-**Variantes : une école, un client.** Ce qui ne vaut que pour un public (« chez PSA », des données de client, un logo dans une image) se déclare dans la capsule ([Variantes](FORMAT.md)) : une phrase, un pas, une section ou une partie réservés à une variante, retirés pour elle, ou remplacés (texte, son, image). La capsule nue n'en garde rien ; `--variante ecole1,aero`, ou avec `--cours` les variantes de la déclinaison et de l'édition (école, parcours, année), construit la capsule pour ce public : les phrases qui renvoient au reste du cursus (« comme vu en séance 3 », « en TP de mécanique du parcours aéro ») ne sont dites que là où elles ont un sens. Dans l'écran de relecture, le bouton « Public » de chaque phrase la règle : dite pour tous, seulement pour…, retirée pour…, et le texte dit à la place pour chaque variante. `capsuleforge verifier` signale les noms d'établissements restés dans la capsule nue, d'après une liste privée (`data/capsuleforge/noms_a_eviter.txt`, un nom par ligne, jamais publiée).
+**Variantes : une école, un client.** Ce qui ne vaut que pour un public (« chez notre partenaire industriel », des données de client, un logo dans une image) se déclare dans la capsule ([Variantes](FORMAT.md)) : une phrase, un pas, une section ou une partie réservés à une variante, retirés pour elle, ou remplacés (texte, son, image). La capsule nue n'en garde rien ; `--variante ecole1,aero`, ou avec `--cours` les variantes de la déclinaison et de l'édition (école, parcours, année), construit la capsule pour ce public : les phrases qui renvoient au reste du cursus (« comme vu en séance 3 », « en TP de mécanique du parcours aéro ») ne sont dites que là où elles ont un sens. Dans l'écran de relecture, le bouton « Public » de chaque phrase la règle : dite pour tous, seulement pour…, retirée pour…, et le texte dit à la place pour chaque variante. `capsuleforge verifier` signale les noms d'établissements restés dans la capsule nue, d'après une liste privée (`data/capsuleforge/noms_a_eviter.txt`, un nom par ligne, jamais publiée).
 
 **Format d'affichage.** Le lecteur montre les images dans une zone de format fixe, `affichage` du chapitre (`16:9` par défaut) : une image d'un autre format y est centrée sans déformation, les bords prenant la couleur du cadre (celle de l'école, ou celle de Forge). Une capsule qui mêle des diapositives 4:3 et des captures 16:10 garde ainsi la même taille d'une section à l'autre.
 
@@ -383,10 +407,11 @@ capsuleforge convertir tuto1      capsule.yaml -> chapitre.yaml (l'original n'es
 ## À venir (dans l'ordre proposé)
 
 1. Caméo (vidéo de l'enseignant en médaillon) dans le lecteur, calé sur le pas ; recalage d'un caméo filmé à part par comparaison des sons.
-2. Simulation ActivePresenter (gestes, mode « À vous ») dans le chapitre.
-3. Éditeur d'assemblage du chapitre (sources mêlées, chronologie, objets).
-4. Lecture des traces SCORM dans DiagForge ; objectifs SCORM par section.
-5. Export H5P ; thème modifiable (couleurs et polices du profil).
+2. Relecture d'un diaporama sans voix : durées estimées, apparitions accrochées aux phrases, pauses.
+3. Simulation ActivePresenter (gestes, mode « À vous ») dans le chapitre ; « manipulations » (curseurs qui pilotent des valeurs affichées).
+4. Éditeur d'assemblage du chapitre (sources mêlées, chronologie, objets).
+5. Lecture des traces SCORM dans DiagForge ; objectifs SCORM par section.
+6. Export H5P ; équations natives de PowerPoint dans le texte des diapositives.
 
 Le plan d'ensemble est sur la page « Prochaines étapes » du site.
 

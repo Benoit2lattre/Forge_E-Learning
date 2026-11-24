@@ -148,9 +148,9 @@ def detail(nom: str) -> dict:
             repris = sum(1 for q in pas if (q.get("source") or {}).get("type") == "pptx")
             images = sum(1 for q in pas if q.get("fond") and (d / q["fond"]).is_file())
             avec_son = [q for q in pas if q.get("audio")]
-            parle = [q for q in pas if q.get("audio") or q.get("phrases") or (q.get("narration") or "").strip()
+            parle = [q for q in pas if q.get("audio") or q.get("phrases") or texte(q.get("narration")).strip()
                      or (q.get("source") or {}).get("type") in ("pptx", "video")]
-            texte_ok = sum(1 for q in parle if q.get("phrases") or (q.get("narration") or "").strip())
+            texte_ok = sum(1 for q in parle if q.get("phrases") or texte(q.get("narration")).strip())
             relus = sum(1 for q in pas if (q.get("source") or {}).get("relu"))
             par_langue = {}
             for l in autres:

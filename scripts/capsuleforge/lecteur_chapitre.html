@@ -141,6 +141,7 @@ nav .duree .q{color:var(--navy2);white-space:nowrap}
 #barre button:hover:not(:disabled){background:var(--slate-l)}
 #barre button:disabled{opacity:.4;cursor:default}
 #barre button[aria-pressed="true"]{background:var(--navy);color:#fff}
+#barre button[aria-pressed="true"]:hover:not(:disabled){background:var(--navy2);color:#fff}   /* enfoncé et survolé : reste lisible */
 #jouer{background:var(--sand)!important;border-color:var(--sand)!important;font-weight:600;min-width:86px!important}
 #temps{font-variant-numeric:tabular-nums;font-size:13px;color:var(--texte2);white-space:nowrap}
 #piste{position:relative;flex:1;min-width:160px;height:22px;cursor:pointer;touch-action:none}
