@@ -455,7 +455,7 @@ function formulaireNouvelle() {
     const r = await api("/api/parcourir", { titre: "Choisir le diaporama", types: [["Diaporama PowerPoint", "*.pptx"]] });
     if (!r.ok) return message(r.message || "Dialogue impossible.", true);
     if (r.chemin) { chemin = r.chemin; nomF.textContent = r.chemin; if (!titre.value) { titre.value = r.chemin.split(/[\\/]/).pop().replace(/\.pptx$/i, "").replace(/_/g, " "); titre.oninput(); } } } }, "Diaporama…");
-  const decoupe = el("select", {}, el("option", { value: "auto" }, "sections de quelques minutes"), el("option", { value: "diapositive" }, "une section par diapositive"), el("option", { value: "une" }, "une seule section"));
+  const decoupe = el("select", {}, el("option", { value: "auto" }, "plan du diaporama (sinon sections de quelques minutes)"), el("option", { value: "diapositive" }, "une section par diapositive"), el("option", { value: "une" }, "une seule section"));
   const minutes = el("select", {}, ["3", "4", "5", "6", "8", "10"].map(m => el("option", { value: m }, m + " min au plus"))); minutes.value = "6";
   const reprendreC = el("input", { type: "checkbox" }); reprendreC.checked = true;
   const blocPptx = el("div", { class: "bloc" }, el("div", { class: "ligne" }, parcourir, nomF), el("label", {}, "Découpage ", decoupe), el("label", {}, "Durée des sections ", minutes),

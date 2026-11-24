@@ -33,6 +33,39 @@ NS = {"p": "http://schemas.openxmlformats.org/presentationml/2006/main",
       "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships"}
 P = "{%s}" % NS["p"]
 EMU_PAR_POUCE = 914400
+MC = "{http://schemas.openxmlformats.org/markup-compatibility/2006}"
+A14_M = "{http://schemas.microsoft.com/office/drawing/2010/main}m"
+
+
+def _formes(conteneur, tags: tuple) -> list:
+    """Enfants d'un arbre de formes, y compris ceux d'un bloc de compatibilité (``mc:AlternateContent`` : une
+    forme qui porte une équation native est rangée là, avec une image de secours que l'on ignore)."""
+    out = []
+    for e in conteneur:
+        if e.tag in tags:
+            out.append(e)
+        elif e.tag == MC + "AlternateContent":
+            choix = e.find(MC + "Choice")
+            if choix is not None:
+                out.extend(x for x in choix if x.tag in tags)
+    return out
+
+
+def _paragraphe_maths(par) -> list[tuple[str, str]]:
+    """Morceaux d'un paragraphe qui contient des équations natives : ``[("t", texte) | ("f", latex)]``."""
+    import omml
+    out = []
+    for e in par:
+        if e.tag == A14_M:
+            for om in e.iter(omml.M + "oMath"):
+                x = omml.latex(om)
+                if x:
+                    out.append(("f", x))
+        elif e.tag in ("{%s}r" % NS["a"], "{%s}fld" % NS["a"]):
+            out.append(("t", "".join(t.text or "" for t in e.iter("{%s}t" % NS["a"]))))
+        elif e.tag == "{%s}br" % NS["a"]:
+            out.append(("t", " "))
+    return out
 
 
 def _rels(z: zipfile.ZipFile, chemin: str) -> dict:
@@ -282,7 +315,7 @@ def texte_diapo(z: zipfile.ZipFile, chemin: str, racine, etats: list) -> list[di
             ajouter(autres, {"formule": latex}, spids, None, ed)
             return
         if el.tag == P + "grpSp":
-            for e in sorted((e for e in el if e.tag in (P + "sp", P + "grpSp", P + "graphicFrame", P + "pic")), key=_xfrm):
+            for e in sorted(_formes(el, (P + "sp", P + "grpSp", P + "graphicFrame", P + "pic")), key=_xfrm):
                 visiter(e, spids, ed)
             return
         if el.tag == P + "graphicFrame":
@@ -302,6 +335,16 @@ def texte_diapo(z: zipfile.ZipFile, chemin: str, racine, etats: list) -> list[di
             return
         titre = ph is not None and ph.get("type") in ("title", "ctrTitle")
         for i, par in enumerate(corps.findall(A + "p")):
+            if par.find(A14_M) is not None:             # équation native (Insertion, Équation)
+                morceaux = _paragraphe_maths(par)
+                if not "".join(x for k, x in morceaux if k == "t").strip():
+                    for k, x in morceaux:
+                        if k == "f":
+                            ajouter(autres, {"formule": x}, spids, i, ed)
+                    continue
+                t = " ".join("".join(x if k == "t" else f"\\({x}\\)" for k, x in morceaux).split())
+                ajouter(titres if titre else autres, {"texte": t, "maths": True}, spids, i, ed)
+                continue
             t = _texte(par).replace("\n", " ").strip()
             if not t:
                 continue
@@ -318,7 +361,7 @@ def texte_diapo(z: zipfile.ZipFile, chemin: str, racine, etats: list) -> list[di
 
     if arbre is None:
         return []
-    for el in sorted((e for e in arbre if e.tag in (P + "sp", P + "grpSp", P + "graphicFrame", P + "pic")), key=_xfrm):
+    for el in sorted(_formes(arbre, (P + "sp", P + "grpSp", P + "graphicFrame", P + "pic")), key=_xfrm):
         visiter(el, [], None)
     out, vus = [], set()
     for b in titres + autres:
@@ -326,6 +369,8 @@ def texte_diapo(z: zipfile.ZipFile, chemin: str, racine, etats: list) -> list[di
             continue                                                  # « F », « σ » posés sur un schéma
         if b.get("texte") is not None and not re.search(r"[^\W\d_]", b["texte"]):
             continue                                                  # « 1. », « 0. » : numéros de section
+        if b.get("texte") is not None and not b.get("titre") and re.fullmatch(r"\s*\w[\w₀-₉]?\s*", b["texte"]):
+            continue                                                  # « x », « σ », « F₁ » : étiquette d'un schéma
         cle = repr({k: v for k, v in b.items() if k != "etat"})
         if cle in vus:
             continue
@@ -578,7 +623,7 @@ def _recouvre(c1, c2) -> float:
     return max(0, lx) * max(0, ly) / max(1, min(c1[2] * c1[3], c2[2] * c2[3]))
 
 
-SOURCE_PPTX = ("type", "fichier", "diapo", "etats", "titre", "animation_par_paragraphe")
+SOURCE_PPTX = ("type", "fichier", "diapo", "etats", "titre", "animation_par_paragraphe", "phrases_notes", "notes_enseignant")
 PAS_PPTX = ("id", "fond", "source", "narration", "phrases", "audio", "duree_s", "objets", "texte_diapo")
 
 
@@ -608,6 +653,12 @@ def garder_traductions(neuf: list[dict], vieux: list[dict] | None, src: str) -> 
             for c in l:
                 c["texte"] = reprendre_v(c["texte"])
     return neuf
+
+
+def _empreinte_phrases(textes: list[str]) -> str:
+    """Empreinte courte des phrases tirées des notes : sert à savoir si elles ont été retouchées depuis."""
+    import hashlib
+    return hashlib.md5("\n".join(" ".join(t.split()) for t in textes).encode("utf-8")).hexdigest()[:12]
 
 
 def _garder(q: dict, vieux: dict, enregistre: bool):
@@ -665,7 +716,8 @@ def masque_chapitre(chap: dict) -> str:
     return "garder" if m in ("garder", "garde", "montrer") else "nu"
 
 
-def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None = None, images: bool = True) -> dict:
+def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None = None, images: bool = True,
+              profil: dict | None = None) -> dict:
     """Reprend le diaporama ``src`` dans les sections du chapitre ``y`` qui y renvoient ; renvoie le chapitre écrit.
 
     Les sections visées sont celles dont ``source.fichier`` est le nom du diaporama et dont ``source.diapos``
@@ -675,17 +727,28 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
     celles de la capsule nue : formes « cf édition » cachées, champs vides, masque caché sauf ``powerpoint: {masque:
     garder}`` dans le chapitre (``pptx_edition`` refait celles d'une édition).
 
+    Notes et balises (guide « Préparer son diaporama ») : sans enregistrement, les notes deviennent les phrases du
+    texte dit, sans leurs balises ; chaque clic est accroché à sa balise ``[clic]`` ou, sans balise, à la phrase de
+    même rang ; ``[pause]`` donne la pause après une phrase. Avec un enregistrement, les balises sont seulement
+    retirées (les clics restent répartis sur la durée, à caler après la transcription). Le diagnostic du diaporama
+    est écrit au journal.
+
     Écrit les images avec PowerPoint (``pptx_images``, sauf si ``images`` est faux), ``pptx_journal.txt``, une copie
     de l'ancien chapitre dans ``sauvegardes/`` et le nouveau ``chapitre.yaml``. ``largeur`` : largeur des images
     (par défaut celle de l'écran du chapitre, sinon 1440).
     """
     import shutil
     import time
+    import calage as CAL
     import format_chapitre as F
+    import scenario as SC
     src, y = Path(src), Path(y)
     dossier = y.parent
     chap = F.lire(y)
     lu = lire(src)
+    delims = SC.delimiteurs(profil, chap)
+    reg = CAL.reglages(chap)
+    debit_src = CAL.debit(chap)
     voulues = set(plage(diapos, len(lu["diapos"])))
     par_n = {d["n"]: d for d in lu["diapos"]}
     cibles = [(p, s) for p in chap.get("parties") or [] for s in p.get("sections") or []
@@ -708,6 +771,8 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
             f.write(ligne + "\n")
 
     journal.write_text(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {src.name} diapos {a_faire}\n", encoding="utf-8")
+    for ligne in SC.resume_diagnostic(SC.diagnostiquer(src, profil=profil, chap=chap, lu=lu)):
+        noter(ligne)
     if not images:
         noter("  images non produites (--sans-images)")
     else:
@@ -753,8 +818,38 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
             q = {"id": f"d{n:02d}", "fond": f"images/d{n:02d}_e0.png",
                  "source": {"type": "pptx", "fichier": src.name, "diapo": n, "etats": K, "titre": d["titre"]},
                  "narration": (vieux or {}).get("narration") or d["notes"] or ""}
-            if (vieux or {}).get("phrases"):            # texte déjà relu : gardé tel quel
-                q["phrases"] = vieux["phrases"]; q.pop("narration")
+            notes = SC.lire_notes(d["notes"] or q["narration"], delims, debit_src)
+            accr = []
+            empreinte = _empreinte_phrases(notes["phrases"])
+            vieilles = (vieux or {}).get("phrases")
+            de_notes = vieilles and ((vieux or {}).get("source") or {}).get("phrases_notes") == _empreinte_phrases(
+                [F.texte(ph.get("texte")) for ph in vieilles])          # phrases tirées des notes, jamais retouchées
+            if vieilles and de_notes and empreinte != ((vieux or {}).get("source") or {}).get("phrases_notes") \
+                    and n not in audios and notes["phrases"]:
+                noter(f"  diapositive {n} : notes modifiées dans PowerPoint, texte dit repris (voix à refaire)")
+                vieilles = None
+            if vieilles:                                # texte déjà là (relu, ou notes inchangées) : gardé tel quel
+                q["phrases"] = vieilles; q.pop("narration")
+                if de_notes:
+                    q["source"]["phrases_notes"] = vieux["source"]["phrases_notes"]
+            elif n in audios:                           # enregistrement : balises retirées, texte à transcrire
+                q["narration"] = notes["texte"]
+                if notes["clics"] or notes["pauses"]:
+                    noter(f"  diapositive {n} : enregistrée, balises retirées (accrocher après la transcription)")
+            elif notes["phrases"]:                      # notes = texte dit, découpé en phrases ; clics accrochés
+                q.pop("narration")
+                q["phrases"] = [{"texte": t, **({"pause_s": notes["pauses"][i + 1]} if i + 1 in notes["pauses"] else {})}
+                                for i, t in enumerate(notes["phrases"])]
+                q["source"]["phrases_notes"] = empreinte
+                accr, rem = SC.accroches(K - 1, notes, float(reg["decalage_s"]))
+                for x in rem:
+                    noter(f"  diapositive {n} : {x}")
+            else:
+                q["narration"] = notes["texte"]
+            for x in notes["inconnues"]:
+                noter(f"  diapositive {n} : balise inconnue {x}, retirée")
+            if notes["notes"]:
+                q["source"]["notes_enseignant"] = notes["notes"]
             for cle in ("narration", "minutage", "relu"):
                 if cle in ((vieux or {}).get("source") or {}):
                     q["source"][cle] = vieux["source"][cle]
@@ -769,7 +864,12 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
             for k in range(1, K):                       # instants répartis, sauf réglage déjà fait
                 o = {"id": f"e{k}", "type": "apparition", "fichier": f"images/d{n:02d}_e{k}.png",
                      "debut_s": (deja.get(f"e{k}") or {}).get("debut_s") or round((duree or 4.0 * K) * k / K, 1)}
-                objets.append(o)
+                ancien = deja.get(f"e{k}") or {}
+                if ancien.get("phrase") is not None and vieilles:
+                    o.update({c: ancien[c] for c in CAL.CLES if c in ancien})   # accroche déjà réglée : gardée
+                elif k - 1 < len(accr):
+                    o.update(accr[k - 1])                # accroche lue dans les notes
+                objets.append(F.ordonner(o, F.ORDRE_OBJET))
             # annotations dessinées dans PowerPoint (formes « cf … ») : géométrie relue, réglages de temps gardés
             k_emu = largeur / lu["largeur_emu"]
             formes = d.get("formes") or []
@@ -794,6 +894,8 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
                     o["cadre"] = [round(v * k_emu) for v in f["cadre"]]
                 v = deja.get(o["id"]) or {}
                 o["debut_s"] = v["debut_s"] if v.get("debut_s") is not None else round((duree or 20.0) * (i + 1) / (len(formes) + 1), 1)
+                if v.get("phrase") is not None and vieilles and f["type"] != "cache":
+                    o.update({c: v[c] for c in CAL.CLES if c in v})
                 o["duree_s"] = v.get("duree_s") or 4.0
                 if f["type"] == "cache":                # un cache part du début du pas ; sa durée est l'instant où il est levé
                     o["duree_s"] = v.get("duree_s") or o["debut_s"]
@@ -806,6 +908,8 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
                        if o.get("type") != "apparition" and o.get("origine") != "pptx"]
             if objets:
                 q["objets"] = objets
+            if q.get("phrases") and not q.get("audio"):  # instants estimés au débit, en attendant la voix
+                CAL.appliquer_pas(q, chap)
             if d.get("animation_par_paragraphe"):
                 q["source"]["animation_par_paragraphe"] = True
             if d.get("texte_diapo"):                    # texte de la diapositive, lisible et traduisible (volet Texte)
@@ -813,7 +917,12 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
                                                       (chap.get("langues") or {}).get("source") or "fr")
             nouveaux.append(F.ordonner(q, F.ORDRE_PAS))
         sec["pas"] = nouveaux + autres
-        d_tot = sum(q.get("duree_s") or 0 for q in nouveaux)
+        def _d(q):                                      # sans son : durée estimée d'après les phrases
+            if q.get("duree_s"):
+                return q["duree_s"]
+            t = CAL.temps(q, chap)
+            return t[-1][1] + float(reg["pause_s"]) if t else 0
+        d_tot = sum(_d(q) for q in nouveaux)
         sec["source"]["duree_s"] = round(d_tot, 1) or sec["source"].get("duree_s")
         print(f"  {N[('section', partie.get('id'), sec.get('id'))]} {F.texte(sec.get('titre'))} : {len(nouveaux)} pas, "
               f"{sum(1 for q in nouveaux for o in q.get('objets') or [] if o.get('type') == 'apparition')} apparitions, "

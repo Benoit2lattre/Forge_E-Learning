@@ -396,7 +396,9 @@ def cmd_pptx(a):
     y = trouver_chapitre(a.chapitre)
     if not y.is_file():
         raise SystemExit(f"Pas de chapitre : {y}")
-    chap = L.reprendre(src, y, a.diapos, largeur=a.largeur, images=not a.sans_images)
+    import scenario
+    chap = L.reprendre(src, y, a.diapos, largeur=a.largeur, images=not a.sans_images,
+                       profil=scenario.profil_nomme(a.profil))
     _rapport2(chap, y.parent)
 
 
@@ -607,7 +609,18 @@ def cmd_nouvelle(a):
     if diaporama and not diaporama.is_file():
         raise SystemExit(f"Diaporama introuvable : {diaporama}")
     nouvelle.creer(cible, a.titre, langue=a.langue, diaporama=diaporama, decoupe=a.decoupe,
-                   minutes=a.minutes, diapos=a.diapos)
+                   minutes=a.minutes, diapos=a.diapos, profil=a.profil)
+
+
+def cmd_diagnostic(a):
+    """Diagnostic d'un diaporama (commande ``diagnostic``) : degré de préparation et ce qu'il faudrait ajouter."""
+    import scenario
+    src = Path(a.fichier)
+    if not src.is_file():
+        raise SystemExit(f"Diaporama introuvable : {src}")
+    prof = scenario.profil_nomme(a.profil)
+    for ligne in scenario.resume_diagnostic(scenario.diagnostiquer(src, profil=prof)):
+        print(ligne)
 
 
 def cmd_plan(a):
@@ -735,6 +748,9 @@ def main(argv=None):
     px.add_argument("--chapitre", required=True); px.add_argument("--diapos", help="ex. 6-12 (défaut : toutes)")
     px.add_argument("--largeur", type=int, help="largeur des images en pixels (défaut : celle du chapitre)")
     px.add_argument("--sans-images", action="store_true", help="ne pas piloter PowerPoint (structure et audio seulement)")
+    px.add_argument("--profil", help="profil de l'école (délimiteurs des balises des notes)")
+    dg = sp.add_parser("diagnostic", help="degré de préparation d'un diaporama (guide « Préparer son diaporama »)")
+    dg.add_argument("fichier"); dg.add_argument("--profil", help="profil de l'école (niveaux des dispositions)")
     tr = sp.add_parser("transcrire", help="transcrire l'audio des pas (premier jet de scénario)"); tr.add_argument("chapitre")
     tr.add_argument("--modele", default="small", help="small (rapide) ou medium (plus juste, plus lent)")
     tr.add_argument("--refaire", action="store_true", help="retranscrire aussi les pas qui ont déjà une narration")
@@ -787,6 +803,7 @@ def main(argv=None):
                     help="auto : sections d'au plus --minutes min ; diapositive : une section par diapositive ; une : une section par partie")
     nv.add_argument("--minutes", type=float, default=6.0, help="durée visée d'une section (découpe auto)")
     nv.add_argument("--diapos", help="diapositives à retenir (ex. 6-12 ; toutes par défaut)")
+    nv.add_argument("--profil", help="profil de l'école (niveaux des dispositions de titre)")
     cm = sp.add_parser("cameo", help="placer le médaillon de la webcam (caméo) dans le lecteur"); cm.add_argument("chapitre")
     cm.add_argument("--position", choices=POSITIONS_CAMEO); cm.add_argument("--taille", type=float, help="part de la largeur (0.08 à 0.5 ; défaut 0.22)")
     cm.add_argument("--forme", choices=["rond", "rectangle"])
@@ -800,7 +817,7 @@ def main(argv=None):
     if not a.cmd:
         p.print_help(); return 0
     return {"enregistrer": cmd_enregistrer, "editer": cmd_editer, "construire": cmd_construire, "traduire": cmd_traduire, "voix": cmd_voix, "video": cmd_video, "filmer": cmd_filmer, "convertir": cmd_convertir, "plan": cmd_plan, "pptx": cmd_pptx, "transcrire": cmd_transcrire, "relire": cmd_relire, "verifier": cmd_verifier,
-            "assembler": cmd_assembler, "approj": cmd_approj, "nouvelle": cmd_nouvelle, "cameo": cmd_cameo, "accrocher": cmd_accrocher, "assistant": cmd_assistant}[a.cmd](a) or 0
+            "assembler": cmd_assembler, "approj": cmd_approj, "nouvelle": cmd_nouvelle, "cameo": cmd_cameo, "accrocher": cmd_accrocher, "diagnostic": cmd_diagnostic, "assistant": cmd_assistant}[a.cmd](a) or 0
 
 
 if __name__ == "__main__":

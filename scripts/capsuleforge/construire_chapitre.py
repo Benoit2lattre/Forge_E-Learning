@@ -423,6 +423,8 @@ def texte_diapo(q: dict, src: str, autres: list[str], publics, champs: dict) -> 
             x.update(k="t" if b.get("titre") else "p", x=t)
             if b.get("niveau"):
                 x["n"] = b["niveau"]
+            if b.get("maths"):                           # équations natives dans le texte : \( … \)
+                x["m"] = 1
             if b.get("liens"):                                # liens de la diapositive, cliquables dans le volet Texte
                 x["l"] = [[li["texte"], li["url"]] for li in b["liens"] if li.get("texte") and li.get("url")]
             tr = {l: v for l in autres for v in [texte(b.get("texte"), l)] if v}
@@ -907,7 +909,7 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                          "forme": (chap.get("cameo") or {}).get("forme", "rond")},
                "parties": parties, "affichage": affichage(chap), "habillage": habiller(habillage, sortie)}
     ressources = []
-    if any(b.get("k") == "f" for p in parties for s in p["sections"] for x in s["pas"] for b in x.get("diapo") or []):
+    if any(b.get("k") == "f" or b.get("m") for p in parties for s in p["sections"] for x in s["pas"] for b in x.get("diapo") or []):
         (sortie / "lecteur").mkdir(exist_ok=True)
         shutil.copy2(MATHJAX, sortie / "lecteur" / "mathjax.js")
         shutil.copy2(MATHJAX.parent / "MATHJAX_LICENSE", sortie / "lecteur" / "MATHJAX_LICENSE")

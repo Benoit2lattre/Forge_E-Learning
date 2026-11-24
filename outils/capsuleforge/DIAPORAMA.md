@@ -4,7 +4,7 @@ CapsuleForge part d'un diaporama PowerPoint qui existe déjà. Plus le diaporama
 
 ```{admonition} État
 :class: note
-Les degrés, les niveaux et les balises sont fixés pour la version 0.3. La lecture des balises, le plan proposé d'après le diaporama et le diagnostic à la reprise arrivent avec cette version. Partir d'une intention (plan, fiche de cours, squelette de leçon), c'est-à-dire des degrés 0 et 1, relève de la version 0.4.
+Les degrés, les niveaux, les balises, le plan proposé d'après le diaporama et le diagnostic sont en place depuis la version 0.3 de la Forge. Partir d'une intention (plan, fiche de cours, squelette de leçon), c'est-à-dire des degrés 0 et 1, relève de la version 0.4.
 ```
 
 ## Les six degrés d'un diaporama
@@ -63,7 +63,7 @@ powerpoint:
     "Ouverture": section
 ```
 
-Sans déclaration, les noms standard de PowerPoint s'appliquent : « Diapositive de titre » (« Title Slide ») pour le chapitre, « En-tête de section » (« Section Header ») pour la partie. Un chapitre peut remplacer la correspondance de son école, sous la même clé de son `chapitre.yaml`.
+Sans déclaration, les noms standard de PowerPoint s'appliquent : « Diapositive de titre » (« Title Slide ») pour le chapitre, « En-tête de section » (« Section Header ») pour la partie. Le profil utilisé est celui choisi dans les Réglages de l'atelier (option `--profil` des commandes). La page de titre est laissée de côté : le lecteur a sa page d'accueil.
 
 ### Adapter son modèle `.potx`
 
@@ -87,8 +87,8 @@ Les balises s'écrivent entre crochets dans les notes. Elles règlent la capsule
 | Balise | Effet |
 |---|---|
 | `[clic]` | L'action suivante se joue à cet endroit du texte. |
-| `[pause]` | Silence de durée par défaut à cet endroit (0,4 s). |
-| `[pause 2 s]` | Silence de la durée donnée. |
+| `[pause]` | Silence marqué d'une seconde après la phrase. |
+| `[pause 2 s]` | Silence de la durée donnée après la phrase (`[pause 1,5 s]` aussi). |
 | `[note] … [/note]` | Texte pour l'enseignant : ni dit, ni affiché, ni imprimé. |
 
 Une balise inconnue est signalée par le diagnostic de la reprise, et retirée comme les autres.
@@ -101,9 +101,11 @@ moyenne, notée mu. [pause] [clic] Son écart-type, noté sigma, règle sa large
 [note]En salle : faire varier sigma dans un tableur.[/note]
 ```
 
-Sans balise `[clic]`, les actions sont accrochées aux phrases dans l'ordre : la première action à la première phrase, la deuxième à la deuxième, et ainsi de suite.
+Sans balise `[clic]`, les actions sont accrochées aux phrases dans l'ordre : la première action à la première phrase, la deuxième à la deuxième, et ainsi de suite. Un `[clic]` au milieu d'une phrase fait apparaître l'élément après les mots qui le précèdent (temps estimé au débit de la langue). S'il y a moins de balises que de clics d'animation, les clics restants suivent les phrases dans l'ordre ; les balises en trop sont ignorées.
 
-Les crochets sont les délimiteurs par défaut. Un profil d'école peut en choisir d'autres, si les crochets servent déjà dans ses notes :
+Les notes deviennent les phrases du texte dit à la reprise. Reprendre de nouveau le diaporama après avoir changé ses notes met le texte à jour, tant qu'il n'a pas été retouché dans la relecture ; sinon, c'est la relecture qui fait foi. Au degré 5 (voix enregistrée), les balises sont seulement retirées : les phrases viennent de la transcription, et les clics se calent à la relecture.
+
+Les crochets sont les délimiteurs par défaut. Un profil d'école, ou un chapitre, peut en choisir d'autres si les crochets servent déjà dans ses notes :
 
 ```yaml
 powerpoint:
@@ -120,9 +122,13 @@ powerpoint:
 
 Les trois réglages se changent par chapitre. Le débit se règle aussi pour une voix enregistrée, quand elle n'est pas de synthèse.
 
-## Le diagnostic à la reprise
+## Les formules
 
-La reprise indique le degré atteint par le diaporama, ce qu'elle a produit et ce qu'il faudrait ajouter dans PowerPoint pour monter d'un degré. En dessous du degré 2, elle prévient que le diaporama est trop tôt pour une capsule : c'est le moment du plan et du squelette de leçon (version 0.4).
+Les équations natives de PowerPoint (Insertion, Équation) et les équations IguanaTeX sont lues avec le texte de la diapositive : elles s'affichent dans le volet « Texte » du lecteur et dans le PDF. Les équations natives s'ouvrent sans complément : ce sont celles des exemples.
+
+## Le diagnostic
+
+La création d'une capsule d'après un diaporama et sa reprise indiquent le degré atteint, ce qui a été lu et ce qu'il faudrait ajouter dans PowerPoint pour monter d'un degré ; `capsuleforge diagnostic fichier.pptx` le donne seul. En dessous du degré 2, le diagnostic prévient que le diaporama est trop tôt pour une capsule : c'est le moment du plan et du squelette de leçon (version 0.4).
 
 ## Les exemples
 

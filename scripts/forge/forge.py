@@ -549,6 +549,12 @@ class Atelier:
         titre = C.texte(C.F().lire(d / "chapitre.yaml").get("titre")) if (d / "chapitre.yaml").is_file() else d.name
         return d, titre or d.name
 
+    @staticmethod
+    def _profil_reglage() -> list[str]:
+        """``--profil`` du profil choisi dans Réglages (niveaux des dispositions, délimiteurs des balises)."""
+        v = C.reglages().get("profil")
+        return ["--profil", v] if v and v in noms_profils() else []
+
     def _tache_cap(self, d: Path, titre: str, argv: list[str], apres=None) -> Tache:
         return Tache(self.nouvel_id(), titre, "capsuleforge", argv, verrou=str(d.resolve()), apres=apres)
 
@@ -606,7 +612,7 @@ class Atelier:
         connus = C.reglages().get("diaporamas") or {}
         connus[f.name] = str(f)
         C.garder_reglage("diaporamas", connus)
-        argv = C.argv_base(PY, "pptx") + [str(f), "--chapitre", str(d)]
+        argv = C.argv_base(PY, "pptx") + [str(f), "--chapitre", str(d)] + self._profil_reglage()
         if p.get("sans_images"):
             argv.append("--sans-images")
         return self._tache_cap(d, f"Reprendre « {f.name} » dans « {t} »", argv)
@@ -742,7 +748,7 @@ class Atelier:
             minutes = float(p.get("minutes") or 6)
             if not 1 <= minutes <= 30:
                 raise ValueError("durée des sections entre 1 et 30 min")
-            argv += ["--diaporama", str(f), "--decoupe", decoupe, "--minutes", f"{minutes:g}"]
+            argv += ["--diaporama", str(f), "--decoupe", decoupe, "--minutes", f"{minutes:g}"] + self._profil_reglage()
             connus = C.reglages().get("diaporamas") or {}
             connus[f.name] = str(f)
             C.garder_reglage("diaporamas", connus)

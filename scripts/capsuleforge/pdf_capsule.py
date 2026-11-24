@@ -105,7 +105,7 @@ def page(donnees: dict, langue: str | None = None, contenu=("texte",), notes: st
     couleurs = hab.get("couleurs") or {}
     principal = couleurs.get("navy") or "#14213D"
     titre = _tr(donnees, "titre", langue, src) or "Capsule"
-    formules = "diapo" in contenu and any(b.get("k") == "f" for p in donnees["parties"] for s in p["sections"]
+    formules = "diapo" in contenu and any(b.get("k") == "f" or b.get("m") for p in donnees["parties"] for s in p["sections"]
                                           for q in s["pas"] for b in q.get("diapo") or [])
     corps = []
     # couverture
