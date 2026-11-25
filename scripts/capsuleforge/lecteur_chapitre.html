@@ -98,6 +98,12 @@ header img.logo{height:28px;flex:none;background:#fff;border-radius:4px;padding:
 #cameo.rond{border-radius:50%;aspect-ratio:1/1}#cameo.rectangle{border-radius:10px;aspect-ratio:16/9}
 #cameo.bas-droite{right:2.5%;bottom:4%}#cameo.bas-gauche{left:2.5%;bottom:4%}#cameo.haut-droite{right:2.5%;top:4%}#cameo.haut-gauche{left:2.5%;top:4%}
 #cameo[hidden]{display:none}
+#incrustes{position:absolute;inset:0;pointer-events:none}
+#incrustes .inc{position:absolute;pointer-events:auto;cursor:pointer}
+#incrustes .inc img,#incrustes .inc video{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
+#incrustes .inc.plein{left:0!important;top:0!important;width:100%!important;height:100%!important;background:#000;z-index:3}
+#incrustes .inc.plein video,#incrustes .inc.plein img{object-fit:contain}
+#incrustes [hidden]{display:none}
 #calque{position:absolute;inset:0;pointer-events:none}
 #calque svg{position:absolute;inset:0;width:100%;height:100%}
 #calque .o{position:absolute}
@@ -203,6 +209,7 @@ nav .exo-score{color:var(--navy2);white-space:nowrap}
         <div id="toile">
         <img id="image" alt="">
         <video id="film" muted playsinline preload="auto" hidden></video>
+        <div id="incrustes"></div>
         <div id="calque"></div>
         <video id="cameo" muted playsinline preload="auto" hidden aria-hidden="true"></video>
         <div id="didac"><div id="d-cadre" class="d-cadre"></div><div id="d-bulle" class="d-bulle" role="status"></div>
@@ -352,7 +359,7 @@ const LG = C.langues || { source: "fr", autres: [], noms: {} };
 C._titre = C.titre;
 for (const p of C.parties) { p._t = { titre: p.titre };
   for (const s of p.sections) { s._t = { titre: s.titre, objectif: s.objectif, ouverture: s.ouverture };
-    for (const q of s.pas) q._src = { fond: q.fond, audio: q.audio, duree_s: q.duree_s, apparitions: q.apparitions, objets: q.objets,
+    for (const q of s.pas) q._src = { fond: q.fond, audio: q.audio, duree_s: q.duree_s, apparitions: q.apparitions, objets: q.objets, incrustes: q.incrustes,
                                       temps: q.phrases.map(ph => [ph[0], ph[1]]), textes: q.phrases.map(ph => ph[2]) }; } }
 const tousPas = () => C.parties.flatMap(p => p.sections.flatMap(s => s.pas));
 const voixDispo = [LG.source].concat((LG.autres || []).filter(l => tousPas().some(q => q.voix && q.voix[l])));
@@ -383,6 +390,7 @@ function appliquerLangues() {
         q.audio = v ? v.audio : o.audio; q.duree_s = v ? v.duree_s : o.duree_s; q.fond = im(o.fond);
         q.apparitions = (v ? v.apparitions : o.apparitions).map(a => [a[0], im(a[1])]);
         q.objets = v ? v.objets : o.objets; q.voixSynthese = v ? true : !!q.synthese;
+        q.incrustes = (v && v.incrustes) || o.incrustes;
         const tps = v ? v.temps : o.temps, tr = stL !== LG.source && q.trad && q.trad[stL];
         q.phrases = tps.map((x, k) => [x[0], x[1], (tr && tr[k] && typo(tr[k])) || o.textes[k]]); d += q.duree_s; }
       if (s.pas.length) s.duree_s = Math.round(d * 10) / 10; } }
@@ -412,7 +420,7 @@ const UI = { en: {
   "Recommencer l'exercice": "Restart the exercise", "Section déjà vue": "Section already viewed", ", questions faites.": ", questions done.", ", questions à faire.": ", questions to do.",
   "▶ Revoir la section": "▶ Watch again", "▶ Reprendre": "▶ Resume", "▶ Commencer": "▶ Start", "{0} sur {1}": "{0} of {1}", "Texte de la section": "Section text", "Document PDF de la capsule (diapositives et textes, à imprimer)": "PDF document of the capsule (slides and text, to print)", "Aéré": "Spaced", "Texte plus petit": "Smaller text", "Texte plus grand": "Larger text",
   "Lettres et mots plus espacés (texte et sous-titres)": "Wider letter and word spacing (text and subtitles)",
-  "Le son de ce passage est introuvable ou illisible ({0}).": "The audio for this passage is missing or unreadable ({0}).", "🔊 Son": "🔊 Sound", "🔇 Muet": "🔇 Muted", "👤 Caméo": "👤 Cameo", "👤 Sans caméo": "👤 No cameo", "Médaillon vidéo de l'enseignant (V)": "Teacher video inset (V)",
+  "Le son de ce passage est introuvable ou illisible ({0}).": "The audio for this passage is missing or unreadable ({0}).", "🔊 Son": "🔊 Sound", "🔇 Muet": "🔇 Muted", "👤 Caméo": "👤 Cameo", "Cliquer pour mettre en pause ou reprendre": "Click to pause or resume", "👤 Sans caméo": "👤 No cameo", "Médaillon vidéo de l'enseignant (V)": "Teacher video inset (V)",
   "Ce chapitre n'a pas encore de section à lire.": "This chapter has no section to play yet.", " (synthèse)": " (synthetic)",
   "☰ Plan": "☰ Outline", "Afficher ou masquer le plan": "Show or hide the outline", "Plan du chapitre": "Chapter outline", "Parcours": "Path", "Voix": "Voice", "Sous-titres": "Subtitles",
   "Langue de la voix": "Voice language", "Langue des sous-titres et des titres": "Language of subtitles and titles", "Lecture": "Playback",
@@ -655,7 +663,45 @@ function aller(t, lancer) {
   $("voile").hidden = true; $("voile").classList.remove("quiz"); enQuiz = false; chargerPas(i, t - debutPas(i), lancer === undefined ? enLecture : lancer);
 }
 function lecture() { if (modeAV && S && S.s.pas[iPas] && S.s.pas[iPas].didac) return; enLecture = true; tHorloge = performance.now(); const q = S.s.pas[iPas]; if (q.audio) son.play().catch(() => { enLecture = false; bouton(); voileDepart(); }); bouton(); }
-function pause() { enLecture = false; son.pause(); film.pause(); cameo.pause(); bouton(); }
+function pause() { enLecture = false; son.pause(); film.pause(); cameo.pause(); document.querySelectorAll("#incrustes video").forEach(v => v.pause()); bouton(); }
+/* vidéos insérées dans la diapositive (reprises de PowerPoint) : posées à leur place, calées sur l'horloge du pas.
+   Avant le départ : première image ; pendant : la vidéo (en boucle, ou en plein écran, selon ses options) ;
+   après : dernière image (première si « rembobiner ») ; « masquer » : rien en dehors de la lecture. */
+let incQ = null;
+function placerIncrustes(q) {
+  const z = $("incrustes"); z.textContent = ""; incQ = q;
+  (q.incrustes || []).forEach((v, i) => {
+    const d = document.createElement("div"); d.className = "inc"; d.hidden = true; d.dataset.i = i;
+    d.style.left = 100 * v.cadre[0] / L + "%"; d.style.top = 100 * v.cadre[1] / H + "%"; d.style.width = 100 * v.cadre[2] / L + "%"; d.style.height = 100 * v.cadre[3] / H + "%";
+    const im = document.createElement("img"); im.alt = ""; im.hidden = true;
+    const vi = document.createElement("video"); vi.muted = true; vi.playsInline = true; vi.preload = "auto"; vi.loop = !!v.b; vi.hidden = true; vi.src = v.src;
+    vi.addEventListener("loadeddata", () => majIncrustes(true));
+    d.title = T("Cliquer pour mettre en pause ou reprendre"); d.onclick = () => { if (enLecture) pause(); else lecture(); };
+    d.append(im, vi); z.appendChild(d); });
+}
+function etatIncruste(v, t) {
+  if (t < v.a) return "cache";
+  if (t < v.d) return v.m ? "cache" : "affiche";
+  if (v.b || t < v.d + v.du) return "lecture";
+  return v.m ? "cache" : v.r ? "affiche" : "finale";
+}
+function majIncrustes(force) {
+  const q = S && S.s.pas[iPas]; if (!q) return;
+  if (incQ !== q) placerIncrustes(q);
+  const z = $("incrustes");
+  (q.incrustes || []).forEach((v, i) => {
+    const d = z.children[i]; if (!d) return; const [im, vi] = d.children, e = etatIncruste(v, tPas);
+    d.hidden = e === "cache"; d.classList.toggle("plein", e === "lecture" && !!v.pe);
+    const montrer = u => { if (u) { if (im.getAttribute("src") !== u) im.src = u; im.hidden = false; } else im.hidden = true; };
+    if (e === "lecture") {
+      let c = tPas - v.d; if (v.b && v.du > 0) c = c % v.du; c = Math.min(c, Math.max(0, v.du - 0.05));
+      vi.hidden = false; if (vi.readyState >= 2) im.hidden = true; else montrer(v.af);
+      vi.playbackRate = Math.max(0.25, Math.min(4, +$("vitesse").value));
+      if (vi.readyState >= 1 && (force || Math.abs((vi.currentTime || 0) - c) > (enLecture ? 0.3 : 0.04))) { try { vi.currentTime = c; } catch (x) {} }
+      if (enLecture && vi.paused) vi.play().catch(() => {}); else if (!enLecture && !vi.paused) vi.pause();
+    } else { vi.hidden = true; if (!vi.paused) vi.pause(); montrer(e === "affiche" ? v.af : e === "finale" ? v.fi : null); }
+  });
+}
 function bouton() { $("jouer").textContent = enLecture ? T("⏸ Pause") : T("▶ Lire"); }
 function finPas() {
   if (iPas < S.s.pas.length - 1) return chargerPas(iPas + 1, 0, true);
@@ -843,7 +889,7 @@ function surTrajet(o, t) { const p = o.trajet; if (!p || p.length < 2) return o.
   return p[p.length - 1]; }
 let signature = "", iPhrase = -2;
 function dessiner(force) {
-  const q = S.s.pas[iPas], t = tPas; majDiapo(force);
+  const q = S.s.pas[iPas], t = tPas; majDiapo(force); majIncrustes(force);
   let f = q.fond; for (const a of q.apparitions) if (a[0] <= t) f = a[1];
   const im = $("image"); if (im.dataset.f !== f) { im.dataset.f = f; im.src = f; }
   const vus = q.objets.map((o, i) => [o, i]).filter(x => t >= x[0].debut_s && t < x[0].debut_s + x[0].duree_s);

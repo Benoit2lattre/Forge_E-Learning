@@ -338,6 +338,7 @@ def _medias(parties: list[dict], sortie: Path) -> list[str]:
         for s in p["sections"]:
             for q in s["pas"]:
                 rels += [q.get("fond"), q.get("audio"), (q.get("video") or {}).get("src"), (q.get("camera") or {}).get("src")] + [a[1] for a in q.get("apparitions") or []]
+                rels += [r for v in q.get("incrustes") or [] for r in (v.get("src"), v.get("af"), v.get("fi"))]
                 rels += [v.get("audio") for v in (q.get("voix") or {}).values()]
                 rels += [r for m in (q.get("fonds_tr") or {}).values() for r in m.values()]
             if s.get("exercice"):
@@ -716,6 +717,42 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
             videos[rel] = f"videos/{src.name}"
         return videos[rel]
 
+    def image_brute(rel: str | None) -> str | None:
+        """Recopie une image telle quelle (première ou dernière image d'une vidéo insérée) dans ``<sortie>/images/``."""
+        if not rel or not (dossier / rel).is_file():
+            return None
+        if rel not in images:
+            src_im, dst = dossier / rel, sortie / "images" / Path(rel).name
+            if not a_jour(src_im, dst):
+                shutil.copy2(src_im, dst)
+            images[rel] = f"images/{dst.name}"
+        return images[rel]
+
+    def incrustes(q: dict, instant) -> list[dict]:
+        """Vidéos insérées du pas, pour le lecteur : place, apparition, départ, durée, images, options.
+
+        ``instant(objet)`` donne l'instant d'un objet dans la langue de la voix (accroche ou instant recalé)."""
+        objets_q = q.get("objets") or []
+        par_id = {o.get("id"): o for o in objets_q}
+        out = []
+        for o in objets_q:
+            if o.get("type") != "video" or not o.get("fichier") or not (dossier / o["fichier"]).is_file() or not o.get("cadre"):
+                continue
+            ap = par_id.get(o.get("apparait"))
+            a = instant(ap) if ap else 0.0
+            if o.get("avec"):                            # lancée avec une apparition, ou à l'ouverture du pas
+                av = par_id.get(o["avec"])
+                d = instant(av) if av else 0.0
+            else:
+                d = instant(o)
+            e = {"src": video(o["fichier"]), "cadre": o["cadre"], "a": round(a, 2), "d": round(max(d, a), 2),
+                 "du": float(o.get("duree_s") or 0), "af": image_brute(o.get("affiche")), "fi": image_brute(o.get("finale"))}
+            for k, c in (("boucle", "b"), ("plein_ecran", "pe"), ("masquer", "m"), ("rembobiner", "r")):
+                if o.get(k):
+                    e[c] = 1
+            out.append(e)
+        return out
+
     def son(rel: str | None) -> str | None:
         if not rel:
             return None
@@ -803,6 +840,9 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                                             if o.get("type") == "apparition" and o.get("fichier")), key=lambda a: a[0]),
                      "objets": [{k: o[k] for k in ("type", "forme", "cadre", "position", "trajet", "couleur", "debut_s", "duree_s")
                                  if k in o} for o in objets if o.get("type") in OBJETS]}
+                inc = incrustes(q, lambda o: float(o.get("debut_s") or 0))
+                if inc:
+                    x["incrustes"] = inc
                 td = texte_diapo(q, src, autres, publics_ed, champs_ed)
                 if td:
                     x["diapo"] = td
@@ -870,6 +910,8 @@ def construire(chapitre_yaml: Path, sortie: Path, largeur: int | None = None, fm
                                                                         "couleur", "debut_s", "duree_s") if k in o},
                                                     debut_s=t_l(o), duree_s=d_l(o))
                                                for o in objets if o.get("type") in OBJETS]}
+                    if x.get("incrustes"):
+                        x["voix"][l]["incrustes"] = incrustes(q, t_l)
                 pas.append(x)
             lots = questions_section(s, dossier, banques, journal)
             for lot in lots:

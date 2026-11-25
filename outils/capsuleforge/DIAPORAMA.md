@@ -124,7 +124,7 @@ Les trois réglages se changent par chapitre. Le débit se règle aussi pour une
 
 ## Les vidéos insérées
 
-Une vidéo posée sur une diapositive (Insertion, Vidéo) est reprise avec son recadrage, sa place et ses options de lecture. Le clic qui la lance est une action comme les autres : au degré 4, il lui faut sa balise `[clic]`. Ses options PowerPoint sont suivies : « En boucle jusqu'à l'arrêt » (jusqu'à la fin du pas), « Lire en plein écran » (à la place de la diapositive pendant la lecture), « Masquer pendant la non-lecture » (rien n'est montré avant le départ), « Rembobiner après la lecture » (la première image revient à la fin). Avant le départ, c'est sa première image qui est montrée ; après la lecture, et dans le PDF, sa dernière.
+Une vidéo posée sur une diapositive (Insertion, Vidéo) est reprise avec son recadrage, sa place et ses options de lecture. Le clic qui la lance est une action comme les autres : au degré 4, il lui faut sa balise `[clic]`. Ses options PowerPoint sont suivies : « En boucle jusqu'à l'arrêt » (jusqu'à la fin du pas), « Lire en plein écran » (à la place de la diapositive pendant la lecture), « Masquer pendant la non-lecture » (rien de la vidéo en dehors de la lecture : posez à sa place, sur la diapositive, l'image qui doit la remplacer avant et après, par exemple une copie d'écran d'un instant choisi ; c'est elle que montrent le lecteur et le PDF), « Rembobiner après la lecture » (la première image revient à la fin). Avant le départ, c'est sa première image qui est montrée ; après la lecture, et dans le PDF, sa dernière.
 
 ## Les formules
 
