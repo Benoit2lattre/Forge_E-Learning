@@ -20,7 +20,7 @@ from urllib.parse import unquote, urlparse
 
 TYPES = {".html": "text/html; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
          ".webp": "image/webp", ".json": "application/json", ".mp3": "audio/mpeg", ".wav": "audio/wav",
-         ".m4a": "audio/mp4", ".ogg": "audio/ogg", ".js": "text/javascript", ".css": "text/css"}
+         ".m4a": "audio/mp4", ".ogg": "audio/ogg", ".js": "text/javascript", ".css": "text/css", ".mp4": "video/mp4"}
 HOTES = ("127.0.0.1", "localhost")
 
 

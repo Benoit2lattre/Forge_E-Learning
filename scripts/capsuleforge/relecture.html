@@ -34,6 +34,16 @@ main{flex:1;display:flex;min-height:0}
 #soustitre span{background:rgba(0,0,0,.72);color:#fff;padding:3px 8px;border-radius:4px;font-size:14px;line-height:1.7;
   -webkit-box-decoration-break:clone;box-decoration-break:clone}
 #calque{position:absolute;inset:0;z-index:1;touch-action:none}
+#incrustes{position:absolute;inset:0;pointer-events:none}
+#incrustes .inc{position:absolute}
+#incrustes .inc img,#incrustes .inc video{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
+#incrustes .inc.plein{left:0!important;top:0!important;width:100%!important;height:100%!important;background:#000;z-index:2}
+#incrustes .inc.plein img,#incrustes .inc.plein video{object-fit:contain}
+#incrustes [hidden]{display:none}
+#videos .options{font-size:12px;color:var(--texte2);display:inline-flex;gap:8px;flex-wrap:wrap}
+#videos .duree{font-size:12px;color:var(--texte2)}
+.marque.video{color:var(--navy2)}
+#piste .ob.video{background:rgba(31,78,140,.35);top:6px;height:8px}
 #calque.dessin{cursor:crosshair}
 #calque .o{position:absolute;box-sizing:border-box}
 #calque .spot{border-radius:8px}
@@ -68,12 +78,13 @@ main{flex:1;display:flex;min-height:0}
 #piste .app b{position:absolute;top:0;left:-3px;min-width:24px;text-align:center;background:var(--ko);color:#fff;font-size:10px;
   border-radius:3px;padding:0 3px;line-height:14px}
 #tete{position:absolute;top:0;bottom:0;width:2px;background:var(--navy);z-index:3;pointer-events:none}
-#apparitions{display:flex;flex-direction:column;gap:4px}
-#apparitions .ligne{display:flex;gap:8px;align-items:center;padding:3px 6px;border:1px solid var(--bord);border-radius:6px;background:#fff}
+#apparitions,#videos{display:flex;flex-direction:column;gap:4px}
+#apparitions .ligne,#videos .ligne{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:3px 6px;border:1px solid var(--bord);border-radius:6px;background:#fff}
 #apparitions .ligne.vue{border-color:var(--ko);background:var(--ko-l)}
-#apparitions img{height:42px;border:1px solid var(--bord);border-radius:3px;cursor:pointer}
-#apparitions input{width:74px;padding:2px 4px;border:1px solid var(--bord);border-radius:4px}
+#apparitions img,#videos img{height:42px;border:1px solid var(--bord);border-radius:3px;cursor:pointer}
+#apparitions input,#videos input[type=number]{width:74px;padding:2px 4px;border:1px solid var(--bord);border-radius:4px}
 #apparitions .nom{font-weight:600;color:var(--ko);min-width:22px}
+#videos .nom{font-weight:600;color:var(--navy2);min-width:22px}
 h2{font-size:13px;margin:6px 0 0;color:var(--texte2);font-weight:600;text-transform:none}
 #entete-droite{padding:8px 12px;border-bottom:1px solid var(--bord);display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex:none}
 #entete-droite .info{color:var(--texte2);font-size:12px;flex:1;min-width:120px}
@@ -131,7 +142,7 @@ label.coche{display:flex;gap:5px;align-items:center;white-space:nowrap}
       <select id="pas" aria-label="Pas à relire"></select>
       <button id="suivant" title="Pas suivant">▶</button>
     </div>
-    <div id="scene"><img id="image" alt="Diapositive à l'instant de lecture"><div id="calque"></div><div id="soustitre"></div></div>
+    <div id="scene"><img id="image" alt="Diapositive à l'instant de lecture"><div id="incrustes"></div><div id="calque"></div><div id="soustitre"></div></div>
     <div id="commandes">
       <button id="lecture" class="primaire" title="Échap">▶ Lire</button>
       <span id="temps">0:00 / 0:00</span>
@@ -149,6 +160,8 @@ label.coche{display:flex;gap:5px;align-items:center;white-space:nowrap}
     </div>
     <h2 id="titre-app">Apparitions</h2>
     <div id="apparitions"></div>
+    <h2 id="titre-vid">Vidéos insérées</h2>
+    <div id="videos"></div>
     <h2 id="titre-obj">Ajouts sur l'image</h2>
     <div id="objets"></div>
   </section>
@@ -190,11 +203,12 @@ function estimer(p) {
   p.duree_s = p.phrases.length ? +t.toFixed(2) : (p.duree_s || 1);
 }
 /* objets accrochés à une phrase : leur instant suit la phrase */
-const accroches = () => [...P.apparitions, ...P.objets].filter(o => o.phrase != null && o.type !== "cache");
+const accroches = () => [...P.apparitions, ...P.objets, ...(P.videos || [])].filter(o => o.phrase != null && o.type !== "cache");
 function base(o) { const ph = P.phrases[Math.min(Math.max(o.phrase - 1, 0), P.phrases.length - 1)];
   return ph && horodatee(ph) ? (o.ancre === "fin" ? ph.fin_s : ph.debut_s) : null; }
 const decalageDe = o => o.decalage_s != null ? o.decalage_s : CAL.decalage_s;
-function resoudre() { for (const o of accroches()) { const b = base(o); if (b != null) o.debut_s = +Math.max(0, b + decalageDe(o)).toFixed(2); } }
+function resoudre() { for (const o of accroches()) { const b = base(o); if (b != null) o.debut_s = +Math.max(0, b + decalageDe(o)).toFixed(2); }
+  for (const v of P.videos || []) if (v.phrase == null && v.avec) { const a = P.apparitions.find(x => x.id === v.avec); v.debut_s = a ? a.debut_s : 0; } }
 function garderAccroche(o) { if (o.phrase == null) return; const b = base(o); if (b == null) return;
   const d = +(o.debut_s - b).toFixed(2); if (Math.abs(d - CAL.decalage_s) < 0.005) delete o.decalage_s; else o.decalage_s = d; }
 function accrocher(o, i) { if (i == null) { delete o.phrase; delete o.ancre; delete o.decalage_s; return; } o.phrase = i + 1; delete o.ancre; }
@@ -263,7 +277,7 @@ function ouvrir(i) {
   dessiner(); suivre(true);
 }
 
-function dessiner() { if (muet()) estimer(P); resoudre(); dessinerPhrases(); dessinerPiste(); dessinerApparitions(); dessinerObjets(); calque(true); info(); }
+function dessiner() { if (muet()) estimer(P); resoudre(); dessinerPhrases(); dessinerPiste(); dessinerApparitions(); dessinerVideos(); dessinerObjets(); calque(true); info(); }
 
 function info() {
   const mots = P.phrases.reduce((n, ph) => n + ph.texte.split(/\s+/).filter(Boolean).length, 0);
@@ -276,8 +290,11 @@ function hauteur(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight 
 
 function dessinerPhrases() {
   const z = $("phrases"); z.textContent = "";
-  const app = [...P.apparitions].sort((a, b) => a.debut_s - b.debut_s); let k = 0;
-  const marque = a => { const m = document.createElement("div"); m.className = "marque"; m.textContent = "▣ apparition " + a.id + " à " + (muet() ? "≈ " : "") + fmt(a.debut_s) + nomAccroche(a); z.appendChild(m); };
+  const app = [...P.apparitions, ...(P.videos || [])].sort((a, b) => a.debut_s - b.debut_s); let k = 0;
+  const marque = a => { const m = document.createElement("div"); m.className = "marque"; const v = (P.videos || []).includes(a);
+    m.textContent = (v ? "▶ vidéo " + a.id + " part à " : "▣ apparition " + a.id + " à ") + (muet() ? "≈ " : "") + fmt(a.debut_s) + nomAccroche(a)
+      + (v ? (a.phrase == null && a.avec ? (a.avec === "debut" ? " · au début du pas" : " · avec " + a.avec) : "") + " (" + (a.boucle ? "en boucle" : String(a.duree_s).replace(".", ",") + " s") + ")" : "");
+    if (v) m.classList.add("video"); z.appendChild(m); };
   const obj = [...P.objets].sort((a, b) => instant(a) - instant(b)); let ko = 0;
   const marqueO = o => { const m = document.createElement("div"); m.className = "marque objet"; m.style.cursor = "pointer";
     m.textContent = o.type === "cache" ? "◧ cache " + o.id + " levé à " + fmt(instant(o)) : "◎ " + NOMS[o.type].toLowerCase() + " " + o.id + " à " + fmt(o.debut_s) + " (" + o.duree_s.toFixed(1).replace(".", ",") + " s)" + nomAccroche(o);
@@ -352,6 +369,8 @@ function bouton(txt, titre, f) { const b = document.createElement("button"); b.c
 function dessinerPiste() {
   const z = $("piste"); z.querySelectorAll(".ph,.app,.ob").forEach(e => e.remove()); const d = duree();
   for (const o of P.objets) { const e = document.createElement("div"); e.className = "ob " + o.type; e.style.left = 100 * o.debut_s / d + "%"; e.style.width = Math.max(0.3, 100 * o.duree_s / d) + "%"; e.title = NOMS[o.type] + " " + o.id; z.appendChild(e); }
+  for (const v of P.videos || []) { const e = document.createElement("div"); e.className = "ob video"; e.style.left = 100 * v.debut_s / d + "%";
+    e.style.width = Math.max(0.3, 100 * ((v.boucle ? d : Math.min(d, v.debut_s + v.duree_s)) - v.debut_s) / d) + "%"; e.title = "Vidéo " + v.id + " : " + fmt(v.debut_s) + (v.boucle ? ", en boucle" : " → " + fmt(v.debut_s + v.duree_s)); z.appendChild(e); }
   P.phrases.forEach((ph, i) => { if (!horodatee(ph)) return; const e = document.createElement("div"); e.className = "ph"; e.dataset.i = i;
     e.style.left = 100 * ph.debut_s / d + "%"; e.style.width = Math.max(0.2, 100 * (ph.fin_s - ph.debut_s) / d) + "%"; z.appendChild(e); });
   for (const a of P.apparitions) {
@@ -368,6 +387,62 @@ $("piste").onpointerdown = e => { if (!P.audio && !P.phrases.length) return; if 
 
 function etatImage(t) { let f = P.fond, td = -1; for (const a of P.apparitions) if (a.debut_s <= t && a.debut_s >= td) { td = a.debut_s; f = a.fichier; } return f; }
 function image() { const f = etatImage(son.currentTime || 0); const im = $("image"); if (f && im.dataset.f !== f) { im.dataset.f = f; im.src = "/media/" + f; } }
+
+/* vidéos insérées : départ (ligne, apparition, ou instant), options, et aperçu joué sur l'image */
+function dessinerVideos() {
+  const z = $("videos"); z.textContent = ""; const vs = P.videos || []; $("titre-vid").style.display = vs.length ? "" : "none";
+  for (const v of vs) {
+    const l = document.createElement("div"); l.className = "ligne"; l.dataset.id = v.id;
+    const n = document.createElement("span"); n.className = "nom"; n.textContent = v.id;
+    const im = document.createElement("img"); im.src = "/media/" + (v.affiche || v.fichier); im.alt = "Vidéo " + v.id; im.title = "Se placer juste avant le départ";
+    im.onclick = () => { arretA = null; son.currentTime = Math.max(0, v.debut_s - 1.5); suivre(true); };
+    const c = document.createElement("input"); c.type = "number"; c.step = "0.1"; c.min = "0"; c.value = (+v.debut_s).toFixed(1); c.setAttribute("aria-label", "Départ de la vidéo " + v.id + ", en secondes");
+    c.onchange = () => { if (c.value === "") return; memoriser(); delete v.avec; v.debut_s = Math.max(0, +c.value); garderAccroche(v); marquer(); dessiner(); suivre(true); };
+    const u = document.createElement("span"); u.textContent = "s";
+    const acc = document.createElement("span"); acc.className = "accroche";
+    const sp = document.createElement("select"); sp.title = "Ce qui lance la vidéo : une ligne (elle la suit si la voix change), une apparition, ou un instant fixe"; sp.setAttribute("aria-label", "Départ de la vidéo " + v.id);
+    sp.innerHTML = "<option value=''>instant fixe</option><option value='a:debut'>début du pas</option>" + P.apparitions.map(a => `<option value="a:${a.id}">avec ${a.id}</option>`).join("")
+      + P.phrases.map((ph, i) => `<option value="${i}">L${i + 1}</option>`).join("");
+    sp.value = v.phrase != null ? String(v.phrase - 1) : v.avec ? "a:" + v.avec : "";
+    const sa = document.createElement("select"); sa.innerHTML = "<option value='debut'>début</option><option value='fin'>fin</option>"; sa.value = v.ancre === "fin" ? "fin" : "debut"; sa.setAttribute("aria-label", "Début ou fin de la ligne");
+    const sd = document.createElement("input"); sd.type = "number"; sd.step = "0.1"; sd.title = "Décalage en secondes (négatif : avant)"; sd.setAttribute("aria-label", "Décalage du départ de la vidéo " + v.id);
+    sd.value = v.phrase != null ? decalageDe(v) : ""; sa.disabled = sd.disabled = v.phrase == null;
+    sp.onchange = () => { memoriser(); const t = v.debut_s; accrocher(v, null); delete v.avec;
+      if (sp.value.startsWith("a:")) v.avec = sp.value.slice(2); else if (sp.value !== "") { accrocher(v, +sp.value); delete v.decalage_s; } else v.debut_s = t;
+      marquer(); dessiner(); suivre(true); };
+    sa.onchange = () => { memoriser(); if (sa.value === "fin") v.ancre = "fin"; else delete v.ancre; marquer(); dessiner(); suivre(true); };
+    sd.onchange = () => { if (sd.value === "") return; memoriser(); v.decalage_s = Math.max(-30, Math.min(30, +sd.value)); if (Math.abs(v.decalage_s - CAL.decalage_s) < 0.005) delete v.decalage_s; marquer(); dessiner(); suivre(true); };
+    acc.append("→ ", sp, sa, sd, " s");
+    const b = bouton("Poser à l'instant de lecture", "La vidéo " + v.id + " partira à l'instant où se trouve la lecture", () => { memoriser(); delete v.avec; v.debut_s = Math.round(10 * (son.currentTime || 0)) / 10; garderAccroche(v); marquer(); dessiner(); suivre(true); });
+    const e = bouton("▶ Voir", "Lire à partir de 2 s avant le départ", () => { arretA = v.debut_s + Math.min(v.duree_s, 8) + 1; son.currentTime = Math.max(0, v.debut_s - 2); son.play(); });
+    const opts = document.createElement("span"); opts.className = "options";
+    for (const [k, lib] of [["boucle", "en boucle"], ["plein_ecran", "plein écran"], ["masquer", "masquer hors lecture"], ["rembobiner", "revenir au début"]]) {
+      const lb = document.createElement("label"), x = document.createElement("input"); x.type = "checkbox"; x.checked = !!v[k];
+      x.onchange = () => { memoriser(); if (x.checked) v[k] = true; else delete v[k]; marquer(); dessiner(); suivre(true); }; lb.append(x, " " + lib); opts.append(lb); }
+    const du = document.createElement("span"); du.className = "duree"; du.textContent = String(v.duree_s).replace(".", ",") + " s" + (v.apparait ? " · visible avec " + v.apparait : "");
+    l.append(n, im, c, u, acc, b, e, du, opts); z.appendChild(l);
+  }
+}
+/* aperçu : la vidéo jouée à sa place, calée sur la lecture (mêmes règles que le lecteur) */
+let incP = null;
+function incrustes() {
+  const z = $("incrustes"); if (!z || !P) return; const vs = P.videos || [], t = son.currentTime || 0, { L, H } = ecran();
+  if (incP !== P) { incP = P; z.textContent = "";
+    for (const v of vs) { const d = document.createElement("div"); d.className = "inc"; d.hidden = true;
+      d.style.left = 100 * v.cadre[0] / L + "%"; d.style.top = 100 * v.cadre[1] / H + "%"; d.style.width = 100 * v.cadre[2] / L + "%"; d.style.height = 100 * v.cadre[3] / H + "%";
+      const im = document.createElement("img"); im.alt = ""; const vi = document.createElement("video"); vi.muted = true; vi.playsInline = true; vi.preload = "auto"; vi.src = "/media/" + v.fichier;
+      vi.addEventListener("loadeddata", () => incrustes()); d.append(im, vi); z.appendChild(d); } }
+  vs.forEach((v, i) => { const d = z.children[i]; if (!d) return; const [im, vi] = d.children;
+    const apr = P.apparitions.find(a => a.id === v.apparait), ta = apr ? apr.debut_s : 0;
+    const e = t < ta ? "cache" : t < v.debut_s ? (v.masquer ? "cache" : "affiche") : (v.boucle || t < v.debut_s + v.duree_s) ? "lecture" : (v.masquer ? "cache" : v.rembobiner ? "affiche" : "finale");
+    d.hidden = e === "cache"; d.classList.toggle("plein", e === "lecture" && !!v.plein_ecran);
+    if (e === "lecture") { im.hidden = vi.readyState >= 2; if (!im.hidden && v.affiche) im.src = "/media/" + v.affiche; vi.hidden = false;
+      let c = t - v.debut_s; if (v.boucle && v.duree_s > 0) c = c % v.duree_s; c = Math.min(c, Math.max(0, v.duree_s - 0.05)); vi.playbackRate = +$("vitesse").value;
+      if (vi.readyState >= 1 && Math.abs((vi.currentTime || 0) - c) > (son.paused ? 0.04 : 0.3)) { try { vi.currentTime = c; } catch (x) {} }
+      if (!son.paused && vi.paused) vi.play().catch(() => {}); else if (son.paused && !vi.paused) vi.pause(); }
+    else { vi.hidden = true; if (!vi.paused) vi.pause(); const u = e === "affiche" ? v.affiche : e === "finale" ? v.finale : null;
+      if (u) { const s2 = "/media/" + u; if (im.getAttribute("src") !== s2) im.src = s2; im.hidden = false; } else im.hidden = true; } });
+}
 
 function dessinerApparitions() {
   const z = $("apparitions"); z.textContent = ""; $("titre-app").style.display = P.apparitions.length ? "" : "none";
@@ -569,7 +644,7 @@ function suivre(force) {
   if (!P) return; const t = son.currentTime || 0, d = duree();
   $("tete").style.left = 100 * Math.min(1, t / d) + "%";
   $("temps").textContent = fmt(t) + " / " + fmt(d);
-  image(); calque(force);
+  image(); calque(force); incrustes();
   const k = phraseA(t);
   if (k !== actif || force) {
     actif = k;
@@ -586,7 +661,7 @@ function suivre(force) {
 function boucle() { if (P && !son.paused) { if (arretA != null && son.currentTime >= arretA) { son.pause(); arretA = null; }
   if (son === muette && son.currentTime >= duree() - 0.001) son.pause(); suivre(); } requestAnimationFrame(boucle); }
 
-audio.onplay = audio.onpause = muette.onplay = muette.onpause = () => { $("lecture").textContent = son.paused ? "▶ Lire" : "⏸ Pause";
+audio.onplay = audio.onpause = muette.onplay = muette.onpause = () => { incrustes(); $("lecture").textContent = son.paused ? "▶ Lire" : "⏸ Pause";
   if (!son.paused && choisi) { choisi = null; dessinerObjets(); calque(true); } };      // en lecture, rien n'est montré hors de son temps
 audio.onloadedmetadata = () => { dessinerPiste(); dessinerApparitions(); info(); suivre(true); };
 audio.onseeked = muette.onseeked = () => { suivre(); infoAjout(); };
@@ -615,6 +690,8 @@ async function enregistrer() {
   for (const id of modifies) { const p = C.pas.find(x => x.id === id);
     const phrases = p.audio ? p.phrases : p.phrases.map(({ debut_s, fin_s, ...x }) => x);   /* instants estimés : jamais écrits */
     envoi[id] = { phrases, accroches: true, apparitions: Object.fromEntries(p.apparitions.map(a => [a.id, { debut_s: a.debut_s, ...acc(a) }])),
+                  videos: Object.fromEntries((p.videos || []).map(v => [v.id, { debut_s: v.debut_s, ...acc(v), avec: v.phrase == null ? v.avec || null : null,
+                    boucle: !!v.boucle, plein_ecran: !!v.plein_ecran, masquer: !!v.masquer, rembobiner: !!v.rembobiner }])),
                   objets: p.objets.map(o => ({ ...o, ...acc(o) })) }; if (p.reluChange) envoi[id].relu = !!p.relu; }
   try {
     const r = await (await fetch("/api/pas", { method: "POST", body: JSON.stringify(envoi) })).json();

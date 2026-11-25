@@ -37,7 +37,8 @@ import transcription as T
 
 ICI = Path(__file__).resolve().parent
 TYPES = {".html": "text/html; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
-         ".webp": "image/webp", ".mp3": "audio/mpeg", ".wav": "audio/wav", ".m4a": "audio/mp4", ".ogg": "audio/ogg"}
+         ".webp": "image/webp", ".mp3": "audio/mpeg", ".wav": "audio/wav", ".m4a": "audio/mp4", ".ogg": "audio/ogg",
+         ".mp4": "video/mp4"}
 
 
 AJOUTS = ("spot", "cadre", "pointeur", "cache")       # objets que la page de relecture sait poser
@@ -126,6 +127,9 @@ class SeanceRelecture:
                 "objets": [{k: o[k] for k in ("id", "type", "forme", "cadre", "position", "trajet", "couleur", "debut_s", "duree_s", "origine",
                                               *CAL.CLES) if k in o}
                            for o in pas.get("objets") or [] if o.get("type") in AJOUTS],
+                "videos": [{k: o[k] for k in ("id", "fichier", "affiche", "finale", "cadre", "apparait", "avec", "debut_s", "duree_s",
+                                              "boucle", "plein_ecran", "masquer", "rembobiner", *CAL.CLES) if o.get(k) is not None}
+                           for o in pas.get("objets") or [] if o.get("type") == "video" and o.get("fichier")],
                 "mots": mots, "prepare": prepare, "relu": (pas.get("source") or {}).get("relu") or "",
             })
         par_pas, generales = self.remarques(chap)
@@ -211,6 +215,24 @@ class SeanceRelecture:
                         o["ancre"] = "fin"
                     if v.get("decalage_s") is not None:
                         o["decalage_s"] = round(min(max(float(v["decalage_s"]), -30.0), 30.0), 2)
+                par_id = {o.get("id"): o for o in pas.get("objets") or []}
+                for o in pas.get("objets") or []:             # vidéos insérées : départ (accroche ou apparition) et options
+                    v = (m.get("videos") or {}).get(o.get("id")) if o.get("type") == "video" else None
+                    if not isinstance(v, dict):
+                        continue
+                    accroche_page(o, v)
+                    avec = v.get("avec")
+                    if avec and o.get("phrase") is None and (avec == "debut" or avec in par_id):
+                        o["avec"] = avec
+                    else:
+                        o.pop("avec", None)
+                    for k in ("boucle", "plein_ecran", "masquer", "rembobiner"):
+                        if v.get(k):
+                            o[k] = True
+                        else:
+                            o.pop(k, None)
+                    t = CAL.instant(o, t_ph, reg) if o.get("phrase") is not None else None
+                    o["debut_s"] = t if t is not None else round(max(0.0, float(v.get("debut_s") or 0)), 2)
                 for o in pas.get("objets") or []:
                     v = (m.get("apparitions") or {}).get(o.get("id")) if o.get("type") == "apparition" else None
                     if isinstance(v, dict):                    # page à jour : instant et accroche
