@@ -56,6 +56,21 @@ def _image_finale(q: dict, langue: str) -> str | None:
     return ((q.get("fonds_tr") or {}).get(langue) or {}).get(f, f) if f else None
 
 
+def _incrustes(q: dict, ecran: dict) -> str:
+    """Vidéos insérées du pas, posées sur l'image finale : leur dernière image (la première si « rembobiner »),
+    rien avec « masquer » (l'image posée à leur place sur la diapositive tient la zone)."""
+    L, H = float(ecran.get("largeur") or 1920), float(ecran.get("hauteur") or 1080)
+    out = []
+    for v in q.get("incrustes") or []:
+        im = None if v.get("m") else (v.get("af") if v.get("r") else v.get("fi"))
+        if not im or not v.get("cadre"):
+            continue
+        x, y, l, h = v["cadre"]
+        out.append(f'<img class="incruste" src="{html.escape(im)}" alt="" style="left:{100 * x / L:.3f}%;top:{100 * y / H:.3f}%;'
+                   f'width:{100 * l / L:.3f}%;height:{100 * h / H:.3f}%">')
+    return "".join(out)
+
+
 def _texte_dit(q: dict, langue: str, src: str) -> str:
     phrases = [p[2] for p in q.get("phrases") or []]
     if langue != src:
@@ -141,7 +156,8 @@ def page(donnees: dict, langue: str | None = None, contenu=("texte",), notes: st
                 bloc = []
                 im = _image_finale(q, langue)
                 if im:
-                    bloc.append(f'<img class="diapo" src="{html.escape(im)}" alt="">')
+                    bloc.append(f'<div class="scene"><img class="diapo" src="{html.escape(im)}" alt="">'
+                                + _incrustes(q, donnees.get("ecran") or {}) + '</div>')
                 if "diapo" in contenu and q.get("diapo"):
                     bloc.append(f'<div class="texte-diapo">{_diapo(q, langue, src)}</div>')
                 if "texte" in contenu:
@@ -182,6 +198,8 @@ h2 {{ font-size: 13pt; margin: 6mm 0 2mm; break-after: avoid; }}
 .exercice {{ color: #444; border-left: 3px solid {principal}; padding-left: 3mm; }}
 .pas {{ break-inside: avoid; margin: 0 0 7mm; }}
 .pas img.diapo {{ width: 100%; border: 1px solid #d8d8d8; display: block; }}
+.pas .scene {{ position: relative; }}
+.pas .scene img.incruste {{ position: absolute; display: block; }}
 .marge {{ display: grid; grid-template-columns: 64% 1fr; gap: 5mm; }}
 .lignes {{ background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' preserveAspectRatio='none'%3E%3Cline x1='0' y1='9.7' x2='10' y2='9.7' stroke='%23999999' stroke-width='0.8' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
   background-size: 100% 7.5mm; background-repeat: repeat-y; min-height: 40mm; }}
