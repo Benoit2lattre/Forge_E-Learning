@@ -1010,7 +1010,7 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
                     elif i < len(accr):
                         o.update(accr[i])
                 else:                                   # lancée avec un état, ou au clic sur elle : avec son apparition
-                    e = f"e{lance[1]}" if lance else o.get("apparait")
+                    e = (f"e{lance[1]}" if lance[1] else None) if lance else o.get("apparait")
                     x = next((x for x in objets if x.get("id") == e), None)
                     o["debut_s"] = x["debut_s"] if x else 0.0
                     o["avec"] = e or "debut"
