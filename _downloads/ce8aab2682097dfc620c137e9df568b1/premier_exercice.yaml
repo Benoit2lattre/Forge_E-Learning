@@ -1,0 +1,64 @@
+# ExoForge — fiche minimale, point de départ d'un nouvel exercice (voir outils/exoforge/README.md).
+# Construire : python scripts/exoforge/build.py outils/exoforge/exemples/premier_exercice
+
+id: premier_exercice
+titre: "Exercice : contrainte dans une barre en traction"
+cours: "Résistance des matériaux — Traction simple"
+auteur: "Benoit Delattre"
+version: "1.0"
+profil: Delattre
+
+donnees:
+  tirage:
+    F: {parmi: [10, 15, 20, 25, 30]}      # kN
+    d: {parmi: [10, 12, 16, 20]}          # mm
+  calculs:
+    S: "pi*d**2/4"                # mm²
+    sigma: "F*1000/S"                     # MPa (N/mm²)
+  fixe: {F: 20, d: 16}
+
+rappel:
+  titre: "Énoncé"
+  texte: >-
+    Une barre cylindrique de diamètre d = {=d} mm est tendue par un effort F = {=F} kN.
+    <b>Quelle est la contrainte normale dans la barre ?</b>
+  formules:
+    - tex: '\sigma = \dfrac{F}{S}'
+
+etapes:
+  - id: unite
+    type: choix
+    titre: "Question 1 : unités"
+    enonce: "Avec F en newtons et S en mm², la contrainte F / S s'exprime en :"
+    options:
+      - texte: "MPa"
+        correct: true
+      - texte: "Pa"
+        retour: "1 N/m² = 1 Pa, mais ici la section est en mm² : 1 N/mm² = 10<sup>6</sup> Pa."
+      - texte: "kPa"
+        retour: "1 N/mm² = 10<sup>6</sup> N/m², soit 1 MPa."
+    explication: "1 N/mm² = 1 MPa : c'est pourquoi on travaille en N et en mm en résistance des matériaux."
+
+  - id: contrainte
+    type: numerique
+    titre: "Question 2 : contrainte"
+    enonce: "Calculez la contrainte normale σ (en MPa)."
+    aide:
+      texte: '$S = \dfrac{\pi d^2}{4}$, puis $\sigma = \dfrac{F}{S}$ avec F en N.'
+    attendu: "sigma"
+    erreurs:
+      - si: "F/S"
+        message: "F est en kN : convertissez-le en N avant de diviser par la section en mm²."
+      - si: "F*1000/(pi*d**2)"
+        message: "La section d'un disque est πd²/4, pas πd²."
+    indice: "S = π × {=d}² / 4 = {=round(S)} mm²."
+    solution: "σ = F / S = {=F*1000} N / {=round(S)} mm² = <b>{=round(sigma*10)/10} MPa</b>"
+
+conclusion:
+  titre: "Bilan"
+  recommencer: true
+
+defauts:
+  tentatives: 3
+  points_par_tentative: [1, 0.75, 0.5]
+  tolerance: 0.02

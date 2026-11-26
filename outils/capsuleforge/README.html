@@ -1,0 +1,1366 @@
+
+<!DOCTYPE html>
+
+
+<html lang="fr" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>CapsuleForge &#8212; Forge E-Learning</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/sphinx-book-theme.css?v=3c74b3bc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=6a604523" />
+    <link rel="stylesheet" type="text/css" href="../../_static/forge.css?v=3cfb91ca" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
+
+    <script src="../../_static/documentation_options.js?v=72dce1d2"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
+    <script>let toggleHintShow = 'Cliquez pour afficher';</script>
+    <script>let toggleHintHide = 'Cliquez pour masquer';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../../_static/translations.js?v=041d0952"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../_static/design-tabs.js?v=fcb327ea"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'outils/capsuleforge/README';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../../_static/forge_e-learning_icone_jour_favicon.svg"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Recherche" href="../../search.html" />
+    <link rel="next" title="CapsuleForge — le fichier chapitre.yaml d’une capsule" href="FORMAT.html" />
+    <link rel="prev" title="ExoForge" href="../exoforge/README.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="fr"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="26/11/2026"/>
+  
+    
+    <script src="../../_static/searchtools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script src="../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Passer au contenu principal</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Haut de page</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Alerte de version"></aside>
+</div>
+<aside class="bd-header-announcement" aria-label="Announcement">
+  <div class="bd-header-announcement__content"><div class="forge-bandeau"> <svg class="only-light" width="28" height="28" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><path d="M20 0H48V96H20A20 20 0 0 1 0 76V20A20 20 0 0 1 20 0Z" fill="#14213d"/><path d="M48 0H76A20 20 0 0 1 96 20V76A20 20 0 0 1 76 96H48Z" fill="#f5e6cc"/><path d="M38 18L48 23.833V40.167L38 46Z" fill="#f5e6cc"/><path d="M48 23.833L62 32L48 40.167Z" fill="#14213d"/><path d="M14 56H48V82H24V76H32V70L26 64H22Q16 62 14 56Z" fill="#f5e6cc"/><path d="M48 56H78V64H70L64 70V76H72V82H48Z" fill="#14213d"/></svg> <svg class="only-dark" width="28" height="28" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><path d="M20 0H48V96H20A20 20 0 0 1 0 76V20A20 20 0 0 1 20 0Z" fill="#e0b989"/><path d="M48 0H76A20 20 0 0 1 96 20V76A20 20 0 0 1 76 96H48Z" fill="#1c2d4d"/><path d="M38 18L48 23.833V40.167L38 46Z" fill="#14213d"/><path d="M48 23.833L62 32L48 40.167Z" fill="#e0b989"/><path d="M14 56H48V82H24V76H32V70L26 64H22Q16 62 14 56Z" fill="#14213d"/><path d="M48 56H78V64H70L64 70V76H72V82H48Z" fill="#e0b989"/></svg> <span class="forge-bandeau-titre">Forge E-Learning</span> <span class="forge-bandeau-texte">v0.3 — des outils libres pour passer du cours à l'activité en ligne</span> </div></div>
+</aside>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Navigation dans le site">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Recherche" aria-label="Recherche" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Recherche</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Recherche" aria-label="Recherche" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Recherche</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="Sur cette page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../site/index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../_static/forge_e-learning_logo_jour.png" class="logo__image only-light" alt="Forge E-Learning - Home"/>
+    <img src="../../_static/forge_e-learning_logo_nuit.png" class="logo__image only-dark pst-js-only" alt="Forge E-Learning - Home"/>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Recherche" aria-label="Recherche" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Recherche</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Présentation</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../site/pourquoi.html">Pourquoi de tels outils ?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../site/etat_outils.html">État des outils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG.html">Journal des versions</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Les outils</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../atelier/README.html">AtelierForge</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../atelier/FORMAT_cours.html">AtelierForge — format d’un cours (<code class="docutils literal notranslate"><span class="pre">forge-cours/1</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../atelier/FORMAT_registre.html">AtelierForge — versions et registre (<code class="docutils literal notranslate"><span class="pre">registre.yaml</span></code>, <code class="docutils literal notranslate"><span class="pre">version.yaml</span></code>)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../quizforge/README.html">QuizForge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../exoforge/README.html">ExoForge</a></li>
+<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">CapsuleForge</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="FORMAT.html">CapsuleForge — le fichier <code class="docutils literal notranslate"><span class="pre">chapitre.yaml</span></code> d’une capsule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DIAPORAMA.html">Préparer son diaporama pour CapsuleForge</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../diagforge/README.html">DiagForge</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../site/communs.html">Éléments communs : style et profils</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../style/README.html">style</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../profils/README.html">profils</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Bibliographie</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../reference/README.html">Bibliographie des méthodes</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../reference/fiches_methode.html">Comment les fiches de lecture sont écrites</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../reference/A_tests_retroaction/README.html">Axe A — Tests et rétroaction</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/adesope2017.html">Les tests d’entraînement : méta-analyse générale (Adesope et al., 2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/attali2017.html">Explication et moment du retour en mathématiques (Attali et van der Kleij, 2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/bego2024.html">Révision espacée dans neuf cours de sciences (Bego et al., 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/butler2007.html">Type et moment du retour sur un QCM (Butler et al., 2007)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/enders2020.html">Explication contre simple correction dans un quiz en ligne (Enders et al., 2020)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/heckler2016.html">Rétroaction et prérequis en calcul vectoriel (Heckler et Mikula, 2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/mertens2025.html">Essais jusqu’à la bonne réponse ou explication (Mertens et Lindner, 2025)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/morris2021.html">Évaluation formative et rétroaction dans le supérieur : revue systématique (Morris et al., 2021)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/murray2025.html">Espacement et effet de test en mathématiques (Murray et al., 2025)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/pan2018.html">Les tests transfèrent-ils ? (Pan et Rickard, 2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/petrovic2017.html">Quiz en ligne en traitement du signal (Petrović et al., 2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/rhodes2015.html">Faut-il autoriser plusieurs tentatives aux devoirs en ligne ? (Rhodes et Sarbaum, 2015)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/say2023.html">Moins de retour, plus d’autorégulation (Say et al., 2023)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/schwerter2022.html">Essais multiples avec indices (Schwerter et al., 2022)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/schwerter2026.html">Exercices de récupération dans un cours de mathématiques (Schwerter et al., 2026)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/slepkov2019.html">Crédit partiel dans les QCM à essais jusqu’à la bonne réponse (Slepkov et Godfrey, 2019)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/vanderkleij2015.html">Le type de retour dans les environnements informatiques (Van der Kleij et al., 2015)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/wisniewski2020.html">L’effet de la rétroaction revisité (Wisniewski et al., 2020)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/A_tests_retroaction/yang2021.html">L’effet de test en classe (Yang et al., 2021)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../reference/B_conception_qcm/README.html">Axe B — Conception des QCM</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/ali2015.html">Corriger les défauts d’écriture et les leurres d’un QCM (Ali et Ruit, 2015)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/ali2016.html">Des leurres tirés des réponses ouvertes (Ali et al., 2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/arhin2024.html">Écrire des leurres de mathématiques (Arhin, 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/brassil2019.html">Vrai/faux multiples contre QCM (Brassil et Couch, 2019)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/burton2005.html">Idées reçues sur le hasard et les barèmes des QCM et vrai/faux (Burton, 2005)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/couch2018.html">Vrai/faux multiples : les limites du QCM (Couch et al., 2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/downing2005.html">Les défauts d’écriture des QCM (Downing, 2005)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/feng2024.html">Génération de leurres de mathématiques par grands modèles de langage (Feng et al., 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/frisbie1992.html">Le format vrai/faux multiple : état des lieux (Frisbie, 1992)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/haladyna1994.html">Règles d’écriture des QCM, 3e édition (Haladyna, 2004)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/haladyna2022.html">Écrire des QCM pour l’évaluation en classe (Haladyna, 2022)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/hubbard2017.html">Vrai/faux multiples contre réponse ouverte (Hubbard et al., 2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/hye2025.html">Améliorer la qualité des QCM : formation ou relecture ? (Hye et al., 2025)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/kanzow2023.html">Barèmes du QCM à réponse unique (Kanzow et al., 2023)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/lesage2013.html">Barèmes de QCM : bonnes réponses ou points négatifs ? (Lesage et al., 2013)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/menze2026.html">QCM écrits avec une IA et biais d’automatisation (Menze et al., 2026)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/moore2023.html">Détecter automatiquement les défauts des QCM (Moore et al., 2023)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/rush2016.html">Défauts d’écriture, niveau cognitif et indices des items (Rush et al., 2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/schmidt2021.html">Barèmes des vrai/faux multiples (Schmidt et al., 2021)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/schmidt2022.html">Barèmes des questions « choisir N » (Schmidt et al., 2022)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/schmucker2025.html">Défauts d’écriture et paramètres des items (Schmucker et Moore, 2025)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/shin2019.html">Des leurres tirés des réponses des élèves (Shin et al., 2019)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/shultz2024.html">Défauts d’écriture dans une banque d’examens de pharmacie (Shultz et al., 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/tarrant2008.html">Défauts d’écriture et bons étudiants (Tarrant et Ware, 2008)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/B_conception_qcm/testa2018.html">Efficacité des leurres selon le niveau cognitif des questions (Testa et al., 2018)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../reference/C_analyse_items/README.html">Axe C — Analyse d’items</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/C_analyse_items/attali2000.html">Mesurer la discrimination d’un leurre (Attali et Fraenkel, 2000)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/C_analyse_items/edelsbrunner2025.html">L’alpha de Cronbach des tests de connaissances (Edelsbrunner et al., 2025)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/C_analyse_items/gierl2017.html">Écrire et analyser les leurres (Gierl et al., 2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/C_analyse_items/hingorjo2012.html">Difficulté, discrimination et efficacité des leurres sur un examen (Hingorjo et Jaleel, 2012)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/C_analyse_items/macdonald2002.html">Théorie classique ou théorie des réponses aux items ? (MacDonald et Paunonen, 2002)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/C_analyse_items/raymond2018.html">Un seuil de leurre non fonctionnel qui dépend de la difficulté (Raymond et al., 2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/C_analyse_items/slepkov2021.html">Valeurs de référence pour les QCM d’examen à l’université (Slepkov et al., 2021)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/C_analyse_items/sridharan2025.html">Combien d’options dans un QCM ? (Sridharan et Sivaramakrishnan, 2025)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/C_analyse_items/srisomsak2025.html">Seuils statistiques et questions défectueuses (Srisomsak et al., 2025)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/C_analyse_items/taber2018.html">Bon et mauvais usages de l’alpha de Cronbach (Taber, 2018)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../reference/D_exemples_guidage/README.html">Axe D — Exemples guidés et guidage</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/atkinson2003.html">Estompage et choix du principe (Atkinson et al., 2003)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/barbieri2023.html">L’effet des exemples résolus en mathématiques (Barbieri et al., 2023)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/beege2024.html">Vidéo interactive : auto-explications et navigation (Beege et Ploetzner, 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/belland2016.html">L’étayage informatique en STEM (Belland et al., 2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/bisra2018.html">Les invites d’auto-explication (Bisra et al., 2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/booth2013.html">Exemples corrects et erronés dans un STI d’algèbre (Booth et al., 2013)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/borchers2025.html">Guidage fort ou liberté de stratégie ? (Borchers et al., 2025)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/dieterich2025.html">Quand les exemples erronés aident-ils ? (Dieterich et al., 2025)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/foster2018.html">Quand l’étudiant choisit : exemple, exemple partiel ou problème ? (Foster et al., 2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/grosse2007.html">Trouver et corriger les erreurs d’un exemple (Große et Renkl, 2007)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/huang2026.html">Apprendre à travailler avec une IA générative (Huang et al., 2026)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/kalyuga2001.html">Quand les exercices valent mieux que les exemples (Kalyuga et al., 2001)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/kalyuga2003.html">L’inversion d’expertise (Kalyuga et al., 2003)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/kalyuga2004.html">Un test rapide pour adapter le guidage (Kalyuga et Sweller, 2004)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/kalyuga2007.html">Adapter le guidage au niveau (Kalyuga, 2007)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/loibl2019.html">Rendre l’échec productif par des consignes de comparaison (Loibl et Leuders, 2019)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/millercotto2019.html">L’estompage dans des devoirs en ligne ordinaires (Miller-Cotto et Auxter, 2019)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/moreno2009.html">Estompage et retour en électricité (Moreno et al., 2009)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/reisslein2006.html">Inversion liée à l’expertise en analyse de circuits électriques (Reisslein et al., 2006)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/renkl2002.html">Transitions progressives de l’exemple à l’exercice (Renkl et al., 2002)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/renkl2003.html">La procédure d’estompage (Renkl et Atkinson, 2003)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/renkl2004.html">Pourquoi l’estompage marche (Renkl et al., 2004)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/rittlejohnson2017.html">Faire expliquer pour mieux apprendre les mathématiques (Rittle-Johnson et al., 2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/salden2009.html">Exemples et résolution guidée par un STI : redondants ou complémentaires ? (Salden et al., 2009)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/salden2010.html">Estompage adaptatif dans un tuteur intelligent (Salden et al., 2010)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/schwonke2009.html">Exemples estompés dans un tuteur intelligent (Schwonke et al., 2009)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/D_exemples_guidage/zhang2024.html">Expliquer ses propres erreurs (Zhang et Fiorella, 2024)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../reference/E_multimedia/README.html">Axe E — Multimédia</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/adesope2012.html">Méta-analyse de la redondance verbale (Adesope et Nesbit, 2012)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/berney2016.html">Animation contre image fixe : méta-analyse (Berney et Bétrancourt, 2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/biard2018.html">Segmentation imposée d’une vidéo de procédure (Biard et al., 2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/chernikova2020.html">Apprendre par simulation dans le supérieur (Chernikova et al., 2020)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/craig2017.html">Voix de synthèse moderne contre voix humaine (Craig et Schroeder, 2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/fang2026.html">Simulation et animation en dynamique du point : travail et énergie (Fang et Guo, 2026)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/fyfield2022.html">Principes de conception des vidéos pédagogiques (Fyfield et al., 2022)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/ha2018.html">Simulation et animation en dynamique du solide (Ha et Fang, 2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/hasler2007.html">Contrôle du rythme d’une animation par l’élève (Hasler et al., 2007)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/hoffler2007.html">Animation contre image fixe (Höffler et Leutner, 2007)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/ito2026.html">Apparitions cumulatives synchronisées et regard (Ito et Ichikawa, 2026)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/kalyuga2008.html">Animation ou images fixes selon le niveau : graphes de fonctions (Kalyuga, 2008)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/liu2021.html">Pauses imposées selon la complexité des diapositives (Liu et al., 2022)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/liu2022.html">Apparitions synchronisées dans un diaporama narré (Liu et al., 2022)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/mayer2017.html">Douze principes multimédia pour l’e-learning (Mayer, 2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/mayer2019.html">Révéler une diapositive par parties (Mayer et al., 2019)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/mayer2021.html">Principes pour la vidéo pédagogique (Mayer, 2021)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/mcelhaney2015.html">Visualisations dynamiques en sciences : ce qui les rend utiles (McElhaney et al., 2015)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/noetel2021.html">Revue des revues sur la conception multimédia (Noetel et al., 2021)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/ploetzner2021.html">Animer pour apprendre le détail d’un mouvement (Ploetzner et al., 2021)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/reuter2025.html">Diapositives statiques, animées ou avec enseignant visible (Reuter et al., 2026)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/rey2019.html">Méta-analyse de la segmentation (Rey et al., 2019)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/richter2016.html">Signaler les liens entre texte et figure (Richter et al., 2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/schneider2018.html">Méta-analyse du signalement (Schneider et al., 2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/seidel2024.html">Vidéos longues, courtes et segmentées (Seidel, 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/siegle2024.html">Voix professionnelle contre voix de synthèse (Siegle et Craig, 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/tajvidi2015.html">Simulations et animations en mécanique de l’ingénieur : revue (Tajvidi et Fang, 2015)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/trypke2023.html">Deux types de redondance en multimédia (Trypke et al., 2023)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/vlahos2026.html">Visualisation interactive en mécanique de première année (Vlahos et al., 2026)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/xu2024.html">Vidéo générée par IA contre vidéo enregistrée (Xu et al., 2025)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/E_multimedia/yu2023.html">Barre de progression et sommaire dans une vidéo (Yu et al., 2024)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../reference/F_video_interactive/README.html">Axe F — Vidéo interactive</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/alemdag2022.html">L’enseignant à l’écran dans les vidéos (Alemdag, 2022)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/brame2016.html">Principes pour des vidéos pédagogiques efficaces (Brame, 2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/deng2023.html">Vrai/faux dans les vidéos de préparation d’une classe inversée (Deng et Gao, 2023)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/deng2024.html">Questions dans la vidéo : présence ou interactivité ? (Deng et al., 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/guo2014.html">Production des vidéos et visionnage dans les MOOC (Guo et al., 2014)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/gutierrez2024.html">Qui regarde les vidéos d’une classe inversée ? (Gutiérrez-González et al., 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/haagsman2020.html">Questions intégrées dans les vidéos d’une classe inversée (Haagsman et al., 2020)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/jacob2023.html">Vidéos H5P dans un cours entièrement en ligne (Jacob et Centofanti, 2023)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/jiang2022.html">Vidéos H5P dans un cours d’ingénierie pendant la pandémie (Jiang et al., 2022)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/jing2016.html">Tests intercalés et intégration d’un cours filmé (Jing et al., 2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/liu2024.html">Vitesse de lecture et questions préalables (Liu et Jia, 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/noetel2021b.html">La vidéo améliore-t-elle l’apprentissage dans le supérieur ? (Noetel et al., 2021)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/pan2020.html">Questions posées avant le contenu d’une vidéo (Pan et al., 2020)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/parker2024.html">Le contexte du cours et la durée des vidéos (Parker et al., 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/szpunar2013.html">Questions entre les segments d’un cours filmé (Szpunar et al., 2013)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/thurner2022.html">Questions H5P dans les vidéos d’un MOOC (Thurner et al., 2022)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/trenholm2024.html">Quand la vidéo améliore-t-elle l’apprentissage ? Réanalyse de Noetel et al. (Trenholm et Marmolejo-Ramos, 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/welhaf2022.html">Questions intercalées et prétest dans un cours filmé : réplication (Welhaf et al., 2022)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/zhou2026.html">Questions visibles pendant la vidéo et attention (Zhou et al., 2026)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/F_video_interactive/zhu2022.html">Capsules courtes contre vidéo longue en ingénierie (Zhu et al., 2022)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../reference/G_restitution/README.html">Axe G — Restitution aux étudiants</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/G_restitution/aguilar2022.html">Score seul ou position par rapport à la moyenne (Aguilar, 2022)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/G_restitution/bodily2017.html">Revue des systèmes de restitution aux étudiants (Bodily et Verbert, 2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/G_restitution/fleur2023.html">Se comparer à des pairs légèrement meilleurs (Fleur et al., 2023)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/G_restitution/fleur2023b.html">IguideME : comparaison aux pairs de même objectif (Fleur et al., 2023b)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/G_restitution/goulas2021.html">Connaître son rang : effet sur les forts et sur les faibles (Goulas et Megalokonomou, 2021)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/G_restitution/harvey2020.html">Se voir en dessous de la moyenne de la classe (Harvey et Keyes, 2020)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/G_restitution/hatala2024.html">Ce que l’étudiant fait après avoir vu sa position (Hatala et Nazeri, 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/G_restitution/herodotou2025.html">Dire quoi faire ensuite : un tableau de bord prescriptif (Herodotou et al., 2025)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/G_restitution/kaliisa2024.html">Les tableaux de bord étudiants tiennent-ils leurs promesses ? (Kaliisa et al., 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/G_restitution/matcha2020.html">Les tableaux de bord vus par la théorie de l’autorégulation (Matcha et al., 2020)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/G_restitution/paulsen2024.html">Des tableaux de bord qui décrivent à ceux qui guident (Paulsen et Lindsay, 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/G_restitution/theobald2022.html">Retour quotidien sur l’autorégulation : situation et stratégie (Theobald et Bellhäuser, 2022)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/G_restitution/valle2021.html">L’objectif d’un tableau de bord et sa mesure (Valle et al., 2021)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/G_restitution/valle2021b.html">Prédire ou décrire : tableau de bord en statistiques en ligne (Valle et al., 2021b)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/G_restitution/weidlich2024.html">Cadre de référence d’un retour automatique : norme, critère ou les deux (Weidlich et al., 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/G_restitution/zheng2026.html">Moyenne de classe ou pairs proches : émotions sur un semestre (Zheng et al., 2026)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../reference/H_specificites_stem/README.html">Axe H — Spécificités STEM</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/brown2007.html">Les états de contrainte en résistance des matériaux (Brown et al., 2007)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/bruhl2022.html">Erreurs types en statique et RDM chez les élèves de génie civil (Bruhl et al., 2022)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/davies2024.html">Passage d’un département de mathématiques à STACK (Davies et al., 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/fakiyesi2024.html">Inventaires de concepts en ingénierie : une revue de portée (Fakiyesi et al., 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/ford2020.html">QCM pour cours de mécanique de 3e année : ce que montrent les entretiens (Ford et al., 2020)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/gaona2018.html">Retour immédiat ou différé dans des devoirs de mathématiques en ligne (Gaona et al., 2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/gill2007.html">Évaluation assistée en mécanique : conception et évaluation (Gill et Greenhow, 2007)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/gill2008.html">Efficacité du retour dans l’évaluation assistée (Gill et Greenhow, 2008)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/gray2005.html">Inventaire de concepts en dynamique du solide (Gray et al., 2005)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/greenhow2015.html">Principes de l’évaluation assistée en mathématiques (Greenhow, 2015)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/gross2012.html">Les erreurs des étudiants dans les problèmes de statique (Gross et Dinehart, 2012)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/kinnear2022.html">Programme de recherche sur l’évaluation en ligne en mathématiques (Kinnear et al., 2022)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/klingbeil2024.html">Un QCM diagnostique en ligne mesure-t-il bien une conception erronée ? (Klingbeil et al., 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/martinblas2010.html">Réponses fausses dominantes au Force Concept Inventory (Martín-Blas et al., 2010)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/orthaber2020.html">Questions d’examen de mécanique en ligne avec report d’erreur (Orthaber et al., 2020)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/parker2026.html">Notions difficiles et erreurs types repérées par LLM (Parker et Zavala-Cerna, 2026)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/payne1990.html">Erreurs types en algèbre : nombreuses, rares et instables (Payne et Squibb, 1990)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/pearson2022.html">Notation automatique des longs calculs avec report d’erreur (Pearson et Penna, 2022)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/poutot2015.html">Conceptions erronées au FCI en école d’ingénieurs (Poutot et Blandin, 2015)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/qian2019.html">Retour ciblé sur les erreurs fréquentes en programmation (Qian et Lehman, 2019)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/rosengrant2009.html">Les étudiants utilisent-ils le diagramme du corps isolé ? (Rosengrant et al., 2009)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/segado2026.html">Erreurs types extraites des leurres d’un inventaire de concepts (Segado et al., 2026)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/sikurajapathi2020.html">Erreurs types en mathématiques de l’ingénieur et évaluation en ligne (Sikurajapathi et al., 2020)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/sikurajapathi2023.html">Juste pour une mauvaise raison : paramètres et erreurs types (Sikurajapathi et al., 2023)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/steele2014.html">Fiches conceptuelles en classe et inventaire de statique (Steele et al., 2014)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/steif2005.html">Un inventaire de concepts en statique (Steif et Dantzler, 2005)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/steif2006.html">Inventaire de statique et examens (Steif et Hansen, 2006)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/steif2006b.html">Restituer les résultats de l’inventaire de statique (Steif et Hansen, 2006)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/H_specificites_stem/tatsuoka1983.html">L’espace des règles : relier les réponses aux erreurs types (Tatsuoka, 1983)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../reference/I_accessibilite/README.html">Axe I — Accessibilité</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/almeqdad2023.html">Méta-analyse de la conception universelle de l’apprentissage (Almeqdad et al., 2023)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/azzarello2026.html">Polices « dyslexie » et lecture (Azzarello et al., 2026)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/capp2017.html">Conception universelle de l’apprentissage, études 2013-2016 (Capp, 2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/chauhan2019.html">Lecture audio des formules : MathML ou LaTeX ? (Chauhan et al., 2019)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/frankel2017.html">Lecture vocale navigable des formules en MathML (Frankel et al., 2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/gaggi2026.html">Notes de cours LaTeX converties en pages web accessibles (Gaggi et al., 2026)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/klingenberg2020.html">Apprentissage numérique des mathématiques et déficience visuelle sévère (Klingenberg et al., 2020)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/kuster2017.html">La police Dyslexie n’aide pas à lire (Kuster et al., 2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/li2024.html">Les pratiques de conception universelle vues par des étudiants en situation de handicap (Li et al., 2024)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/mackowski2017.html">Plateforme d’exercices de mathématiques pour étudiants aveugles (Mackowski et al., 2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/mackowski2018.html">Chaîne de production d’exercices de mathématiques accessibles (Maćkowski et al., 2018)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/marinus2016.html">L’effet de la police Dyslexie vient de son espacement (Marinus et al., 2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/mcmillan2026.html">Sites de cours en HTML + MathML générés depuis Markdown (McMillan et Boyden, 2026)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/rello2015.html">Taille et espacement du texte à l’écran pour les lecteurs dyslexiques (Rello et Baeza-Yates, 2015)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/rello2016.html">Choix de police à l’écran et dyslexie (Rello et Baeza-Yates, 2016)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/saenen2026.html">La conception universelle dans le supérieur, des principes à la pratique (Saenen et al., 2026)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/schreffler2019.html">Conception universelle de l’apprentissage en sciences dans le supérieur (Schreffler et al., 2019)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/shoaib2023.html">Technologies d’assistance pour apprendre les mathématiques sans la vue (Shoaib et al., 2023)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/vanderzee2017.html">Sous-titres et complexité des vidéos de MOOC (van der Zee et al., 2017)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../reference/I_accessibilite/vanhoecke2026.html">Sous-titres et style de cours enregistré (Van Hoecke et al., 2026)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/bibliographie_complete.html">Liste des références</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Pour aller plus loin</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../skills/README.html">Skills : l’aide d’un assistant d’IA autour de Forge</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../skills/creation-syllabus.html">Création de quiz et d’exercices à partir d’un syllabus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../skills/critique-pedagogie.html">Lecture critique d’articles de pédagogie</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../skills/finition-site.html">Finition du dépôt et du site</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../skills/preparation-capsules.html">Aide à la préparation de capsules</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../../site/prochaines_etapes.html">Prochaines étapes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../site/etat_redaction.html">État de rédaction</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../site/api.html">Référence API</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/approj/index.html">scripts.capsuleforge.approj</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/assemblage/index.html">scripts.capsuleforge.assemblage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/calage/index.html">scripts.capsuleforge.calage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/capsuleforge/index.html">scripts.capsuleforge.capsuleforge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/construire/index.html">scripts.capsuleforge.construire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/construire_chapitre/index.html">scripts.capsuleforge.construire_chapitre</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/editeur/index.html">scripts.capsuleforge.editeur</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/enregistreur/index.html">scripts.capsuleforge.enregistreur</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/essai_capture/index.html">scripts.capsuleforge.essai_capture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/filmer/index.html">scripts.capsuleforge.filmer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/format_chapitre/index.html">scripts.capsuleforge.format_chapitre</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/habillage/index.html">scripts.capsuleforge.habillage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/nouvelle/index.html">scripts.capsuleforge.nouvelle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/omml/index.html">scripts.capsuleforge.omml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/pdf_capsule/index.html">scripts.capsuleforge.pdf_capsule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/pptx_edition/index.html">scripts.capsuleforge.pptx_edition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/pptx_images/index.html">scripts.capsuleforge.pptx_images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/pptx_lire/index.html">scripts.capsuleforge.pptx_lire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/pptx_video/index.html">scripts.capsuleforge.pptx_video</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/raccourcis/index.html">scripts.capsuleforge.raccourcis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/relecture/index.html">scripts.capsuleforge.relecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/scenario/index.html">scripts.capsuleforge.scenario</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/serveur_local/index.html">scripts.capsuleforge.serveur_local</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/sons/index.html">scripts.capsuleforge.sons</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/traduction/index.html">scripts.capsuleforge.traduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/transcription/index.html">scripts.capsuleforge.transcription</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/variantes/index.html">scripts.capsuleforge.variantes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/video/index.html">scripts.capsuleforge.video</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/capsuleforge/voix/index.html">scripts.capsuleforge.voix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/commun/charte/index.html">scripts.commun.charte</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/commun/chemins/index.html">scripts.commun.chemins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/commun/cours_options/index.html">scripts.commun.cours_options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/commun/profil_cours/index.html">scripts.commun.profil_cours</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/commun/registre/index.html">scripts.commun.registre</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/commun/verifier_depot/index.html">scripts.commun.verifier_depot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/diagforge/bilan/index.html">scripts.diagforge.bilan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/diagforge/bilan_sorties/index.html">scripts.diagforge.bilan_sorties</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/diagforge/diagforge/index.html">scripts.diagforge.diagforge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/diagforge/graphiques/index.html">scripts.diagforge.graphiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/diagforge/tirage/index.html">scripts.diagforge.tirage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/exoforge/build/index.html">scripts.exoforge.build</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/exoforge/generique/index.html">scripts.exoforge.generique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/exoforge/latex_macros/index.html">scripts.exoforge.latex_macros</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/forge/capsules/index.html">scripts.forge.capsules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/forge/cours/index.html">scripts.forge.cours</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/forge/forge/index.html">scripts.forge.forge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/forge/questions_bilans/index.html">scripts.forge.questions_bilans</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/quizforge/qualite/index.html">scripts.quizforge.qualite</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/quizforge/quizforge/index.html">scripts.quizforge.quizforge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../site/api/scripts/quizforge/schema/wohler_schema/index.html">scripts.quizforge.schema.wohler_schema</a></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/Benoit2lattre/Forge_E-Learning" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Dépôt source"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/Benoit2lattre/Forge_E-Learning/issues/new?title=Issue%20on%20page%20%2Foutils/capsuleforge/README.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Ouvrez un problème"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Téléchargez cette page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../../_sources/outils/capsuleforge/README.md" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Télécharger le fichier source"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.md</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Imprimer au format PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button pst-navbar-icon"
+  title="Mode plein écran"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Thème" data-bs-title="Thème"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Clair"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Sombre"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="Paramètres système"></i>
+</button>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Recherche" aria-label="Recherche" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+<button class="sidebar-toggle secondary-toggle btn btn-sm pst-navbar-icon" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>CapsuleForge</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contenu </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#une-capsule-plusieurs-ecoles">Une capsule, plusieurs écoles</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#preparer-une-capsule">Préparer une capsule</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#chaine">Chaîne</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#le-fichier-chapitre-yaml-parties-sections-pas">Le fichier <code class="docutils literal notranslate"><span class="pre">chapitre.yaml</span></code> : parties, sections, pas</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reprendre-un-diaporama-powerpoint-narre">Reprendre un diaporama PowerPoint narré</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#annoter-dans-powerpoint-formes-cf">Annoter dans PowerPoint (formes « cf … »)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#habiller-dans-powerpoint-formes-dedition-et-champs">Habiller dans PowerPoint : formes d’édition et champs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#transcrire-le-texte-dit">Transcrire le texte dit</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#relire-le-texte-dit">Relire le texte dit</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#importer-une-video-enregistrement-decran-export-activepresenter-clip">Importer une vidéo (enregistrement d’écran, export ActivePresenter, clip)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#filmer-lecran-le-micro-et-la-webcam-windows">Filmer l’écran, le micro et la webcam (Windows)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#construire-le-lecteur-dun-cours">Construire le lecteur d’un cours</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#exercices-exoforge">Exercices ExoForge</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#paquets-scorm-pour-moodle">Paquets SCORM pour Moodle</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pdf-de-la-capsule-commande-pdf">PDF de la capsule (commande <code class="docutils literal notranslate"><span class="pre">pdf</span></code>)</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#habiller-la-capsule-pour-une-edition-cours">Habiller la capsule pour une édition (<code class="docutils literal notranslate"><span class="pre">--cours</span></code>)</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#traduire-sous-titrer-faire-parler-une-voix-de-synthese">Traduire, sous-titrer, faire parler une voix de synthèse</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#didacticiel-dans-le-lecteur-de-chapitre">Didacticiel dans le lecteur de chapitre</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ancien-lecteur-didacticiels-enregistres-capsule-yaml">Ancien lecteur : didacticiels enregistrés (<code class="docutils literal notranslate"><span class="pre">capsule.yaml</span></code>)</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Chaîne</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#enregistrer">Enregistrer</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#le-fichier-capsule-yaml">Le fichier capsule.yaml</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#modifier-la-capsule-dans-lediteur">Modifier la capsule dans l’éditeur</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#construire-et-utiliser-le-lecteur">Construire et utiliser le lecteur</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reprendre-un-projet-activepresenter">Reprendre un projet ActivePresenter</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mettre-a-jour-pour-le-lecteur-actuel">Mettre à jour pour le lecteur actuel</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#a-venir-dans-lordre-propose">À venir (dans l’ordre proposé)</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="capsuleforge">
+<h1>CapsuleForge<a class="headerlink" href="#capsuleforge" title="Lien vers cette rubrique">#</a></h1>
+<p><img src="../../_static/identite/bandeaux/capsuleforge_bandeau_jour.png#gh-light-mode-only" alt="CapsuleForge" class="only-light" width="100%"><img src="../../_static/identite/bandeaux/capsuleforge_bandeau_nuit.png#gh-dark-mode-only" alt="CapsuleForge" class="only-dark" width="100%"></p>
+<p>CapsuleForge produit des <strong>capsules</strong> : des cours et des didacticiels interactifs, décrits dans un fichier texte (<code class="docutils literal notranslate"><span class="pre">chapitre.yaml</span></code>, voir <a class="reference internal" href="FORMAT.html"><span class="std std-doc">FORMAT.md</span></a>). Une capsule part d’un diaporama PowerPoint narré, d’une vidéo, d’un enregistrement d’écran ou d’une manipulation enregistrée dans un logiciel (FreeCAD, ABAQUS, Excel…), et peut mêler ces sources ; elle reçoit des questions QuizForge, des exercices ExoForge, des sous-titres, une traduction et une voix de synthèse. Le fichier texte est la seule référence : on le relit, on le corrige, et le lecteur HTML (ou le paquet SCORM) est reconstruit à chaque fois.</p>
+<p>Une capsule est découpée en parties et en sections de quelques minutes, avec plusieurs parcours, des questions en fin de section et des exercices ; elle se lit dans un lecteur HTML ou se dépose dans Moodle en paquet SCORM. Un didacticiel montre une manipulation puis la fait faire (« Regarder » puis « À vous ») : il remplace le mode « simulation interactive » d’ActivePresenter sans son défaut principal (une diapositive par action, à la durée de l’enregistrement). Les premiers didacticiels étaient écrits pour un ancien lecteur (<code class="docutils literal notranslate"><span class="pre">capsule.yaml</span></code>) ; AtelierForge les met à jour pour le lecteur actuel (dernière partie de cette page).</p>
+<p>Statut : outil en développement, utilisé sur un chapitre pilote. Essayés en conditions réelles : reprise d’un diaporama narré, transcription, relecture, lecteur de chapitre, questions et exercices, paquets SCORM 2004 et 1.2 dans Moodle, traduction et voix de synthèse, import de vidéo, enregistrement d’écran, et une capsule habillée pour plusieurs écoles (charte, modèle PowerPoint, variantes, texte et diapositives traduits, PDF, versions par édition), reprise et relecture d’un diaporama sans voix, vidéo insérée dans le diaporama. Pas encore : partir d’une intention (plan, squelette du diaporama), éditeur d’assemblage, simulation ActivePresenter dans le chapitre, export H5P. L’état détaillé est sur la page « État des outils » du site.</p>
+<p>Dans cette page, <code class="docutils literal notranslate"><span class="pre">capsuleforge</span> <span class="pre">…</span></code> abrège <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">scripts/capsuleforge/capsuleforge.py</span> <span class="pre">…</span></code>, lancé depuis le dossier du dépôt. Un nom seul (<code class="docutils literal notranslate"><span class="pre">fiabilite</span></code>) désigne le dossier <code class="docutils literal notranslate"><span class="pre">data/capsuleforge/fiabilite/</span></code>. Sous Windows, le plus simple est <strong>AtelierForge</strong> (double-clic sur <code class="docutils literal notranslate"><span class="pre">Forge.bat</span></code>, à la racine du dépôt), écran « Capsules » : on choisit la capsule, son état s’affiche section par section (diapositives reprises, images, texte dit, relu, traduction, voix, questions) et chaque étape se lance par un bouton (reprendre un diaporama, importer une vidéo, transcrire, relire, traduire, faire la voix, vérifier, construire avec ou sans paquets SCORM), sans ligne de commande. Un double-clic sur <code class="docutils literal notranslate"><span class="pre">scripts/capsuleforge/CapsuleForge.bat</span></code> ouvre aussi un menu qui pose les questions une à une (enregistrer, construire, vérifier, reprendre un diaporama, relire…), sans ligne de commande.</p>
+<section id="une-capsule-plusieurs-ecoles">
+<h2>Une capsule, plusieurs écoles<a class="headerlink" href="#une-capsule-plusieurs-ecoles" title="Lien vers cette rubrique">#</a></h2>
+<p>Un même cours se donne dans plusieurs écoles, parcours ou années. CapsuleForge le prépare une fois, <strong>nu</strong> (sans rien qui désigne un établissement), puis le <strong>rhabille</strong> pour chaque édition d’un cours (école, déclinaison, année) au moment de construire. Le diaporama de l’auteur n’est jamais modifié.</p>
+<ol class="arabic simple">
+<li><p><strong>Dans PowerPoint</strong>, ce qui dépend de l’édition se prépare sur les diapositives : formes nommées <code class="docutils literal notranslate"><span class="pre">cf</span> <span class="pre">édition</span></code> (montrées dans les éditions) ou <code class="docutils literal notranslate"><span class="pre">cf</span> <span class="pre">édition</span> <span class="pre">ecole1</span></code> (pour cette école seulement), champs <code class="docutils literal notranslate"><span class="pre">{cours}</span></code>, <code class="docutils literal notranslate"><span class="pre">{code}</span></code>, <code class="docutils literal notranslate"><span class="pre">{promo}</span></code>… dans le texte (voir « Habiller dans PowerPoint » plus bas).</p></li>
+<li><p><strong>Reprise</strong> (<code class="docutils literal notranslate"><span class="pre">capsuleforge</span> <span class="pre">pptx</span></code>) : les images de la capsule nue (formes d’édition cachées, champs vides, masque de l’auteur caché) et le texte de chaque diapositive, gardé comme texte.</p></li>
+<li><p><strong>Relecture</strong> : chaque phrase dite peut être réservée à un public, retirée pour lui ou remplacée (bouton « Public ») : un renvoi au reste du cursus n’est dit que là où il a un sens.</p></li>
+<li><p><strong>Traduction</strong> : le texte dit, les titres et le texte des diapositives ; les diapositives elles-mêmes sont réexportées dans la langue.</p></li>
+<li><p><strong>Construction pour une édition</strong> (<code class="docutils literal notranslate"><span class="pre">construire</span> <span class="pre">--cours</span></code>, ou un cours choisi dans AtelierForge) : charte et logo de l’école, écran d’accueil, pied de page, filigrane si l’édition le demande ; PowerPoint applique le <strong>modèle de l’école</strong> (<code class="docutils literal notranslate"><span class="pre">.potx</span></code> de son profil) et remplit les champs ; un <strong>PDF</strong> à imprimer, fait à part à partir du lecteur construit (une version par réglage), joint au paquet si sa case est cochée. Le paquet SCORM et ses PDF sont rangés comme version de l’édition.</p></li>
+</ol>
+<p><img alt="Capsule construite pour une édition d'Ecole1 (école fictive) : bandeau aux couleurs de l'école, écran d'accueil (cours, code, année, promo, mentions), diapositive au modèle de l'école avec le cartouche « cf édition ecole1 », promo remplie et filigrane" src="../../_images/habillage_accueil.png" /></p>
+<p><img alt="Volet « Texte » du lecteur : le texte de chaque diapositive au fil des pas (ce qui apparaît au clic suivant est estompé), la formule en vraie formule aux couleurs de l'école, le texte dit ; boutons A−, A+ et « Aéré »" src="../../_images/lecteur_texte.png" /></p>
+<p><img alt="La même capsule en anglais : diapositive réexportée par PowerPoint avec ses textes traduits, sous-titres et voix de synthèse anglais" src="../../_images/diapositive_traduite.png" /></p>
+<p><img alt="Une page du PDF imprimé par Edge : la diapositive dans son dernier état, le texte dit, des lignes pour les notes, pied de page de l'édition" src="../../_images/pdf_page.png" /></p>
+<p>Un modèle d’école change les polices et les couleurs des diapositives : un texte peut s’élargir et toucher une équation ou un schéma restés en place. La construction le vérifie après avoir appliqué le modèle : elle note dans son journal chaque texte qui déborde de sa zone ou de la diapositive, deux textes l’un sur l’autre, un texte qui passe en partie sur une autre forme (un texte posé tout entier sur une forme, comme une étiquette sur un panneau, est voulu) ou sur une forme du modèle (logo, pied de page), avec « à vérifier » ; à regarder ensuite dans le lecteur. Le contrôle compare des cadres : un texte qui frôle un trait, ou la partie vide d’une image, peut passer inaperçu ou être signalé à tort ; regarder aussi ces diapositives.</p>
+</section>
+<section id="preparer-une-capsule">
+<h2>Préparer une capsule<a class="headerlink" href="#preparer-une-capsule" title="Lien vers cette rubrique">#</a></h2>
+<section id="chaine">
+<h3>Chaîne<a class="headerlink" href="#chaine" title="Lien vers cette rubrique">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>capsuleforge nouvelle cours --titre … --diaporama cours.pptx   crée la capsule : plan proposé (parties = sections PowerPoint, sections de quelques minutes)
+chapitre.yaml                                       plan : parties, sections, renvois aux diapositives (proposé par nouvelle, corrigé à la main ou avec un assistant d'IA)
+capsuleforge plan fiabilite                         plan par parcours, durées
+capsuleforge pptx cours.pptx --chapitre fiabilite   diapositives → pas : images, sons, apparitions, annotations « cf … » (Windows, PowerPoint)
+capsuleforge transcrire fiabilite                   premier jet du texte dit (Whisper, sur cet ordinateur)
+capsuleforge relire fiabilite                       relecture : texte, phrases, apparitions, spots, cadres, caches
+capsuleforge construire fiabilite --scorm parties   lecteur HTML et paquets SCORM pour Moodle
+capsuleforge traduire / voix                        traduction, sous-titres, voix de synthèse
+</pre></div>
+</div>
+<p>Des vidéos (<code class="docutils literal notranslate"><span class="pre">video</span></code>) et des enregistrements d’écran (<code class="docutils literal notranslate"><span class="pre">filmer</span></code>) entrent dans les mêmes sections que les diapositives.</p>
+</section>
+<section id="le-fichier-chapitre-yaml-parties-sections-pas">
+<h3>Le fichier <code class="docutils literal notranslate"><span class="pre">chapitre.yaml</span></code> : parties, sections, pas<a class="headerlink" href="#le-fichier-chapitre-yaml-parties-sections-pas" title="Lien vers cette rubrique">#</a></h3>
+<p>Le chapitre est décrit dans <a class="reference internal" href="FORMAT.html"><span class="std std-doc">FORMAT.md</span></a> : des parties (tronc, annexes, exercices), des sections de 5 à 6 min et des pas qui sont des scènes (fond, objets, gestes attendus, retours), avec plusieurs parcours sur le même contenu (par exemple vue d’ensemble, lecture détaillée, lecture immersive). Une section renvoie aux diapositives qui la composent (<code class="docutils literal notranslate"><span class="pre">source:</span> <span class="pre">{fichier:</span> <span class="pre">cours.pptx,</span> <span class="pre">diapos:</span> <span class="pre">[6,</span> <span class="pre">7]}</span></code>) ; un chapitre en cours d’écriture porte <code class="docutils literal notranslate"><span class="pre">source:</span> <span class="pre">{statut:</span> <span class="pre">squelette}</span></code> (une section encore vide n’est alors qu’un avertissement).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">capsuleforge</span> <span class="n">plan</span> <span class="n">fiabilite</span>                          <span class="n">plan</span> <span class="n">par</span> <span class="n">parcours</span> <span class="p">:</span> <span class="n">noms</span> <span class="p">(</span><span class="n">B</span><span class="o">-</span><span class="n">S2</span><span class="o">-</span><span class="n">P4</span><span class="p">),</span> <span class="n">durées</span><span class="p">,</span> <span class="n">annexes</span><span class="p">,</span> <span class="n">questions</span>
+<span class="n">capsuleforge</span> <span class="n">plan</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">parcours</span> <span class="n">immersive</span>
+<span class="n">capsuleforge</span> <span class="n">verifier</span> <span class="n">fiabilite</span>                      <span class="n">erreurs</span> <span class="n">et</span> <span class="n">avertissements</span>
+</pre></div>
+</div>
+</section>
+<section id="reprendre-un-diaporama-powerpoint-narre">
+<h3>Reprendre un diaporama PowerPoint narré<a class="headerlink" href="#reprendre-un-diaporama-powerpoint-narre" title="Lien vers cette rubrique">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">capsuleforge</span> <span class="n">pptx</span> <span class="n">Fiabilite</span><span class="o">.</span><span class="n">pptx</span> <span class="o">--</span><span class="n">chapitre</span> <span class="n">fiabilite</span>                <span class="c1"># toutes les diapositives citées par le chapitre</span>
+<span class="n">capsuleforge</span> <span class="n">pptx</span> <span class="n">Fiabilite</span><span class="o">.</span><span class="n">pptx</span> <span class="o">--</span><span class="n">chapitre</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">diapos</span> <span class="mi">6</span><span class="o">-</span><span class="mi">12</span>  <span class="c1"># seulement celles-ci</span>
+</pre></div>
+</div>
+<p>Chaque diapositive citée par une section devient un pas : image de départ et une image par clic d’animation (produites par PowerPoint lui-même, sous Windows), son de la narration enregistrée dans PowerPoint, durée. Chaque clic devient une apparition. Diapositive enregistrée : les apparitions sont réparties d’abord sur la durée (PowerPoint n’enregistre pas l’instant des clics), puis réglées dans la relecture, et les notes servent de premier texte dit. Diapositive sans enregistrement : les notes deviennent les phrases du texte dit et chaque clic est accroché à sa phrase, à l’endroit de sa balise <code class="docutils literal notranslate"><span class="pre">[clic]</span></code> ou, sans balise, dans l’ordre (voir <a class="reference internal" href="DIAPORAMA.html"><span class="std std-doc">Préparer son diaporama pour CapsuleForge</span></a>). Une vidéo posée sur une diapositive est extraite, recadrée comme dans PowerPoint et mise à la taille choisie (<code class="docutils literal notranslate"><span class="pre">--video</span> <span class="pre">fine</span></code>, par défaut, <code class="docutils literal notranslate"><span class="pre">standard</span></code> ou <code class="docutils literal notranslate"><span class="pre">source</span></code>) ; elle devient un objet du pas, lancé par son propre clic, que le lecteur joue à sa place (ou en plein écran) en suivant la lecture. Le texte de la diapositive est gardé comme texte (<code class="docutils literal notranslate"><span class="pre">texte_diapo</span></code> du pas) : titres, paragraphes avec leur niveau, tableaux équations natives de PowerPoint et équations IguanaTeX (en LaTeX), chacun avec le clic à partir duquel il est visible, et les liens hypertextes (cliquables dans le volet « Texte ») ; les annotations « cf … », les images, les pieds de page, les étiquettes d’un seul symbole posées sur un schéma et les numéros de section n’y sont pas. <code class="docutils literal notranslate"><span class="pre">--sans-images</span></code> suffit pour l’ajouter à une capsule déjà reprise. Relancer la commande après une modification du diaporama garde le texte déjà relu, les instants réglés et les ajouts de la relecture. Le journal est écrit dans <code class="docutils literal notranslate"><span class="pre">pptx_journal.txt</span></code> du chapitre et l’ancien chapitre est copié dans <code class="docutils literal notranslate"><span class="pre">sauvegardes/</span></code>. <code class="docutils literal notranslate"><span class="pre">--sans-images</span></code> reprend la structure et les sons sans piloter PowerPoint ; <code class="docutils literal notranslate"><span class="pre">--largeur</span></code> fixe la largeur des images.</p>
+<p>Ce qu’un diaporama peut porter (plan, animations, texte dit, balises de calage), degré par degré, et la façon de l’écrire pour que la reprise le comprenne : voir <a class="reference internal" href="DIAPORAMA.html"><span class="std std-doc">Préparer son diaporama pour CapsuleForge</span></a>, avec un diaporama d’exemple pour chaque degré.</p>
+</section>
+<section id="annoter-dans-powerpoint-formes-cf">
+<h3>Annoter dans PowerPoint (formes « cf … »)<a class="headerlink" href="#annoter-dans-powerpoint-formes-cf" title="Lien vers cette rubrique">#</a></h3>
+<p>Les spots, cadres et pointeurs se dessinent aussi dans PowerPoint, sur la diapositive : on trace la forme, puis on la renomme dans le volet Sélection (Accueil &gt; Organiser &gt; Volet Sélection) :</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Nom de la forme</p></th>
+<th class="head"><p>Ce qu’elle devient</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cf</span> <span class="pre">spot</span></code></p></td>
+<td><p>zone éclairée, le reste assombri (rectangle ou ellipse)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cf</span> <span class="pre">cadre</span></code></p></td>
+<td><p>zone entourée (rectangle ou ellipse)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cf</span> <span class="pre">cache</span></code></p></td>
+<td><p>zone masquée jusqu’à un instant réglé dans la relecture ; non repris si un cache de la relecture couvre déjà la zone</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cf</span> <span class="pre">pointeur</span></code></p></td>
+<td><p>point lumineux ; tracé en trait ou en forme libre (ligne brisée), il suit ce trajet, du premier point au dernier</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Le nom peut être suivi de ce que l’on veut (<code class="docutils literal notranslate"><span class="pre">cf</span> <span class="pre">pointeur</span> <span class="pre">moyennes</span></code>). Ces formes ne sont jamais sur les images, et leurs animations éventuelles sont ignorées. <code class="docutils literal notranslate"><span class="pre">capsuleforge</span> <span class="pre">pptx</span> <span class="pre">…</span></code> les relit à chaque passage : leur forme vient du diaporama, leur instant et leur durée se règlent dans la relecture et sont gardés. Une apparition qui manque se remet comme animation PowerPoint ordinaire, puis on relance <code class="docutils literal notranslate"><span class="pre">capsuleforge</span> <span class="pre">pptx</span></code>. Limites : formes hors d’un groupe, sans rotation.</p>
+</section>
+<section id="habiller-dans-powerpoint-formes-dedition-et-champs">
+<h3>Habiller dans PowerPoint : formes d’édition et champs<a class="headerlink" href="#habiller-dans-powerpoint-formes-dedition-et-champs" title="Lien vers cette rubrique">#</a></h3>
+<p>Une capsule reprise d’un diaporama est nue : ses images ne nomment aucun établissement. Ce qui dépend de l’édition se prépare sur les diapositives elles-mêmes, puis est rempli à la construction pour chaque édition (<code class="docutils literal notranslate"><span class="pre">construire</span> <span class="pre">--cours</span></code>).</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Dans le diaporama</p></th>
+<th class="head"><p>Capsule nue</p></th>
+<th class="head"><p>Édition</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>forme nommée <code class="docutils literal notranslate"><span class="pre">cf</span> <span class="pre">édition</span></code> (volet Sélection)</p></td>
+<td><p>cachée</p></td>
+<td><p>montrée</p></td>
+</tr>
+<tr class="row-odd"><td><p>forme nommée <code class="docutils literal notranslate"><span class="pre">cf</span> <span class="pre">édition</span> <span class="pre">ecole1</span></code> (ou <code class="docutils literal notranslate"><span class="pre">cf</span> <span class="pre">édition</span> <span class="pre">ecole1,</span> <span class="pre">aero</span></code>)</p></td>
+<td><p>cachée</p></td>
+<td><p>montrée seulement pour ce public : l’école du profil ou une variante active</p></td>
+</tr>
+<tr class="row-even"><td><p>forme nommée <code class="docutils literal notranslate"><span class="pre">cf</span> <span class="pre">nu</span></code></p></td>
+<td><p>montrée</p></td>
+<td><p>cachée</p></td>
+</tr>
+<tr class="row-odd"><td><p>texte <code class="docutils literal notranslate"><span class="pre">{cours}</span></code>, <code class="docutils literal notranslate"><span class="pre">{code}</span></code>, <code class="docutils literal notranslate"><span class="pre">{bloc}</span></code>, <code class="docutils literal notranslate"><span class="pre">{promo}</span></code>, <code class="docutils literal notranslate"><span class="pre">{annee}</span></code>, <code class="docutils literal notranslate"><span class="pre">{ecole}</span></code>, <code class="docutils literal notranslate"><span class="pre">{enseignant}</span></code>, <code class="docutils literal notranslate"><span class="pre">{declinaison}</span></code>, <code class="docutils literal notranslate"><span class="pre">{capsule}</span></code></p></td>
+<td><p>vide</p></td>
+<td><p>valeur de l’édition (<code class="docutils literal notranslate"><span class="pre">cours.yaml</span></code> et profil de l’école)</p></td>
+</tr>
+<tr class="row-even"><td><p>formes du masque (logo, bandeau) et pieds de page sans champ</p></td>
+<td><p>cachés</p></td>
+<td><p>cachés</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Exemple : sur la page de titre, un sous-titre <code class="docutils literal notranslate"><span class="pre">{cours}</span> <span class="pre">·</span> <span class="pre">{promo}</span></code> et un cartouche <code class="docutils literal notranslate"><span class="pre">cf</span> <span class="pre">édition</span> <span class="pre">ecole1</span></code> avec le logo de l’école ; dans le pied de page, <code class="docutils literal notranslate"><span class="pre">{code}</span> <span class="pre">·</span> <span class="pre">{promo}</span></code>. Dans la capsule nue, un champ vidé part avec le séparateur voisin (<code class="docutils literal notranslate"><span class="pre">Benoit</span> <span class="pre">Delattre</span> <span class="pre">-</span> <span class="pre">{code}</span></code> devient « Benoit Delattre ») et une forme dont il ne reste que des séparateurs est cachée : ni sous-titre vide ni pied orphelin. Un libellé ne part pas avec son champ (<code class="docutils literal notranslate"><span class="pre">Promo</span> <span class="pre">{promo}</span></code> donnerait « Promo ») : une telle forme se nomme <code class="docutils literal notranslate"><span class="pre">cf</span> <span class="pre">édition</span></code>. Un champ peut être mis en forme comme le reste du texte, la mise en forme est gardée.</p>
+<p>Le masque des diapositives est caché par défaut (« Masquer les graphiques d’arrière-plan » de PowerPoint) : le fond et les couleurs du thème restent, les logos et les mentions qu’il porte disparaissent. Pour un masque neutre à garder partout, écrire dans <code class="docutils literal notranslate"><span class="pre">chapitre.yaml</span></code> :</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">powerpoint</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">masque</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">garder</span>
+</pre></div>
+</div>
+<p>Les champs écrits dans le masque sont alors remplis aussi.</p>
+<p><strong>Modèle de l’école.</strong> Si le profil de l’école donne un modèle PowerPoint (<code class="docutils literal notranslate"><span class="pre">habillage:</span> <span class="pre">{modele:</span> <span class="pre">modele_ecole1.potx}</span></code>, voir <a class="reference internal" href="../../profils/README.html"><span class="std std-doc">Profils d’établissement</span></a>), toutes les diapositives de l’édition sont réexportées avec ce modèle appliqué : thème, polices, couleurs et masque de l’école ; les pieds de page de l’auteur restent cachés, ceux qui portent des champs sont remplis. Chaque diapositive garde sa disposition, appariée par son nom ; la construction signale une disposition absente du modèle ou un format différent. Les équations IguanaTeX et les images gardent leurs couleurs d’origine. Sans modèle, l’image d’une édition garde le thème du diaporama.</p>
+<p>À la construction d’une édition, seules les diapositives qui portent des formes d’édition ou des champs sont réexportées par PowerPoint (toutes, avec un modèle d’école) ; les autres gardent l’image nue. Ces images sont gardées dans <code class="docutils literal notranslate"><span class="pre">_editions/</span></code> du chapitre (jamais publié) et refaites seulement si le diaporama, l’habillage ou la largeur change. Le diaporama est cherché là où il a été repris (noté dans le chapitre), à côté du chapitre, dans <code class="docutils literal notranslate"><span class="pre">sources/</span></code>, puis parmi les diaporamas retenus par l’atelier. Il faut donc PowerPoint (Windows) la première fois qu’on construit une édition ; ensuite, le cache suffit. <code class="docutils literal notranslate"><span class="pre">capsuleforge</span> <span class="pre">pptx</span></code> signale dans son journal les formes d’édition et les champs trouvés sur chaque diapositive.</p>
+</section>
+<section id="transcrire-le-texte-dit">
+<h3>Transcrire le texte dit<a class="headerlink" href="#transcrire-le-texte-dit" title="Lien vers cette rubrique">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">capsuleforge</span> <span class="n">transcrire</span> <span class="n">fiabilite</span>                        <span class="c1"># pas qui n'ont pas encore de texte</span>
+<span class="n">capsuleforge</span> <span class="n">transcrire</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">modele</span> <span class="n">medium</span>        <span class="c1"># plus juste, plus lent</span>
+<span class="n">capsuleforge</span> <span class="n">transcrire</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">sections</span> <span class="n">dimensionnement</span> <span class="o">--</span><span class="n">refaire</span>
+</pre></div>
+</div>
+<p>La narration de chaque pas est transcrite sur cet ordinateur (Whisper, via <code class="docutils literal notranslate"><span class="pre">faster-whisper</span></code> ; rien n’est envoyé en ligne). Le résultat est un premier jet, à corriger dans la relecture : les mots horodatés sont gardés dans <code class="docutils literal notranslate"><span class="pre">transcriptions/&lt;pas&gt;.json</span></code> et servent à placer les phrases dans le temps. Un pas qui a déjà un texte n’est pas retranscrit, sauf avec <code class="docutils literal notranslate"><span class="pre">--refaire</span></code>.</p>
+</section>
+<section id="relire-le-texte-dit">
+<h3>Relire le texte dit<a class="headerlink" href="#relire-le-texte-dit" title="Lien vers cette rubrique">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">capsuleforge</span> <span class="n">relire</span> <span class="n">fiabilite</span>                  <span class="p">(</span><span class="n">ou</span> <span class="n">CapsuleForge</span><span class="o">.</span><span class="n">bat</span><span class="p">,</span> <span class="n">choix</span> <span class="mi">7</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Ouvre dans le navigateur la diapositive, le son et le texte dit, phrase par phrase. On corrige une phrase en l’écoutant (bouton ▶ de la phrase), on la coupe au curseur (Ctrl+Entrée), on la fusionne avec la suivante, on règle son début sur l’instant de lecture. Les apparitions se posent à l’instant de lecture, au début d’une phrase, ou en faisant glisser leur repère rouge sur la piste. Chaque ligne de texte dit est numérotée (L1, L2…, sous sa durée) : une ligne est un morceau de texte, pas forcément une phrase entière. Une apparition est <strong>accrochée à une ligne</strong> : sous l’image, sa ligne de réglage indique la ligne, le début ou la fin, et le décalage (−0,4 s par défaut, juste avant d’être nommée) ; « ▣ accrocher… » d’une phrase l’accroche au début de cette phrase. Elle suit alors sa phrase quand la voix change ou qu’une phrase est coupée ou fusionnée ; la poser à la main règle son décalage. « instant fixe » la détache. Une <strong>vidéo insérée</strong> a sa ligne sous les apparitions : ce qui la lance (une ligne, une apparition, le début du pas ou un instant), sa durée et ses options ; l’aperçu la joue à sa place, calée sur la lecture, et sa barre apparaît sur la piste. La <strong>fin du pas</strong> a sa ligne et son repère « fin » sur la piste : automatique (la voix, puis les vidéos insérées jusqu’à leur fin), après une vidéo, après une ligne, ou à un instant, avec un décalage ; une fin après la voix se lit en silence. Le champ <strong>pause</strong> d’une phrase règle le silence après elle (0,4 s par défaut) ; il est rendu par la voix de synthèse. Un pas <strong>sans son</strong> se relit quand même : la lecture est muette et les instants (marqués « ≈ ») sont estimés au débit de la langue, puis remplacés par ceux de la voix quand elle est générée. « Relu » marque le pas comme relu par l’auteur.</p>
+<p><img alt="L'écran de relecture : diapositive à l'instant de lecture, piste avec les repères d'apparition, phrases horodatées à droite, apparitions et ajouts sur l'image en dessous (chapitre de démonstration)" src="../../_images/relecture.png" /></p>
+<p>Sous la piste, « Ajouter » pose sur l’image ce que le diaporama n’a pas : un <strong>spot</strong> (zone éclairée, le reste assombri), un <strong>cadre</strong>, un <strong>pointeur</strong> (point lumineux) ou un <strong>cache</strong> (zone masquée jusqu’à un instant donné, pour une apparition absente du diaporama). On place le curseur dans une phrase, on choisit le type, on trace sur l’image : l’ajout prend le début et la durée de la phrase. Il se déplace à la souris, se règle dans la liste, se supprime par Suppr.</p>
+<p>Touches : Échap lit ou met en pause (même depuis un texte), Alt+↑ ou ↓ joue la phrase voisine, Ctrl+S enregistre. « Enregistrer et quitter » arrête la relecture et libère la fenêtre de commande ; fermer l’onglet a le même effet au bout de quelques secondes.</p>
+<p>Les remarques de <code class="docutils literal notranslate"><span class="pre">verifier</span></code> sur le pas ouvert (phrase mal placée dans le temps, phrase après la fin du son, fond ou son introuvable…) s’affichent en haut de la colonne des phrases, et un « ⚠ » marque les pas concernés dans la liste ; elles sont recalculées à chaque enregistrement.</p>
+<p>Les phrases horodatées (<code class="docutils literal notranslate"><span class="pre">phrases</span></code> du pas) sont la seule source de la narration et des sous-titres. À la première ouverture, elles sont préparées à partir de la narration et de la transcription ; rien n’est écrit avant « Enregistrer » (l’ancien chapitre est copié dans <code class="docutils literal notranslate"><span class="pre">sauvegardes/</span></code>).</p>
+</section>
+<section id="importer-une-video-enregistrement-decran-export-activepresenter-clip">
+<h3>Importer une vidéo (enregistrement d’écran, export ActivePresenter, clip)<a class="headerlink" href="#importer-une-video-enregistrement-decran-export-activepresenter-clip" title="Lien vers cette rubrique">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">capsuleforge</span> <span class="n">video</span> <span class="n">capture</span><span class="o">.</span><span class="n">mp4</span> <span class="o">--</span><span class="n">chapitre</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">section</span> <span class="n">dimensionnement</span><span class="o">/</span><span class="n">approche</span>
+<span class="n">capsuleforge</span> <span class="n">video</span> <span class="n">demo</span><span class="o">.</span><span class="n">mp4</span> <span class="o">--</span><span class="n">chapitre</span> <span class="n">tuto1</span> <span class="o">--</span><span class="n">section</span> <span class="n">principale</span><span class="o">/</span><span class="n">esquisse</span> <span class="o">--</span><span class="n">titre</span> <span class="s2">"Créer une esquisse"</span>   <span class="c1"># nouvelle section</span>
+<span class="n">capsuleforge</span> <span class="n">video</span> <span class="n">export_AP</span><span class="o">.</span><span class="n">mp4</span> <span class="o">--</span><span class="n">chapitre</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">section</span> <span class="n">applications</span><span class="o">/</span><span class="n">train</span> <span class="o">--</span><span class="n">debut</span> <span class="mi">12</span> <span class="o">--</span><span class="n">fin</span> <span class="mi">95</span> <span class="o">--</span><span class="n">remplacer</span>
+<span class="n">capsuleforge</span> <span class="n">video</span> <span class="n">Video_281</span><span class="o">.</span><span class="n">MP4</span> <span class="o">--</span><span class="n">son</span> <span class="n">audio_284</span><span class="o">.</span><span class="n">mp4</span> <span class="o">--</span><span class="n">chapitre</span> <span class="n">tuto1</span> <span class="o">--</span><span class="n">section</span> <span class="n">principale</span><span class="o">/</span><span class="n">abaqus</span> <span class="o">--</span><span class="n">remplacer</span>   <span class="c1"># son à part (ActivePresenter)</span>
+</pre></div>
+</div>
+<p>ActivePresenter range le son à part de la vidéo (<code class="docutils literal notranslate"><span class="pre">audio_NNN.mp4</span></code> à côté de <code class="docutils literal notranslate"><span class="pre">Video_NNN.mp4</span></code>) : <code class="docutils literal notranslate"><span class="pre">--son</span></code> le reprend, le remet dans la vidéo comprimée et s’en sert pour la découpe. Une vidéo sans son est découpée en pas réguliers d’au plus <code class="docutils literal notranslate"><span class="pre">--pas-max</span></code> secondes.</p>
+<p>La vidéo (MP4, MKV, MOV, WEBM…) est comprimée une fois dans <code class="docutils literal notranslate"><span class="pre">videos/</span></code> du chapitre (H.264, qualité <code class="docutils literal notranslate"><span class="pre">--qualite</span> <span class="pre">28</span></code> par défaut — 23 plus belle et plus lourde, 32 plus légère —, largeur au plus celle de l’écran du chapitre, 30 images/s au plus), puis découpée en pas aux silences de la voix (<code class="docutils literal notranslate"><span class="pre">--pas-min</span> <span class="pre">20</span> <span class="pre">--pas-max</span> <span class="pre">90</span></code> secondes ; <code class="docutils literal notranslate"><span class="pre">--decoupe</span> <span class="pre">aucune</span></code> = un seul pas). Chaque pas (<code class="docutils literal notranslate"><span class="pre">v01</span></code>, <code class="docutils literal notranslate"><span class="pre">v02</span></code>…) a son image d’affiche et son propre son : <code class="docutils literal notranslate"><span class="pre">transcrire</span></code>, <code class="docutils literal notranslate"><span class="pre">relire</span></code> (phrases, spots, cadres, pointeurs, caches posés sur l’image d’affiche), <code class="docutils literal notranslate"><span class="pre">traduire</span></code> et <code class="docutils literal notranslate"><span class="pre">voix</span></code> fonctionnent comme pour une diapositive. Dans le lecteur, la vidéo est jouée muette et suit l’horloge du son du pas : avec une voix traduite, elle accélère ou ralentit un peu pour couvrir la même durée. Une section peut mêler des diapositives PowerPoint et des pas vidéo. Il faut PyAV (<code class="docutils literal notranslate"><span class="pre">av</span></code>, déjà requis pour le MP3).</p>
+</section>
+<section id="filmer-lecran-le-micro-et-la-webcam-windows">
+<h3>Filmer l’écran, le micro et la webcam (Windows)<a class="headerlink" href="#filmer-lecran-le-micro-et-la-webcam-windows" title="Lien vers cette rubrique">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">capsuleforge</span> <span class="n">filmer</span> <span class="o">--</span><span class="n">appareils</span>                                              <span class="c1"># écrans, caméras, micros</span>
+<span class="n">capsuleforge</span> <span class="n">filmer</span> <span class="o">--</span><span class="n">tester</span><span class="o">-</span><span class="n">micro</span>                                           <span class="c1"># niveau de la voix (4 s)</span>
+<span class="n">capsuleforge</span> <span class="n">filmer</span> <span class="n">tuto1</span> <span class="o">--</span><span class="n">section</span> <span class="n">principale</span><span class="o">/</span><span class="n">demo</span> <span class="o">--</span><span class="n">titre</span> <span class="s2">"Démonstration"</span>  <span class="c1"># écran principal + micro</span>
+<span class="n">capsuleforge</span> <span class="n">filmer</span> <span class="n">tuto1</span> <span class="o">--</span><span class="n">section</span> <span class="n">principale</span><span class="o">/</span><span class="n">demo</span> <span class="o">--</span><span class="n">webcam</span> <span class="o">--</span><span class="n">ecran</span> <span class="mi">2</span>       <span class="c1"># + webcam (caméo), second écran</span>
+<span class="n">capsuleforge</span> <span class="n">filmer</span> <span class="n">tuto1</span> <span class="o">--</span><span class="n">sans</span><span class="o">-</span><span class="kn">import</span><span class="w"> </span><span class="o">--</span><span class="n">duree</span> <span class="mi">60</span>                           <span class="c1"># fichiers seulement, sans section</span>
+<span class="n">capsuleforge</span> <span class="n">cameo</span> <span class="n">tuto1</span> <span class="o">--</span><span class="n">position</span> <span class="n">bas</span><span class="o">-</span><span class="n">gauche</span> <span class="o">--</span><span class="n">taille</span> <span class="mf">0.2</span>                  <span class="c1"># place du médaillon dans le lecteur</span>
+</pre></div>
+</div>
+<p>La section est vérifiée avant de filmer : elle doit exister (<code class="docutils literal notranslate"><span class="pre">partie/section</span></code>), ou être créée dans une partie existante avec <code class="docutils literal notranslate"><span class="pre">--titre</span></code>. Compte à rebours de 3 s (1 bip au départ), puis enregistrement : <strong>Ctrl+Maj+P</strong> pause / reprise (2 bips), <strong>Ctrl+Maj+F</strong> ou Entrée dans la fenêtre de commande : fin (3 bips). Écran (20 images/s, <code class="docutils literal notranslate"><span class="pre">--ips</span></code>), micro (le premier trouvé, ou <code class="docutils literal notranslate"><span class="pre">--micro</span> <span class="pre">&quot;nom&quot;</span></code>) et webcam (la première, hors caméra infrarouge, ou <code class="docutils literal notranslate"><span class="pre">--webcam</span> <span class="pre">&quot;nom&quot;</span></code>) sont filmés chacun dans un fil, sur une horloge commune dont les pauses sont retirées : ils restent calés (le retard d’ouverture du micro est complété par du silence). Fichiers bruts dans <code class="docutils literal notranslate"><span class="pre">&lt;chapitre&gt;/enregistrements/&lt;date&gt;/</span></code>, puis import automatique comme <code class="docutils literal notranslate"><span class="pre">capsuleforge</span> <span class="pre">video</span></code> (pas vidéo découpés aux silences ; la webcam est attachée à chaque pas comme caméo, champ <code class="docutils literal notranslate"><span class="pre">camera</span></code>). <code class="docutils literal notranslate"><span class="pre">--sans-import</span></code> garde les fichiers sans les importer (la section n’est alors pas demandée ; la commande d’import est affichée) ; <code class="docutils literal notranslate"><span class="pre">--duree</span> <span class="pre">60</span></code> arrête seul. Les bips passent par la sortie son de l’ordinateur : avec des haut-parleurs, le micro peut les entendre. Seul PyAV est utilisé (pas d’OBS). Le lecteur montre la webcam en médaillon (caméo) calé sur la vidéo ; l’élève peut le masquer (bouton « Caméo », touche V) ; <code class="docutils literal notranslate"><span class="pre">capsuleforge</span> <span class="pre">cameo</span></code> règle sa position, sa taille et sa forme (rond ou rectangle) ; <code class="docutils literal notranslate"><span class="pre">--position</span> <span class="pre">aucune</span></code> ne le montre pas (la webcam reste dans le chapitre). <code class="docutils literal notranslate"><span class="pre">--tester-micro</span></code> écoute le micro 4 s et donne le niveau de la voix : « bon » au-dessus de −28 dBFS ; plus bas, rapprocher le micro ou monter son volume (Windows : Paramètres &gt; Son &gt; Entrée). À l’import, une voix faible est relevée vers −20 dBFS (au plus +30 dB, sans saturer) ; le souffle du micro monte avec elle.</p>
+</section>
+<section id="construire-le-lecteur-dun-cours">
+<h3>Construire le lecteur d’un cours<a class="headerlink" href="#construire-le-lecteur-dun-cours" title="Lien vers cette rubrique">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">capsuleforge</span> <span class="n">construire</span> <span class="n">fiabilite</span>
+</pre></div>
+</div>
+<p>Pour un dossier qui contient <code class="docutils literal notranslate"><span class="pre">chapitre.yaml</span></code> sans <code class="docutils literal notranslate"><span class="pre">capsule.yaml</span></code>, la commande produit <code class="docutils literal notranslate"><span class="pre">dist/capsuleforge/&lt;nom&gt;/index.html</span></code> : plan du chapitre à gauche (sections vues, à venir), choix du parcours, image avec ses apparitions, spots, cadres, pointeurs et caches, sous-titres tirés des phrases, texte de la section cliquable, vitesse, plein écran. Le volet « Texte » (touche T) montre aussi, pas à pas, le texte de chaque diapositive : les équations y sont de vraies formules (MathJax, aux couleurs du jeu LaTeX de l’école), ce qui apparaît au clic suivant est estompé jusqu’à son apparition, et le texte suit la langue des sous-titres. Boutons A− et A+ pour la taille, « Aéré » pour espacer lettres et mots du volet et des sous-titres, dans une police sans empattement courante : d’après les études lues (axe Accessibilité de la bibliographie), c’est l’espacement qui aide, pas une police « dyslexie ». La lecture s’arrête en fin de section et propose la suivante ; l’avancement est gardé dans le navigateur. Les images sont converties en WebP et les sons en MP3 mono (environ 0,5 Mo par minute) ; <code class="docutils literal notranslate"><span class="pre">--audio</span> <span class="pre">origine</span></code> recopie les sons tels quels. En fin de section, le lecteur pose les questions tirées de la banque QuizForge désignée par la section (vrai/faux, QCM, numérique), avec leurs rétroactions ; « proposées », elles peuvent être passées, « obligatoires », non. En tête du plan : trois jauges (vue d’ensemble, approfondissements, pratique) et un disque par partie (secteurs = sections lues, anneau ondulé = pratique, badge quand tout est fait).</p>
+<p><img alt="Le lecteur de chapitre : plan avec jauges et disques à gauche, diapositive avec une apparition, un spot et le sous-titre, barre de lecture (chapitre de démonstration)" src="../../_images/lecteur_section.png" /></p>
+<p><img alt="Question de fin de section : rétroaction du leurre choisi, puis rétroaction générale" src="../../_images/lecteur_questions.png" /></p>
+<section id="exercices-exoforge">
+<h4>Exercices ExoForge<a class="headerlink" href="#exercices-exoforge" title="Lien vers cette rubrique">#</a></h4>
+<p>Une partie peut porter un exercice ExoForge : <code class="docutils literal notranslate"><span class="pre">exercice:</span> <span class="pre">{outil:</span> <span class="pre">exoforge,</span> <span class="pre">fiche:</span> <span class="pre">fiabilite_coef_securite.yaml,</span> <span class="pre">duree_min:</span> <span class="pre">15}</span></code> (fiche cherchée à côté du chapitre, puis dans <code class="docutils literal notranslate"><span class="pre">data/exoforge</span></code>). À la construction, la fiche est reconstruite par ExoForge si elle (ou le moteur) a changé, ses fichiers sont copiés dans <code class="docutils literal notranslate"><span class="pre">exercices/&lt;id&gt;/</span></code> à côté du lecteur, et l’exercice devient la dernière section de la partie. Une annexe peut porter du cours et un exercice ; une partie <code class="docutils literal notranslate"><span class="pre">type:</span> <span class="pre">exercice</span></code> peut n’avoir aucune section et s’appelle comme une annexe (<code class="docutils literal notranslate"><span class="pre">annexes:</span> <span class="pre">[exo_biellette]</span></code> sur une section). L’exercice n’est proposé que par les parcours <code class="docutils literal notranslate"><span class="pre">exercices:</span> <span class="pre">true</span></code> (Lecture immersive). Le lecteur l’affiche dans un cadre et lui sert de plateforme SCORM : terminé, il compte dans « Pratique », et le plan affiche le meilleur score ; les réponses sont gardées dans le navigateur (journal <code class="docutils literal notranslate"><span class="pre">exercices</span></code>) pour les futures traces.</p>
+<p><img alt="Un exercice ExoForge dans le lecteur de chapitre, en Lecture immersive" src="../../_images/lecteur_exercice.png" /></p>
+</section>
+<section id="paquets-scorm-pour-moodle">
+<h4>Paquets SCORM pour Moodle<a class="headerlink" href="#paquets-scorm-pour-moodle" title="Lien vers cette rubrique">#</a></h4>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">capsuleforge</span> <span class="n">construire</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">scorm</span> <span class="n">chapitre</span>     <span class="c1"># un paquet pour tout le chapitre</span>
+<span class="n">capsuleforge</span> <span class="n">construire</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">scorm</span> <span class="n">parties</span>      <span class="c1"># un paquet par partie du tronc (avec ses annexes et exercices)</span>
+<span class="n">capsuleforge</span> <span class="n">construire</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">scorm</span> <span class="n">tout</span>         <span class="c1"># les deux</span>
+<span class="n">capsuleforge</span> <span class="n">construire</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">scorm</span> <span class="n">chapitre</span> <span class="o">--</span><span class="n">scorm</span><span class="o">-</span><span class="n">version</span> <span class="mf">1.2</span>   <span class="c1"># même paquet au format SCORM 1.2</span>
+</pre></div>
+</div>
+<p>Paquets SCORM 2004 écrits dans <code class="docutils literal notranslate"><span class="pre">dist/capsuleforge/</span></code> : <code class="docutils literal notranslate"><span class="pre">fiabilite_scorm2004.zip</span></code>, <code class="docutils literal notranslate"><span class="pre">fiabilite_B_dimensionnement_scorm2004.zip</span></code>… À déposer dans Moodle comme activité « Paquet SCORM ». Dans la plateforme, le lecteur :</p>
+<ul class="simple">
+<li><p>garde l’avancement chez elle (sections vues, questions, scores d’exercices, parcours, dernière section) et le reprend à la séance suivante, sur n’importe quel ordinateur ; ce que le navigateur garde hors plateforme est ignoré (pas de mélange entre étudiants sur un poste partagé) ;</p></li>
+<li><p>déclare l’activité achevée quand toutes les sections du tronc ont été vues (progression = part du tronc vue, pondérée par la durée) ;</p></li>
+<li><p>renvoie une note sur 100 = la pratique, pondérée : chaque question pèse 1 et compte 1 si elle a été juste au moins une fois ; chaque exercice pèse son <code class="docutils literal notranslate"><span class="pre">poids</span></code> (entrée <code class="docutils literal notranslate"><span class="pre">exercice</span></code> du chapitre ; par défaut sa durée en minutes) et compte son meilleur score ; ce qui n’est pas fait compte 0 ; la même pratique compte quel que soit le parcours ; pas de note tant que rien n’est fait. <code class="docutils literal notranslate"><span class="pre">poids:</span> <span class="pre">0</span></code> garde l’exercice pour la rétroaction et les traces sans le noter ; pour noter un exercice pour lui-même, déposer son propre paquet ExoForge ;</p></li>
+<li><p>envoie une interaction par section vue (<code class="docutils literal notranslate"><span class="pre">lecture:…</span></code>), par question répondue (<code class="docutils literal notranslate"><span class="pre">question:…</span></code>, réponse et bonne réponse) et par réponse d’exercice (<code class="docutils literal notranslate"><span class="pre">exercice:&lt;id&gt;:…</span></code>, plus son score) : elles apparaissent dans le rapport de l’activité et serviront à DiagForge.</p></li>
+</ul>
+<p>Réglages Moodle conseillés : méthode d’évaluation « Note la plus élevée » ; nombre de tentatives illimité sans « Forcer une nouvelle tentative » (l’avancement continue la même tentative) ; achèvement « l’étudiant doit terminer l’activité » (statut achevé) et, si on le veut, « recevoir une note ». Moodle ne prend officiellement en charge que SCORM 1.2 ; ses fonctions SCORM 2004 sont partielles mais couvrent ce qui est utilisé ici (données de suspension, note, achèvement, interactions), et les paquets 2004 y ont fonctionné.</p>
+<p><strong>SCORM 1.2</strong> (<code class="docutils literal notranslate"><span class="pre">--scorm-version</span> <span class="pre">1.2</span></code>, paquets <code class="docutils literal notranslate"><span class="pre">…_scorm12.zip</span></code>) : même lecteur, même note, même achèvement et mêmes interactions, dans le vocabulaire de SCORM 1.2. Différences : l’avancement gardé par la plateforme est limité à 4 096 caractères (au-delà, les sections vues les plus anciennes sont oubliées ; largement assez pour un chapitre de quelques dizaines de sections) ; pas de mesure de progression ; pas de description des interactions ; la bonne réponse d’une question numérique est envoyée comme une valeur, sans sa tolérance. Le lecteur reconnaît seul la version de la plateforme. Préférer SCORM 1.2 pour une plateforme autre que Moodle, ou si un paquet 2004 pose problème.</p>
+<p>Une partie annexe appelée par aucune partie du tronc n’entre dans aucun paquet par partie (la construction le signale).</p>
+</section>
+<section id="pdf-de-la-capsule-commande-pdf">
+<h4>PDF de la capsule (commande <code class="docutils literal notranslate"><span class="pre">pdf</span></code>)<a class="headerlink" href="#pdf-de-la-capsule-commande-pdf" title="Lien vers cette rubrique">#</a></h4>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">capsuleforge</span> <span class="n">construire</span> <span class="n">fiabilite</span>                                          <span class="c1"># d'abord le lecteur</span>
+<span class="n">capsuleforge</span> <span class="n">pdf</span> <span class="n">fiabilite</span>                                                 <span class="c1"># diapositives et texte dit</span>
+<span class="n">capsuleforge</span> <span class="n">pdf</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">contenu</span> <span class="n">texte</span><span class="p">,</span><span class="n">diapo</span> <span class="o">--</span><span class="n">notes</span> <span class="n">marge</span> <span class="o">--</span><span class="n">paquet</span> <span class="n">oui</span>
+<span class="n">capsuleforge</span> <span class="n">pdf</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">langue</span> <span class="n">en</span> <span class="o">--</span><span class="n">contenu</span> <span class="n">diapos</span> <span class="o">--</span><span class="n">cours</span> <span class="n">traction</span><span class="p">:</span><span class="n">ecole1</span><span class="o">-</span><span class="n">meca</span><span class="o">/</span><span class="mi">2026</span>
+<span class="n">capsuleforge</span> <span class="n">pdf</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">liste</span>
+</pre></div>
+</div>
+<p>Le PDF est fait à partir du lecteur construit, sans le reconstruire : mêmes images (habillage de l’édition, variantes, filigrane, diapositives traduites), mêmes textes. Une couverture (logo, titre, cours, code, école, année, promo, enseignant, mentions, licence), puis, partie par partie et section par section, chaque diapositive dans son dernier état ; dessous, selon <code class="docutils literal notranslate"><span class="pre">--contenu</span></code> : <code class="docutils literal notranslate"><span class="pre">texte</span></code> (le texte dit, défaut), <code class="docutils literal notranslate"><span class="pre">diapo</span></code> (le texte de la diapositive, formules comprises), <code class="docutils literal notranslate"><span class="pre">texte,diapo</span></code> (les deux), ou <code class="docutils literal notranslate"><span class="pre">diapos</span></code> (les diapositives seules, sans texte). <code class="docutils literal notranslate"><span class="pre">--notes</span> <span class="pre">marge</span></code> laisse une colonne lignée à droite de chaque diapositive, <code class="docutils literal notranslate"><span class="pre">dessous</span></code> des lignes sous chacune. <code class="docutils literal notranslate"><span class="pre">--langue</span> <span class="pre">en</span></code> fait le PDF dans une autre langue de la capsule (titres, texte dit, texte et images des diapositives traduits). Pied de page et numéros de page ; un exercice est signalé, à faire dans la capsule en ligne.</p>
+<p>Chaque réglage donne sa <strong>version</strong>, au nom explicite, dans le dossier <code class="docutils literal notranslate"><span class="pre">pdf/</span></code> du lecteur : <code class="docutils literal notranslate"><span class="pre">fiabilite_fr_texte.pdf</span></code>, <code class="docutils literal notranslate"><span class="pre">fiabilite_fr_texte-diapo_marge.pdf</span></code>, <code class="docutils literal notranslate"><span class="pre">fiabilite_en_diapos.pdf</span></code>… Une version n’est remplacée que par une version aux mêmes réglages. Les versions faites sont notées dans <code class="docutils literal notranslate"><span class="pre">_pdf.yaml</span></code>, dans le dossier de la capsule ; <code class="docutils literal notranslate"><span class="pre">--liste</span></code> les montre.</p>
+<p><code class="docutils literal notranslate"><span class="pre">--paquet</span> <span class="pre">oui</span></code> met une version <strong>dans le paquet SCORM</strong> (une par langue : celle de la même langue en sort), <code class="docutils literal notranslate"><span class="pre">--paquet</span> <span class="pre">non</span></code> l’en retire ; <code class="docutils literal notranslate"><span class="pre">--sans-refaire</span></code> change seulement la case. « Construire » ne fait plus de PDF de lui-même : il refait les versions cochées avec le lecteur à jour, les joint aux paquets et, avec <code class="docutils literal notranslate"><span class="pre">--cours</span></code>, les range avec la version de l’édition et les note dans son registre (une version dont un PDF coché n’a pas pu être écrit n’est pas rangée). Le bouton « PDF » du lecteur ouvre la version de la langue des sous-titres, sinon celle de la langue source. L’ancienne option <code class="docutils literal notranslate"><span class="pre">construire</span> <span class="pre">--pdf</span></code> (<code class="docutils literal notranslate"><span class="pre">--pdf-contenu</span></code>, <code class="docutils literal notranslate"><span class="pre">--pdf-notes</span></code>, <code class="docutils literal notranslate"><span class="pre">--pdf-langue</span></code>) reste acceptée : elle note la version et la coche.</p>
+<p>Dans AtelierForge, la carte « 6. PDF » fait une version, montre les versions faites (« Montrer », date, « refaire » si le lecteur a été reconstruit depuis) et porte leur case « dans le paquet ».</p>
+<p><img alt="Carte « 6. PDF » de l'écran Capsules d'AtelierForge : langue, contenu et notes, bouton « Faire le PDF », deux versions avec « Montrer » et la case « dans le paquet »" src="../../_images/construire_pdf.png" /></p>
+<p>L’impression passe par Edge (présent sur Windows) ou Chrome, sans fenêtre ; une page <code class="docutils literal notranslate"><span class="pre">imprimer.html</span></code> est écrite à côté du lecteur. Sans navigateur trouvé (ou pour en choisir un autre : variable <code class="docutils literal notranslate"><span class="pre">FORGE_NAVIGATEUR</span></code>), ouvrir cette page et l’imprimer en PDF (Ctrl+P).</p>
+</section>
+<section id="habiller-la-capsule-pour-une-edition-cours">
+<h4>Habiller la capsule pour une édition (<code class="docutils literal notranslate"><span class="pre">--cours</span></code>)<a class="headerlink" href="#habiller-la-capsule-pour-une-edition-cours" title="Lien vers cette rubrique">#</a></h4>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">capsuleforge</span> <span class="n">construire</span> <span class="n">demo_traction</span> <span class="o">--</span><span class="n">cours</span> <span class="n">traction</span><span class="p">:</span><span class="n">ecole1</span><span class="o">-</span><span class="n">meca</span><span class="o">/</span><span class="mi">2026</span>
+</pre></div>
+</div>
+<p>La capsule source reste nue : elle ne nomme aucun établissement. Avec <code class="docutils literal notranslate"><span class="pre">--cours</span></code>, la construction l’habille pour l’édition et la range comme version :</p>
+<ul class="simple">
+<li><p><strong>charte et logo</strong> de l’école (clés <code class="docutils literal notranslate"><span class="pre">charte</span></code> et <code class="docutils literal notranslate"><span class="pre">habillage</span></code> de son profil d’établissement) : couleurs du lecteur, police, logo dans le bandeau ;</p></li>
+<li><p><strong>écran d’accueil</strong> à la première ouverture : logo, titre de la capsule, cours, code, école, année, promo, enseignant, mentions ;</p></li>
+<li><p><strong>pied de page</strong> sous l’image (<code class="docutils literal notranslate"><span class="pre">MEC-L3-TR</span> <span class="pre">·</span> <span class="pre">P2029</span> <span class="pre">·</span> <span class="pre">Ecole1</span></code>) et <strong>crédits</strong> (licence, mentions) en fin de parcours ;</p></li>
+<li><p><strong>diapositives habillées</strong> dans PowerPoint pour l’édition : formes « cf édition », champs <code class="docutils literal notranslate"><span class="pre">{cours}</span></code>, <code class="docutils literal notranslate"><span class="pre">{promo}</span></code>… (voir « Habiller dans PowerPoint » plus haut) ;</p></li>
+<li><p><strong>filigrane</strong> sur les images (texte, place et opacité donnés par le profil) quand l’édition le demande (<code class="docutils literal notranslate"><span class="pre">filigrane:</span> <span class="pre">true</span></code>, case de l’édition dans AtelierForge) ;</p></li>
+<li><p><strong>exercices ExoForge</strong> construits avec la même charte ;</p></li>
+<li><p><strong>paquets</strong> au nom de l’édition (<code class="docutils literal notranslate"><span class="pre">demo_traction_ecole1-meca_2026_v1_scorm2004.zip</span></code>, un pour la capsule par défaut), titrés « capsule — cours — déclinaison — année ».</p></li>
+</ul>
+<p>Le lecteur va dans <code class="docutils literal notranslate"><span class="pre">dist/capsuleforge/&lt;capsule&gt;_&lt;déclinaison&gt;_&lt;année&gt;/</span></code> ; les paquets sont recopiés dans l’édition (<code class="docutils literal notranslate"><span class="pre">capsules/&lt;capsule&gt;/v1/</span></code>, avec <code class="docutils literal notranslate"><span class="pre">version.yaml</span></code>) et inscrits au registre, comme les versions de quiz et d’exercices (<a class="reference internal" href="../atelier/FORMAT_registre.html"><span class="std std-doc">Versions et registre</span></a>). Reconstruire sans rien changer (capsule, médias, habillage, options) ne crée pas de version.</p>
+<p><strong>Variantes : une école, un client.</strong> Ce qui ne vaut que pour un public (« chez notre partenaire industriel », des données de client, un logo dans une image) se déclare dans la capsule (<a class="reference internal" href="FORMAT.html"><span class="std std-doc">Variantes</span></a>) : une phrase, un pas, une section ou une partie réservés à une variante, retirés pour elle, ou remplacés (texte, son, image). La capsule nue n’en garde rien ; <code class="docutils literal notranslate"><span class="pre">--variante</span> <span class="pre">ecole1,aero</span></code>, ou avec <code class="docutils literal notranslate"><span class="pre">--cours</span></code> les variantes de la déclinaison et de l’édition (école, parcours, année), construit la capsule pour ce public : les phrases qui renvoient au reste du cursus (« comme vu en séance 3 », « en TP de mécanique du parcours aéro ») ne sont dites que là où elles ont un sens. Dans l’écran de relecture, le bouton « Public » de chaque phrase la règle : dite pour tous, seulement pour…, retirée pour…, et le texte dit à la place pour chaque variante. <code class="docutils literal notranslate"><span class="pre">capsuleforge</span> <span class="pre">verifier</span></code> signale les noms d’établissements restés dans la capsule nue, d’après une liste privée (<code class="docutils literal notranslate"><span class="pre">data/capsuleforge/noms_a_eviter.txt</span></code>, un nom par ligne, jamais publiée).</p>
+<p><strong>Format d’affichage.</strong> Le lecteur montre les images dans une zone de format fixe, <code class="docutils literal notranslate"><span class="pre">affichage</span></code> du chapitre (<code class="docutils literal notranslate"><span class="pre">16:9</span></code> par défaut) : une image d’un autre format y est centrée sans déformation, les bords prenant la couleur du cadre (celle de l’école, ou celle de Forge). Une capsule qui mêle des diapositives 4:3 et des captures 16:10 garde ainsi la même taille d’une section à l’autre.</p>
+</section>
+</section>
+<section id="traduire-sous-titrer-faire-parler-une-voix-de-synthese">
+<h3>Traduire, sous-titrer, faire parler une voix de synthèse<a class="headerlink" href="#traduire-sous-titrer-faire-parler-une-voix-de-synthese" title="Lien vers cette rubrique">#</a></h3>
+<ol class="arabic">
+<li><p><strong>Traduire</strong> (fichier d’échange, puis import) :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">capsuleforge</span> <span class="n">traduire</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">langue</span> <span class="n">en</span>                 <span class="c1"># écrit traductions/en.yaml (source, cible, relu)</span>
+<span class="n">capsuleforge</span> <span class="n">traduire</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">langue</span> <span class="n">en</span> <span class="o">--</span><span class="n">moteur</span> <span class="n">argos</span>  <span class="c1"># pré-remplit les cibles vides (gratuit, hors ligne)</span>
+<span class="n">capsuleforge</span> <span class="n">traduire</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">langue</span> <span class="n">en</span> <span class="o">--</span><span class="n">importer</span>      <span class="c1"># recopie les cibles dans chapitre.yaml</span>
+</pre></div>
+</div>
+<p>Pour relire : <code class="docutils literal notranslate"><span class="pre">capsuleforge</span> <span class="pre">traduire</span> <span class="pre">fiabilite</span> <span class="pre">--langue</span> <span class="pre">en</span> <span class="pre">--relire</span></code> ouvre un écran dans le navigateur — l’original avec la diapositive et le son de la phrase (Échap), la traduction à corriger, la voix de synthèse de la phrase si elle existe ; <strong>✓ Fait</strong> (Ctrl+Entrée) valide et passe au texte suivant, <strong>Zap</strong> (Ctrl+→) passe sans changer le statut, « ↺ À relire » remet en attente ; filtre « Non relus seulement », progression, enregistrement continu dans <code class="docutils literal notranslate"><span class="pre">traductions/en.yaml</span></code>, bouton « Importer dans le chapitre ». (Le fichier reste modifiable à la main.) Moteurs : <code class="docutils literal notranslate"><span class="pre">aucun</span></code> (cibles vides : traduction à la main, ou par un assistant d’IA, à relire), <code class="docutils literal notranslate"><span class="pre">argos</span></code> (Argos Translate, gratuit, sur cet ordinateur : <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">argostranslate</span></code>), <code class="docutils literal notranslate"><span class="pre">deepl</span></code> (clé dans <code class="docutils literal notranslate"><span class="pre">DEEPL_AUTH_KEY</span></code> ; l’offre API Free a un quota gratuit). Une cible déjà écrite n’est jamais remplacée ; une phrase corrigée depuis dans la relecture est signalée et laissée de côté. Les textes deviennent <code class="docutils literal notranslate"><span class="pre">{fr:</span> <span class="pre">…,</span> <span class="pre">en:</span> <span class="pre">…}</span></code> dans <code class="docutils literal notranslate"><span class="pre">chapitre.yaml</span></code> ; la relecture garde les traductions des phrases qu’on ne modifie pas. Le texte des diapositives se traduit avec le reste (clés <code class="docutils literal notranslate"><span class="pre">diapo/&lt;pas&gt;/&lt;n&gt;</span></code>) ; une nouvelle reprise du diaporama garde la traduction de chaque texte qui n’a pas changé. Les formules ne se traduisent pas ; un champ <code class="docutils literal notranslate"><span class="pre">{cours}</span></code>, <code class="docutils literal notranslate"><span class="pre">{promo}</span></code>… et le texte d’un lien se recopient tels quels dans la traduction. Les titres des trois parcours proposés par <code class="docutils literal notranslate"><span class="pre">nouvelle</span></code> (« Vue d’ensemble », « Lecture détaillée », « Lecture immersive ») ne sont pas demandés : le lecteur les traduit lui-même. <strong>Diapositives traduites</strong> : pour un diaporama PowerPoint, la construction réexporte par PowerPoint chaque diapositive dont des textes sont traduits, ces textes remplacés dans la copie ouverte (jamais enregistrée), habillée comme la capsule (capsule nue, ou édition avec ses formes, ses champs et le modèle de l’école) ; le lecteur montre ces images quand on choisit la langue des sous-titres. Un paragraphe est retrouvé par son texte ; la mise en forme du début du paragraphe est gardée, et un texte lié (« Crédits : &#64;Instron ») reste en place avec son lien et son style si la traduction le reprend tel quel, et un texte traduit plus long peut déborder de sa zone : la construction le signale dans son journal (« à vérifier », seulement ce que la traduction ajoute à la langue source), à regarder dans le lecteur. Les images traduites sont gardées en cache (<code class="docutils literal notranslate"><span class="pre">_editions/</span></code>) ; sans PowerPoint et sans cache, la capsule nue garde les images en langue source (la construction le signale) et une édition ne se construit pas. Les captures, les vidéos et les diapositives d’ActivePresenter gardent leur image.</p>
+</li>
+<li><p><strong>Voix de synthèse</strong> :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">capsuleforge</span> <span class="n">voix</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">langue</span> <span class="n">en</span>                  <span class="c1"># Piper, voix en_GB-alan-medium</span>
+<span class="n">capsuleforge</span> <span class="n">voix</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">langue</span> <span class="n">fr</span>                  <span class="c1"># pas sans enregistrement (diapositives neuves) seulement</span>
+<span class="n">capsuleforge</span> <span class="n">voix</span> <span class="n">fiabilite</span> <span class="o">--</span><span class="n">langue</span> <span class="n">en</span> <span class="o">--</span><span class="n">moteur</span> <span class="n">edge</span>    <span class="c1"># voix Microsoft Edge (en ligne, gratuite, texte envoyé à Microsoft)</span>
+</pre></div>
+</div>
+<p>Piper : <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">piper-tts</span></code> ; la voix est téléchargée à la première utilisation dans <code class="docutils literal notranslate"><span class="pre">data/capsuleforge/_voix/</span></code>. Voix par défaut : <code class="docutils literal notranslate"><span class="pre">fr_FR-tom-medium</span></code>, <code class="docutils literal notranslate"><span class="pre">en_GB-alan-medium</span></code> (autres : <code class="docutils literal notranslate"><span class="pre">--voix</span> <span class="pre">en_US-ryan-high</span></code>…, liste sur le site de Piper). Edge : <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">edge-tts</span></code> (voix <code class="docutils literal notranslate"><span class="pre">fr-FR-HenriNeural</span></code>, <code class="docutils literal notranslate"><span class="pre">en-GB-RyanNeural</span></code>…). La voix est fabriquée phrase par phrase avec des silences proches de l’original : les instants de chaque phrase sont connus, et le lecteur recale sous-titres, apparitions, spots et pointeurs. Sons dans <code class="docutils literal notranslate"><span class="pre">audio/voix/&lt;pas&gt;.&lt;langue&gt;.wav</span></code>. Un pas n’est refait que si son texte a changé (<code class="docutils literal notranslate"><span class="pre">--refaire</span></code> pour forcer). En langue source, un pas qui a un enregistrement n’est jamais remplacé ; une narration sans phrases est découpée en phrases.</p>
+</li>
+<li><p><strong>Lecteur</strong> : menus « Voix » et « Sous-titres » dans l’en-tête, indépendants (ta voix avec des sous-titres anglais, ou tout en anglais) ; les titres suivent la langue des sous-titres ; la mention « 🗣 voix de synthèse » s’affiche pendant un passage synthétisé. L’interface du lecteur (boutons, plan, jauges, écrans de début et de fin, questions : libellés « Valider », « Vrai/Faux »…) suit la langue des sous-titres : français, ou anglais pour toute autre langue (dictionnaire <code class="docutils literal notranslate"><span class="pre">UI</span></code> de lecteur_chapitre.html, à compléter pour d’autres langues). Les titres des parcours se traduisent comme les autres textes. Les questions QuizForge et les exercices ExoForge du chapitre se traduisent avec le reste : <code class="docutils literal notranslate"><span class="pre">traduire</span></code> ajoute leurs textes au fichier <code class="docutils literal notranslate"><span class="pre">traductions/&lt;langue&gt;.yaml</span></code> (clés <code class="docutils literal notranslate"><span class="pre">question/…</span></code> et <code class="docutils literal notranslate"><span class="pre">exercice/…</span></code>, même écran de relecture) ; la banque et la fiche ne sont pas modifiées. À la construction, le lecteur reçoit les questions traduites et une version traduite de chaque exercice (textes de la fiche et boutons du moteur en anglais ; sans le commentaire audio, enregistré dans la langue source). Une question ou une fiche modifiée depuis sa traduction garde son texte d’origine (la construction le signale) : relancer <code class="docutils literal notranslate"><span class="pre">traduire</span></code>. Limites : les textes calculés par des expressions dans la fiche (lignes de tableau) restent dans la langue source ; l’interface du moteur ExoForge n’est traduite qu’en anglais.</p></li>
+</ol>
+</section>
+<section id="didacticiel-dans-le-lecteur-de-chapitre">
+<h3>Didacticiel dans le lecteur de chapitre<a class="headerlink" href="#didacticiel-dans-le-lecteur-de-chapitre" title="Lien vers cette rubrique">#</a></h3>
+<p>Les pas de didacticiel (captures de l’enregistreur, chapitres convertis d’une capsule) se jouent dans le même lecteur que les cours et les vidéos : <code class="docutils literal notranslate"><span class="pre">capsuleforge</span> <span class="pre">construire</span> <span class="pre">tuto1</span> <span class="pre">--lecteur</span> <span class="pre">2</span></code>. <strong>Regarder</strong> : la souris va à la zone (arc ou trajet enregistré), clique, tape la saisie, la bulle et le cadre apparaissent ; c’est une fonction du temps du pas, donc la piste, le saut, la pause et la vitesse marchent comme pour un cours. <strong>À vous</strong> (bouton de la barre, visible dans une section qui a des gestes) : la bulle donne la consigne, l’étudiant fait le geste (clic, double-clic, clic droit, molette, glisser, touche, saisie, variantes <code class="docutils literal notranslate"><span class="pre">ou</span></code>), avec les essais, l’indice et les retours du chapitre (<code class="docutils literal notranslate"><span class="pre">reglages</span></code>) ; bilan « Réussi du premier coup » en fin de section ; une interaction <code class="docutils literal notranslate"><span class="pre">geste:…</span></code> par pas dans la plateforme. <strong>« À vous » est la pratique du didacticiel</strong> : une section faite jusqu’au bout en « À vous » compte dans la jauge « Pratique » et l’anneau de la partie (plan : « ✋ 83 % », meilleure tentative) ; dans la note SCORM, elle pèse sa durée en minutes (au moins 1 ; une question pèse 1) et compte la part des gestes réussis du premier coup. Les masques du chapitre (barre des tâches…) sont floutés sur les images. Pas encore : formules LaTeX dans les bulles, narration d’étape lue par la voix du navigateur.</p>
+</section>
+</section>
+<section id="ancien-lecteur-didacticiels-enregistres-capsule-yaml">
+<h2>Ancien lecteur : didacticiels enregistrés (<code class="docutils literal notranslate"><span class="pre">capsule.yaml</span></code>)<a class="headerlink" href="#ancien-lecteur-didacticiels-enregistres-capsule-yaml" title="Lien vers cette rubrique">#</a></h2>
+<section id="id1">
+<h3>Chaîne<a class="headerlink" href="#id1" title="Lien vers cette rubrique">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>capsuleforge enregistrer freecad_pad      (Windows : souris, clavier, accessibilité de Windows)
+        │   data/capsuleforge/freecad_pad/  journal.jsonl + images/ + capsule.yaml
+        ▼
+capsuleforge editer freecad_pad           (éditeur visuel : bulles, zones, étapes, narration, durées, ajouts)
+        ▼
+capsuleforge construire freecad_pad       dist/capsuleforge/freecad_pad/index.html + images/
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">capsuleforge</span> <span class="pre">approj</span> <span class="pre">projet.approj</span></code> reprend une simulation déjà enregistrée dans ActivePresenter (lecture seule : le projet est copié avant d’être lu).</p>
+</section>
+<section id="enregistrer">
+<h3>Enregistrer<a class="headerlink" href="#enregistrer" title="Lien vers cette rubrique">#</a></h3>
+<p>Double-cliquer sur <code class="docutils literal notranslate"><span class="pre">scripts/capsuleforge/CapsuleForge.bat</span></code>, choix 1, ou :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">scripts</span><span class="o">/</span><span class="n">capsuleforge</span><span class="o">/</span><span class="n">capsuleforge</span><span class="o">.</span><span class="n">py</span> <span class="n">enregistrer</span> <span class="n">freecad_pad</span> <span class="o">--</span><span class="n">titre</span> <span class="s2">"FreeCAD : premier corps extrudé"</span> <span class="o">--</span><span class="n">application</span> <span class="n">FreeCAD</span>
+</pre></div>
+</div>
+<p>Après un compte à rebours de 3 s, passer dans l’application et faire la manipulation normalement.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Raccourci</p></th>
+<th class="head"><p>Effet</p></th>
+<th class="head"><p>Signal</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Ctrl+Maj+E</p></td>
+<td><p>nouvelle étape : le pas suivant ouvre une étape (à faire à chaque idée nouvelle, règle biard2018)</p></td>
+<td><p>1 bip</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ctrl+Maj+P</p></td>
+<td><p>pause / reprise (avant de taper un mot de passe, ou pour préparer l’écran)</p></td>
+<td><p>2 bips</p></td>
+</tr>
+<tr class="row-even"><td><p>Ctrl+Maj+F</p></td>
+<td><p>fin</p></td>
+<td><p>3 bips</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Ces raccourcis sont interceptés : l’application enregistrée ne les reçoit pas. Pas de touches F1-F12 par défaut : sur un portable ou un clavier compact, elles demandent la touche Fn et commandent souvent le système (F8 peut ouvrir le panneau d’émojis ou activer le mode avion selon le clavier). Autre choix possible : <code class="docutils literal notranslate"><span class="pre">--touche-etape</span> <span class="pre">f8</span> <span class="pre">--touche-pause</span> <span class="pre">f9</span> <span class="pre">--touche-fin</span> <span class="pre">f10</span></code>.</p>
+<p>Ce qui est enregistré pour chaque action : l’image de l’écran juste avant l’action, la trajectoire de la souris depuis l’action précédente, et le contrôle visé tel que l’accessibilité de Windows le décrit (nom, type, rectangle). Actions reconnues : clic, double-clic, clic droit, clic molette, glisser, molette, saisie au clavier (le texte tapé), touche ou raccourci (Entrée, Ctrl+S…).</p>
+<p>Quand l’application n’expose pas ses contrôles (vue 3D, OpenGL, certaines interfaces d’ABAQUS), le pas reste valide : la zone de clic est un rectangle de 120 × 48 px autour du clic et la bulle vaut « Cliquez ici. ». <code class="docutils literal notranslate"><span class="pre">capsuleforge</span> <span class="pre">verifier</span></code> liste ces pas à réécrire. ActivePresenter fait la même chose (3 pas sur 9 dans un projet d’essai).</p>
+<p>Actions écartées automatiquement (<code class="docutils literal notranslate"><span class="pre">ignorer:</span> <span class="pre">true</span></code> et <code class="docutils literal notranslate"><span class="pre">raison</span></code> dans le YAML, absentes du lecteur) : clics dans la barre des tâches ou la zone de notification, raccourcis Windows (Win+…), menus du système. Les actions faites dans un autre programme que le programme principal sont seulement signalées (<code class="docutils literal notranslate"><span class="pre">autre_programme:</span> <span class="pre">true</span></code>) : à garder ou à écarter. Pour écarter un pas à la main (clic raté, hésitation), ajouter <code class="docutils literal notranslate"><span class="pre">ignorer:</span> <span class="pre">true</span></code> dans son bloc : plus sûr que de le supprimer.</p>
+<p>Quand le clic tombe dans un conteneur (vue 3D, fenêtre, panneau) plutôt que sur un contrôle, la bulle reste générique et le nom du conteneur est noté pour information (<code class="docutils literal notranslate"><span class="pre">cible.dans</span></code>).</p>
+<p>Précautions : l’écran entier est capturé (écran 1 par défaut, <code class="docutils literal notranslate"><span class="pre">--ecran</span> <span class="pre">2</span></code> pour le second) ; fermer la messagerie et ce qui ne doit pas apparaître, ou déclarer des masques ensuite. Les frappes au clavier sont enregistrées tant que l’enregistrement n’est pas en pause.</p>
+</section>
+<section id="le-fichier-capsule-yaml">
+<h3>Le fichier capsule.yaml<a class="headerlink" href="#le-fichier-capsule-yaml" title="Lien vers cette rubrique">#</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">capsuleforge/1</span>
+<span class="nt">titre</span><span class="p">:</span><span class="w"> </span><span class="s">"FreeCAD</span><span class="nv"> </span><span class="s">:</span><span class="nv"> </span><span class="s">premier</span><span class="nv"> </span><span class="s">corps</span><span class="nv"> </span><span class="s">extrudé"</span>
+<span class="nt">langue</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">fr</span>
+<span class="nt">ecran</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">largeur</span><span class="p">:</span><span class="w"> </span><span class="nv">2560</span><span class="p p-Indicator">,</span><span class="nt"> hauteur</span><span class="p">:</span><span class="w"> </span><span class="nv">1600</span><span class="p p-Indicator">,</span><span class="nt"> echelle</span><span class="p">:</span><span class="w"> </span><span class="nv">1.5</span><span class="p p-Indicator">}</span><span class="w">   </span><span class="c1"># pixels de l'écran enregistré</span>
+<span class="nt">reglages</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">les_deux</span><span class="w">          </span><span class="c1"># demonstration | pratique | les_deux (boutons « Regarder » et « À vous »)</span>
+<span class="w">  </span><span class="nt">essais</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span><span class="w">               </span><span class="c1"># essais en mode À vous avant de montrer la zone</span>
+<span class="nt">masques</span><span class="p">:</span><span class="w">                  </span><span class="c1"># zones floutées sur toutes les images : [x, y, largeur, hauteur]</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">170</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">200</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">1150</span><span class="p p-Indicator">]</span>
+<span class="nt">etapes</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">titre</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Créer l'esquisse</span>
+<span class="w">    </span><span class="nt">narration</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">      </span><span class="no">On crée une esquisse sur le plan XY : c'est le profil que l'on extrudera ensuite.</span>
+<span class="w">    </span><span class="nt">arret</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">           </span><span class="c1"># arrêt en fin d'étape, bouton « Continuer » (false : enchaîne)</span>
+<span class="w">    </span><span class="c1"># audio: audio/etape1.mp3   (facultatif : remplace la narration lue par le navigateur)</span>
+<span class="w">    </span><span class="nt">pas</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">p001</span>
+<span class="w">        </span><span class="nt">action</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">clic</span><span class="w">      </span><span class="c1"># clic | double_clic | clic_droit | clic_milieu | glisser | molette | saisie | touche</span>
+<span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">images/p001.png</span>
+<span class="w">        </span><span class="nt">point</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">182</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">121</span><span class="p p-Indicator">]</span>
+<span class="w">        </span><span class="nt">cible</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">nom</span><span class="p">:</span><span class="w"> </span><span class="nv">Pad</span><span class="p p-Indicator">,</span><span class="nt"> type</span><span class="p">:</span><span class="w"> </span><span class="nv">ButtonControl</span><span class="p p-Indicator">,</span><span class="nt"> cadre</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">160</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">100</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">48</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">44</span><span class="p p-Indicator">],</span><span class="nt"> origine</span><span class="p">:</span><span class="w"> </span><span class="nv">accessibilite</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="nt">bulle</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Cliquez sur le bouton **Pad**.</span>
+<span class="w">        </span><span class="nt">trajet</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[[</span><span class="nv">640</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">410</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">],</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">300</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">200</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">420</span><span class="p p-Indicator">],</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">182</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">121</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">900</span><span class="p p-Indicator">]]</span>
+<span class="w">        </span><span class="nt">duree_ms</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2300</span><span class="w">    </span><span class="c1"># temps passé à l'enregistrement (information)</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">p002</span>
+<span class="w">        </span><span class="nt">action</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">saisie</span>
+<span class="w">        </span><span class="nt">texte</span><span class="p">:</span><span class="w"> </span><span class="s">"20"</span>
+<span class="w">        </span><span class="c1"># …</span>
+<span class="nt">image_finale</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">images/fin.png</span>
+</pre></div>
+</div>
+<p>Ce qu’on modifie à la main :</p>
+<ul class="simple">
+<li><p><strong>les étapes</strong> : titre, narration (texte lu par la voix du navigateur en aperçu, affiché au-dessus de l’écran), arrêt ;</p></li>
+<li><p><strong>le regroupement</strong> : pour fusionner deux étapes, supprimer les lignes <code class="docutils literal notranslate"><span class="pre">-</span> <span class="pre">titre</span></code>, <code class="docutils literal notranslate"><span class="pre">narration</span></code>, <code class="docutils literal notranslate"><span class="pre">arret</span></code>, <code class="docutils literal notranslate"><span class="pre">pas:</span></code> de la seconde ; pour couper, insérer ces quatre lignes entre deux pas ;</p></li>
+<li><p><strong>les bulles</strong> : texte court, <code class="docutils literal notranslate"><span class="pre">**gras**</span></code> pour le nom du contrôle ;</p></li>
+<li><p><strong>les zones</strong> : <code class="docutils literal notranslate"><span class="pre">cible.cadre</span></code> si la zone proposée est mauvaise (coordonnées lisibles dans n’importe quel visualiseur d’images) ;</p></li>
+<li><p><strong>les masques</strong> ;</p></li>
+<li><p><strong>les réponses attendues</strong> d’une saisie : <code class="docutils literal notranslate"><span class="pre">texte</span></code> est la réponse ; « 100 », « 100 mm », « 100,0 » sont acceptés d’office ; <code class="docutils literal notranslate"><span class="pre">accepte:</span> <span class="pre">[cent]</span></code> ajoute d’autres formes, <code class="docutils literal notranslate"><span class="pre">tolerance:</span> <span class="pre">0.01</span></code> un écart relatif ;</p></li>
+<li><p><strong>les pas à regarder seulement</strong> : <code class="docutils literal notranslate"><span class="pre">observer:</span> <span class="pre">true</span></code> (la molette l’est d’office, car un défilement ne se refait pas sur une image fixe) ; en mode À vous, un bouton « Continuer » remplace l’action ;</p></li>
+<li><p>supprimer un pas inutile (clic raté, hésitation) : supprimer son bloc ; son image peut rester dans <code class="docutils literal notranslate"><span class="pre">images/</span></code>.</p></li>
+</ul>
+<p>Ce qu’on ne modifie pas : <code class="docutils literal notranslate"><span class="pre">trajet</span></code> (la trajectoire est rejouée en 0,45 à 1,5 s, quelle que soit l’hésitation enregistrée), <code class="docutils literal notranslate"><span class="pre">id</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">capsuleforge</span> <span class="pre">assembler</span> <span class="pre">freecad_pad</span></code> refait le YAML depuis <code class="docutils literal notranslate"><span class="pre">journal.jsonl</span></code> sans écraser les corrections : il écrit <code class="docutils literal notranslate"><span class="pre">capsule_reassemblee.yaml</span></code> si <code class="docutils literal notranslate"><span class="pre">capsule.yaml</span></code> existe.</p>
+</section>
+<section id="modifier-la-capsule-dans-lediteur">
+<h3>Modifier la capsule dans l’éditeur<a class="headerlink" href="#modifier-la-capsule-dans-lediteur" title="Lien vers cette rubrique">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">scripts</span><span class="o">/</span><span class="n">capsuleforge</span><span class="o">/</span><span class="n">capsuleforge</span><span class="o">.</span><span class="n">py</span> <span class="n">editer</span> <span class="n">tuto1</span>
+</pre></div>
+</div>
+<p>ou <code class="docutils literal notranslate"><span class="pre">CapsuleForge.bat</span></code>, choix 5. L’éditeur s’ouvre dans le navigateur ; il passe par un petit serveur qui ne répond qu’à cet ordinateur (laisser la fenêtre de commande ouverte, Ctrl+C pour arrêter). Rien ne sort du poste.</p>
+<ul class="simple">
+<li><p><strong>Image</strong> (à gauche) : le pas sélectionné, avec sa zone (à glisser, ou à redimensionner par les coins), le point du clic, la bulle (à glisser pour la placer ; pointillés = position choisie à la main) et le déplacement du curseur tel que le lecteur le jouera (arc en pointillé depuis le pas précédent). « Redessiner la zone » et « Nouveau masque » se tracent à la souris.</p></li>
+<li><p><strong>Propriétés</strong> (à droite) : onglet Pas (type, bulle, réponse attendue d’une saisie, touche, zone, durée à la lecture, comportement en mode « À vous »), onglet Étape (titre, narration avec sa durée estimée, arrêt), onglet Capsule (titre, modes, essais, masques).</p></li>
+<li><p><strong>Chronologie</strong> (en bas) : un groupe par étape, un bloc par pas, de largeur proportionnelle à sa durée à la lecture ; la vignette montre l’endroit cliqué. Cliquer un bloc le sélectionne (flèches ← →), le glisser le déplace, y compris vers une autre étape ; tirer son bord droit règle sa durée (double-clic : retour à la durée calculée). La barre sous le titre de l’étape compare la durée de la narration à celle des pas : rouge quand la narration est plus longue, et « Caler les pas sur la narration » (onglet Étape) allonge alors chaque pas dans la même proportion.</p></li>
+<li><p><strong>Ajouter un élément non enregistré</strong> : choisir le type (montrer une zone sans geste, clic, saisie de texte, touche, glisser, image importée) puis « + avant » ou « + après ». Une image importée (diapositive exportée de PowerPoint, capture) est ramenée à la taille de l’écran de la capsule et donne un pas « montrer » : une capsule peut ainsi mêler diapositives commentées et manipulations.</p></li>
+<li><p><strong>Écarter</strong> (touche Suppr) retire un pas du lecteur sans le supprimer ; seuls les pas ajoutés se suppriment. « Couper l’étape ici » et « Fusionner avec la précédente » règlent le découpage.</p></li>
+<li><p><strong>Enregistrer</strong> (Ctrl+S) écrit <code class="docutils literal notranslate"><span class="pre">capsule.yaml</span></code> ; la première fois de chaque séance, l’ancien fichier est copié dans <code class="docutils literal notranslate"><span class="pre">sauvegardes/</span></code>. Ctrl+Z / Ctrl+Y annulent et rétablissent. <strong>Aperçu</strong> enregistre, construit le lecteur et l’ouvre sur le pas sélectionné.</p></li>
+</ul>
+<p>Durées : sans réglage, un pas dure le temps du déplacement du curseur (0,45 à 1,5 s selon la distance), du geste et de la lecture de la bulle (1,8 à 5 s selon sa longueur). Le curseur suit un arc direct ; le trajet enregistré, avec ses hésitations, n’est rejoué que si on le demande (pas par pas, ou pour toute la capsule).</p>
+<p>Champs écrits par l’éditeur : <code class="docutils literal notranslate"><span class="pre">action:</span> <span class="pre">montrer</span></code>, <code class="docutils literal notranslate"><span class="pre">lecture_s</span></code>, <code class="docutils literal notranslate"><span class="pre">bulle_position</span></code>, <code class="docutils literal notranslate"><span class="pre">trajectoire:</span> <span class="pre">enregistree</span></code>, <code class="docutils literal notranslate"><span class="pre">indice</span></code>, <code class="docutils literal notranslate"><span class="pre">cible.origine:</span> <span class="pre">manuelle</span></code>, identifiants <code class="docutils literal notranslate"><span class="pre">a001</span></code>… pour les pas ajoutés.</p>
+</section>
+<section id="construire-et-utiliser-le-lecteur">
+<h3>Construire et utiliser le lecteur<a class="headerlink" href="#construire-et-utiliser-le-lecteur" title="Lien vers cette rubrique">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">scripts</span><span class="o">/</span><span class="n">capsuleforge</span><span class="o">/</span><span class="n">capsuleforge</span><span class="o">.</span><span class="n">py</span> <span class="n">construire</span> <span class="n">freecad_pad</span> <span class="p">[</span><span class="o">--</span><span class="n">largeur</span> <span class="mi">1920</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="nb">format</span> <span class="n">webp</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Sortie : <code class="docutils literal notranslate"><span class="pre">dist/capsuleforge/freecad_pad/index.html</span></code> et <code class="docutils literal notranslate"><span class="pre">images/</span></code>, à ouvrir dans un navigateur (fonctionne aussi depuis le disque). <code class="docutils literal notranslate"><span class="pre">--largeur</span></code> réduit les images, <code class="docutils literal notranslate"><span class="pre">--format</span> <span class="pre">webp</span></code> les compresse sans perte (environ deux fois plus légères).</p>
+<p>Le lecteur propose :</p>
+<ul class="simple">
+<li><p><strong>Regarder</strong> : le curseur se déplace, la zone visée est encadrée au moment du clic (signalement, sans clignotement), la bulle s’affiche, la saisie se tape ; arrêt en fin d’étape avec « Revoir l’étape », « Faire cette étape » ou « Continuer » ;</p></li>
+<li><p><strong>À vous</strong> : l’étudiant refait l’action (bon bouton de la souris, double-clic, glisser, molette, texte à taper, raccourci) ; après 3 essais la zone est montrée ; bilan « réussi du premier coup » en fin d’étape ;</p></li>
+<li><p>un sommaire des étapes cliquable, une vitesse 1,25× (pas 1,5×, liu2024), la voix du navigateur en aperçu de la narration ;</p></li>
+<li><p>clavier : Espace (lecture/pause), flèches (pas précédent/suivant).</p></li>
+</ul>
+<p>Les essais de chaque pas sont gardés dans <code class="docutils literal notranslate"><span class="pre">window.capsuleTraces</span></code> (pour le futur paquet SCORM et DiagForge).</p>
+</section>
+<section id="reprendre-un-projet-activepresenter">
+<h3>Reprendre un projet ActivePresenter<a class="headerlink" href="#reprendre-un-projet-activepresenter" title="Lien vers cette rubrique">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">scripts</span><span class="o">/</span><span class="n">capsuleforge</span><span class="o">/</span><span class="n">capsuleforge</span><span class="o">.</span><span class="n">py</span> <span class="n">approj</span> <span class="n">data</span><span class="o">/</span><span class="n">sources</span><span class="o">/</span><span class="n">projet</span><span class="o">.</span><span class="n">approj</span> <span class="o">--</span><span class="n">nom</span> <span class="n">ap_demo</span>
+</pre></div>
+</div>
+<p>Repris : image de chaque diapositive, trajectoire de la souris, zone de clic et nom du contrôle, type d’action. Non repris : audio, objets ajoutés à la main, mise en forme des légendes. Unités d’ActivePresenter 10 : millièmes de pixel.</p>
+</section>
+<section id="mettre-a-jour-pour-le-lecteur-actuel">
+<h3>Mettre à jour pour le lecteur actuel<a class="headerlink" href="#mettre-a-jour-pour-le-lecteur-actuel" title="Lien vers cette rubrique">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">capsuleforge</span> <span class="n">convertir</span> <span class="n">tuto1</span>      <span class="n">capsule</span><span class="o">.</span><span class="n">yaml</span> <span class="o">-&gt;</span> <span class="n">chapitre</span><span class="o">.</span><span class="n">yaml</span> <span class="p">(</span><span class="n">l</span><span class="s1">'original n'</span><span class="n">est</span> <span class="n">pas</span> <span class="n">touché</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">capsule.yaml</span></code> reste la source tant que l’éditeur visuel ne lit que lui ; <code class="docutils literal notranslate"><span class="pre">chapitre.yaml</span></code> se refait par <code class="docutils literal notranslate"><span class="pre">convertir</span></code>. Quand les deux fichiers existent, <code class="docutils literal notranslate"><span class="pre">construire</span></code> prend le plus récent (ou <code class="docutils literal notranslate"><span class="pre">--lecteur</span> <span class="pre">1|2</span></code>).</p>
+</section>
+</section>
+<section id="a-venir-dans-lordre-propose">
+<h2>À venir (dans l’ordre proposé)<a class="headerlink" href="#a-venir-dans-lordre-propose" title="Lien vers cette rubrique">#</a></h2>
+<ol class="arabic simple">
+<li><p>Caméo (vidéo de l’enseignant en médaillon) dans le lecteur, calé sur le pas ; recalage d’un caméo filmé à part par comparaison des sons.</p></li>
+<li><p>Relecture d’un diaporama sans voix : durées estimées, apparitions accrochées aux phrases, pauses.</p></li>
+<li><p>Simulation ActivePresenter (gestes, mode « À vous ») dans le chapitre ; « manipulations » (curseurs qui pilotent des valeurs affichées).</p></li>
+<li><p>Éditeur d’assemblage du chapitre (sources mêlées, chronologie, objets).</p></li>
+<li><p>Lecture des traces SCORM dans DiagForge ; objectifs SCORM par section.</p></li>
+<li><p>Export H5P ; équations natives de PowerPoint dans le texte des diapositives.</p></li>
+</ol>
+<p>Le plan d’ensemble est sur la page « Prochaines étapes » du site.</p>
+<p>Licence : GPL v3 (code).</p>
+</section>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./outils/capsuleforge"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../exoforge/README.html"
+       title="page précédente">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">précédent</p>
+        <p class="prev-next-title">ExoForge</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="FORMAT.html"
+       title="page suivante">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">suivant</p>
+        <p class="prev-next-title">CapsuleForge — le fichier <code class="docutils literal notranslate"><span class="pre">chapitre.yaml</span></code> d’une capsule</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item"><div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contenu
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#une-capsule-plusieurs-ecoles">Une capsule, plusieurs écoles</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#preparer-une-capsule">Préparer une capsule</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#chaine">Chaîne</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#le-fichier-chapitre-yaml-parties-sections-pas">Le fichier <code class="docutils literal notranslate"><span class="pre">chapitre.yaml</span></code> : parties, sections, pas</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reprendre-un-diaporama-powerpoint-narre">Reprendre un diaporama PowerPoint narré</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#annoter-dans-powerpoint-formes-cf">Annoter dans PowerPoint (formes « cf … »)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#habiller-dans-powerpoint-formes-dedition-et-champs">Habiller dans PowerPoint : formes d’édition et champs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#transcrire-le-texte-dit">Transcrire le texte dit</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#relire-le-texte-dit">Relire le texte dit</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#importer-une-video-enregistrement-decran-export-activepresenter-clip">Importer une vidéo (enregistrement d’écran, export ActivePresenter, clip)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#filmer-lecran-le-micro-et-la-webcam-windows">Filmer l’écran, le micro et la webcam (Windows)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#construire-le-lecteur-dun-cours">Construire le lecteur d’un cours</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#exercices-exoforge">Exercices ExoForge</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#paquets-scorm-pour-moodle">Paquets SCORM pour Moodle</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pdf-de-la-capsule-commande-pdf">PDF de la capsule (commande <code class="docutils literal notranslate"><span class="pre">pdf</span></code>)</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#habiller-la-capsule-pour-une-edition-cours">Habiller la capsule pour une édition (<code class="docutils literal notranslate"><span class="pre">--cours</span></code>)</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#traduire-sous-titrer-faire-parler-une-voix-de-synthese">Traduire, sous-titrer, faire parler une voix de synthèse</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#didacticiel-dans-le-lecteur-de-chapitre">Didacticiel dans le lecteur de chapitre</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ancien-lecteur-didacticiels-enregistres-capsule-yaml">Ancien lecteur : didacticiels enregistrés (<code class="docutils literal notranslate"><span class="pre">capsule.yaml</span></code>)</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Chaîne</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#enregistrer">Enregistrer</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#le-fichier-capsule-yaml">Le fichier capsule.yaml</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#modifier-la-capsule-dans-lediteur">Modifier la capsule dans l’éditeur</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#construire-et-utiliser-le-lecteur">Construire et utiliser le lecteur</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reprendre-un-projet-activepresenter">Reprendre un projet ActivePresenter</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mettre-a-jour-pour-le-lecteur-actuel">Mettre à jour pour le lecteur actuel</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#a-venir-dans-lordre-propose">À venir (dans l’ordre proposé)</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+Par Benoit Delattre
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2026.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Mis à jour le 26/11/2026.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

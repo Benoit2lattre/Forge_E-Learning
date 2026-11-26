@@ -1,0 +1,27 @@
+/* Forge E-Learning — habillage du site (charte navy / sable, jour et nuit) */
+:root {
+  --forge-navy: #14213D;
+  --forge-navy2: #28406B;
+  --forge-sable: #E0B989;
+  --forge-fond: #F7F6F4;
+}
+html[data-theme="light"] { --pst-color-primary: #28406B; --pst-color-secondary: #B8864B; }
+html[data-theme="dark"]  { --pst-color-primary: #E0B989; --pst-color-secondary: #9DB0CC; }
+
+/* Bandeau d'annonce */
+.bd-header-announcement { background: var(--forge-navy) !important; color: #F7F6F4; }
+html[data-theme="dark"] .bd-header-announcement { background: #0B1324 !important; border-bottom: 1px solid #28406B; }
+.forge-bandeau { display: flex; align-items: center; gap: .6rem; justify-content: center; flex-wrap: wrap; font-size: .95rem; }
+.forge-bandeau svg { height: 28px; width: 28px; }
+.forge-bandeau-titre { font-weight: 700; color: var(--forge-sable); letter-spacing: .02em; }
+.forge-bandeau-texte { color: #E8E6E1; }
+
+/* Images de la charte : versions jour / nuit */
+html[data-theme="light"] .only-dark, html[data-theme="dark"] .only-light { display: none !important; }
+
+/* Icônes jour / nuit des modes d'emploi (notation GitHub #gh-light-mode-only / #gh-dark-mode-only) */
+html[data-theme="light"] img[src$="#gh-dark-mode-only"], html[data-theme="dark"] img[src$="#gh-light-mode-only"] { display: none !important; }
+
+/* Tableaux d'état */
+table.forge-etat td, table.forge-etat th { vertical-align: top; }
+.bd-article img { max-width: 100%; height: auto; }
