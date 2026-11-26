@@ -64,6 +64,35 @@ def _recouvre(a, b, tol: float = TOLERANCE_PT) -> bool:
     return min(a[2], b[2]) - max(a[0], b[0]) > tol and min(a[3], b[3]) - max(a[1], b[1]) > tol
 
 
+def _dans(a, b, tol: float = TOLERANCE_PT) -> bool:
+    """Rectangle ``a`` entièrement dans ``b`` (à la tolérance près)."""
+    return a[0] >= b[0] - tol and a[1] >= b[1] - tol and a[2] <= b[2] + tol and a[3] <= b[3] + tol
+
+
+def _dessinee(f) -> bool:
+    """La forme se voit par elle-même (fond, contour, image, tableau, graphique), pas seulement par son texte. Les
+    traits et connecteurs sont laissés de côté : leur cadre déborde de ce qu'ils dessinent."""
+    try:
+        if not int(f.Visible):
+            return False
+        t = int(f.Type)
+        if t == 9 or int(getattr(f, "Connector", 0) or 0):
+            return False
+        if t in (3, 11, 13, 19, 28):                    # graphique, image liée, image, tableau, graphique SVG
+            return True
+        try:
+            if int(f.Fill.Visible) and float(f.Fill.Transparency) < 0.95:
+                return True
+        except Exception:
+            pass
+        try:
+            return bool(int(f.Line.Visible))
+        except Exception:
+            return False
+    except Exception:
+        return False
+
+
 def _nom(f) -> str:
     try:
         return str(f.Name)
@@ -74,9 +103,12 @@ def _nom(f) -> str:
 def chevauchements(diapo, n: int, largeur_pt: float, hauteur_pt: float, masque: bool = True) -> list[str]:
     """Textes qui se chevauchent ou débordent sur une diapositive, après l'application du modèle de l'école (ou la
     traduction) : texte plus grand que sa zone, texte hors de la diapositive, deux textes l'un sur l'autre, texte
-    sur une forme du masque ou de la disposition (logo, pied de page). Renvoie une phrase par problème."""
+    qui passe en partie sur une autre forme (fond, contour, image, tableau), texte sur une forme du masque ou de la
+    disposition (logo, pied de page). Un texte posé tout entier sur une forme n'est pas signalé. Renvoie une phrase par
+    problème."""
     out = []
     textes = []
+    dessins = []                                        # formes qui se voient par elles-mêmes, avec leur cadre
     coll = diapo.Shapes
     for i in range(1, coll.Count + 1):
         f = coll.Item(i)
@@ -90,6 +122,10 @@ def chevauchements(diapo, n: int, largeur_pt: float, hauteur_pt: float, masque: 
             t = _cadre_texte(m)
             if t:
                 textes.append((m, t))
+            if _dessinee(m):
+                c = _cadre(m)
+                if c:
+                    dessins.append((m, c))
     for f, t in textes:
         c = _cadre(f)
         if c and (t[3] - c[3] > TOLERANCE_PT or t[2] - c[2] > TOLERANCE_PT):
@@ -100,6 +136,12 @@ def chevauchements(diapo, n: int, largeur_pt: float, hauteur_pt: float, masque: 
         for g, u in textes[i + 1:]:
             if _recouvre(t, u):
                 out.append(f"les textes de « {_nom(f)} » et « {_nom(g)} » se chevauchent")
+    for f, t in textes:                                 # texte qui passe en partie sur une autre forme de la diapositive
+        for g, c in dessins:                            # (un texte posé tout entier sur une forme est voulu)
+            if g is f:
+                continue
+            if _recouvre(t, c) and not _dans(t, c):
+                out.append(f"le texte de « {_nom(f)} » passe sur « {_nom(g)} »")
     if masque:                                          # formes du masque et de la disposition, hors espaces réservés
         try:
             montrees = int(diapo.DisplayMasterShapes)
@@ -420,7 +462,13 @@ def exporter(fichier: Path, diapos: list[dict], dossier: Path, largeur: int, jou
             formes = _formes(diapo)
             fixes: set = set()                                          # cachées dans tous les états
             table = ((edition or {}).get("traductions") or {}).get(d["n"]) or {}
+            avant: set = set()
             if table:                                                   # diapositive traduite : textes remplacés
+                try:                                                    # problèmes déjà là dans la langue source
+                    avant = set(chevauchements(diapo, d["n"], float(pres.PageSetup.SlideWidth),
+                                               float(pres.PageSetup.SlideHeight), masque=montrer_masque))
+                except Exception:
+                    pass
                 faits = 0
                 for f in formes.values():
                     try:
@@ -471,8 +519,9 @@ def exporter(fichier: Path, diapos: list[dict], dossier: Path, largeur: int, jou
                 except Exception as exc:
                     pbs = []
                     journal(f"  diapo {d['n']} : chevauchements non vérifiés ({type(exc).__name__})")
+                pbs = [p for p in pbs if p not in avant]                # traduite : seulement ce que la traduction ajoute
                 for p in pbs:
-                    journal(f"  diapo {d['n']} : {p} : à vérifier")
+                    journal(f"  diapo {d['n']} : {p}" + (" après la traduction" if table else "") + " : à vérifier")
                 chevauchants += bool(pbs)
             # tout ce qu'une animation fait apparaître ou disparaître dans cette diapositive
             animes = {tuple(c) if isinstance(c, list) else c for e in d["etats"] for c in e}
