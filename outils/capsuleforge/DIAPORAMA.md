@@ -89,6 +89,7 @@ Les balises s'écrivent entre crochets dans les notes. Elles règlent la capsule
 | `[clic]` | L'action suivante se joue à cet endroit du texte. |
 | `[pause]` | Silence marqué d'une seconde après la phrase. |
 | `[pause 2 s]` | Silence de la durée donnée après la phrase (`[pause 1,5 s]` aussi). |
+| `[fin]` | Le pas finit après la ligne qui précède (0,5 s après ; `[fin 3 s]` : 3 s après). Sans elle, il finit après la voix et après ses vidéos. |
 | `[note] … [/note]` | Texte pour l'enseignant : ni dit, ni affiché, ni imprimé. |
 
 Une balise inconnue est signalée par le diagnostic de la reprise, et retirée comme les autres.

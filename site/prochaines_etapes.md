@@ -1,16 +1,16 @@
 # Prochaines étapes
 
-Un plan grossier, outil par outil, de la version 0.2 vers la 0.3 puis au-delà. Les priorités peuvent changer avec les essais en cours.
+Un plan grossier, outil par outil, de la version 0.3 vers la 0.4 puis au-delà. Les priorités peuvent changer avec les essais en cours.
 
-## Court terme : vers la version 0.3
+## Court terme : vers la version 0.4
 
 | Outil | Prochaines étapes |
 | --- | --- |
 | **QuizForge** | rappel des réglages Moodle conseillés selon l'usage (classe ou examen), avec une alerte contre la combinaison tentatives multiples, meilleure note et relecture question par question ; pénalité par essai |
 | **ExoForge** | fonction Φ (loi normale) dans les expressions ; rejet des tirages où une erreur type donne la bonne réponse ; retour gradué ; journal SCORM détaillé |
-| **CapsuleForge** | **relecture d'un diaporama sans voix** (durées estimées, apparitions accrochées aux phrases, pauses) ; afficher le **caméo** (vidéo de l'enseignant en médaillon) dans le lecteur, calé sur le pas, puis recaler un caméo filmé à part par comparaison des sons ; jouer une **simulation ActivePresenter** (gestes, mode « À vous ») dans le chapitre ; premier **éditeur d'assemblage** du chapitre (sources mêlées, chronologie, objets) |
+| **CapsuleForge** | **partir d'une intention** : concepteur de leçon (plan, fiche de cours, temps prévu par partie), puis squelette du chapitre et du diaporama de degré 1 (diapositives de titre et diapositives vides), que la relecture sans voix de la 0.3 sait déjà remplir ; éditeurs des fichiers YAML ; recaler un **caméo** filmé à part par comparaison des sons ; jouer une **simulation ActivePresenter** (gestes, mode « À vous ») dans le chapitre ; premier **éditeur d'assemblage** |
 | **DiagForge** | essai sur une vraie promotion ; première **restitution aux étudiants** (repère par notion, pas de classement, stratégie d'étude sous le seuil) ; lecture des traces SCORM d'ExoForge et de CapsuleForge |
-| **Ensemble** | **interface graphique** qui lance toute la suite Forge avec des boutons et des listes (chapitres, sections, profils, micros, langues choisis au lieu d'être tapés), sans ligne de commande ; **cours de démonstration** entièrement fictif qui montre la chaîne complète (questions, exercice, chapitre, bilan) ; licences des éléments embarqués vérifiées |
+| **Ensemble** | essai de l'atelier hors Windows ; ouverture des fichiers sans messages dans la fenêtre de commande ; licences des éléments embarqués vérifiées |
 
 ## Au-delà
 

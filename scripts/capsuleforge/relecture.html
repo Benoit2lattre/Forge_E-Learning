@@ -40,6 +40,11 @@ main{flex:1;display:flex;min-height:0}
 #incrustes .inc.plein{left:0!important;top:0!important;width:100%!important;height:100%!important;background:#000;z-index:2}
 #incrustes .inc.plein img,#incrustes .inc.plein video{object-fit:contain}
 #incrustes [hidden]{display:none}
+#finpas .ligne{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:3px 6px;border:1px solid var(--bord);border-radius:6px;background:#fff}
+#finpas input[type=number]{width:74px;padding:2px 4px;border:1px solid var(--bord);border-radius:4px}
+#finpas .nom{font-weight:600;color:var(--navy2)} #finpas .duree{font-size:12px;color:var(--texte2)}
+#piste .app.fin::before{background:var(--navy2)} #piste .app.fin b{background:var(--navy2)}
+.marque.fin{color:var(--navy2)}
 #videos .options{font-size:12px;color:var(--texte2);display:inline-flex;gap:8px;flex-wrap:wrap}
 #videos .duree{font-size:12px;color:var(--texte2)}
 .marque.video{color:var(--navy2)}
@@ -162,6 +167,8 @@ label.coche{display:flex;gap:5px;align-items:center;white-space:nowrap}
     <div id="apparitions"></div>
     <h2 id="titre-vid">Vidéos insérées</h2>
     <div id="videos"></div>
+    <h2>Fin du pas</h2>
+    <div id="finpas"></div>
     <h2 id="titre-obj">Ajouts sur l'image</h2>
     <div id="objets"></div>
   </section>
@@ -218,7 +225,30 @@ const NOMS = { spot: "Spot", cadre: "Cadre", pointeur: "Pointeur", cache: "Cache
 const modifies = new Set();
 
 const fmt = t => { t = Math.max(0, t || 0); const m = Math.floor(t / 60), s = t - 60 * m; return m + ":" + (s < 10 ? "0" : "") + s.toFixed(1).replace(".", ","); };
-const duree = () => (isFinite(son.duration) && son.duration) || (P && P.duree_s) || (P && P.phrases.length && P.phrases[P.phrases.length - 1].fin_s) || 1;
+const dureeVoix = () => (P && P.audio ? (P.audio_s || (isFinite(audio.duration) && audio.duration)) : P && P.duree_s) || (P && P.phrases.length && P.phrases[P.phrases.length - 1].fin_s) || 1;
+/* fin du pas : automatique (voix, puis vidéos non bouclées, + 0,5 s), après une vidéo, après une ligne, ou instant fixe */
+const FIN_MARGE = 0.5;
+function finP() {
+  const f = P.fin || {}, dec = f.decalage_s != null ? f.decalage_s : FIN_MARGE, base = dureeVoix();
+  const fv = Object.fromEntries((P.videos || []).filter(v => !v.boucle).map(v => [v.id, v.debut_s + v.duree_s]));
+  let r;
+  if (f.instant_s != null) r = f.instant_s;
+  else if (f.video && fv[f.video] != null) r = fv[f.video] + dec;
+  else if (f.phrase != null && P.phrases.length && horodatee(P.phrases[Math.min(f.phrase, P.phrases.length) - 1])) r = P.phrases[Math.min(f.phrase, P.phrases.length) - 1].fin_s + dec;
+  else r = Math.max(base, ...Object.values(fv).map(x => x + FIN_MARGE));
+  return +Math.max(0.5, r).toFixed(2);
+}
+const duree = () => P ? finP() : 1;
+/* une voix plus courte que le pas : l'horloge muette mène, la voix la suit */
+function horloge() {
+  if (!P) return; const veut = (!P.audio || finP() > dureeVoix() + 0.05) ? muette : audio;
+  if (son === veut) return; const t = son.currentTime || 0, lit = !son.paused; son.pause(); son = veut; son.currentTime = t; if (lit) son.play();
+}
+function synchroVoix() {
+  if (son !== muette || !P || !P.audio) return; const t = muette.currentTime, fin = dureeVoix();
+  if (!muette.paused && t < fin - 0.05) { audio.playbackRate = muette.playbackRate; if (Math.abs((audio.currentTime || 0) - t) > 0.25) audio.currentTime = t; if (audio.paused) audio.play().catch(() => {}); }
+  else { if (!audio.paused) audio.pause(); if (t < fin && Math.abs((audio.currentTime || 0) - t) > 0.05) audio.currentTime = t; }
+}
 const horodatee = ph => ph.debut_s != null;
 
 function message(txt, ko) { const m = $("message"); m.textContent = txt; m.className = ko ? "ko" : ""; m.style.display = "block"; clearTimeout(message.t); message.t = setTimeout(() => m.style.display = "none", ko ? 7000 : 2500); }
@@ -268,7 +298,7 @@ function listePas() {
 function ouvrir(i) {
   rang = Math.max(0, Math.min(C.pas.length - 1, i)); P = C.pas[rang]; afficherRemarques();
   son.pause(); arretA = null; choisi = null; phraseChoisie = -1; choisirOutil(null);
-  son = P.audio ? audio : muette;
+  son = P.audio ? audio : muette; if (P.audio && P.audio_s == null) P.audio_s = P.duree_s;
   if (P.audio) { audio.src = "/media/" + P.audio; audio.playbackRate = +$("vitesse").value; } else { audio.removeAttribute("src"); muette._t = 0; muette.playbackRate = +$("vitesse").value; }
   $("pas").value = rang; $("relu").checked = !!P.relu; location.hash = P.id;
   $("precedent").disabled = rang === 0; $("suivant").disabled = rang === C.pas.length - 1;
@@ -277,7 +307,7 @@ function ouvrir(i) {
   dessiner(); suivre(true);
 }
 
-function dessiner() { if (muet()) estimer(P); resoudre(); dessinerPhrases(); dessinerPiste(); dessinerApparitions(); dessinerVideos(); dessinerObjets(); calque(true); info(); }
+function dessiner() { if (muet()) estimer(P); resoudre(); horloge(); dessinerPhrases(); dessinerPiste(); dessinerApparitions(); dessinerVideos(); dessinerFin(); dessinerObjets(); calque(true); info(); }
 
 function info() {
   const mots = P.phrases.reduce((n, ph) => n + ph.texte.split(/\s+/).filter(Boolean).length, 0);
@@ -295,6 +325,9 @@ function dessinerPhrases() {
     m.textContent = (v ? "▶ vidéo " + a.id + " part à " : "▣ apparition " + a.id + " à ") + (muet() ? "≈ " : "") + fmt(a.debut_s) + nomAccroche(a)
       + (v ? (a.phrase == null && a.avec ? (a.avec === "debut" ? " · au début du pas" : " · avec " + a.avec) : "") + " (" + (a.boucle ? "en boucle" : String(a.duree_s).replace(".", ",") + " s") + ")" : "");
     if (v) m.classList.add("video"); z.appendChild(m); };
+  const marqueFin = () => { const m = document.createElement("div"); m.className = "marque fin"; const f = P.fin || {};
+    m.textContent = "⏹ fin du pas à " + (muet() ? "≈ " : "") + fmt(finP()) + (f.instant_s != null ? " (instant fixe)" : f.video ? " · après " + f.video : f.phrase != null ? " · après L" + f.phrase : " (automatique)")
+      + ((f.video || f.phrase != null) ? " " + ((f.decalage_s != null ? f.decalage_s : FIN_MARGE) >= 0 ? "+" : "−") + Math.abs(f.decalage_s != null ? f.decalage_s : FIN_MARGE).toFixed(1).replace(".", ",") + " s" : ""); return m; };
   const obj = [...P.objets].sort((a, b) => instant(a) - instant(b)); let ko = 0;
   const marqueO = o => { const m = document.createElement("div"); m.className = "marque objet"; m.style.cursor = "pointer";
     m.textContent = o.type === "cache" ? "◧ cache " + o.id + " levé à " + fmt(instant(o)) : "◎ " + NOMS[o.type].toLowerCase() + " " + o.id + " à " + fmt(o.debut_s) + " (" + o.duree_s.toFixed(1).replace(".", ",") + " s)" + nomAccroche(o);
@@ -362,6 +395,7 @@ function dessinerPhrases() {
   });
   while (k < app.length) marque(app[k++]);
   while (ko < obj.length) marqueO(obj[ko++]);
+  z.appendChild(marqueFin());
   if (!P.phrases.length) { const v = document.createElement("p"); v.style.cssText = "color:var(--texte2);padding:10px"; v.textContent = "Ce pas n'a pas de texte. Lancer « capsuleforge transcrire » pour un premier jet, ou écrire la narration dans le chapitre."; z.appendChild(v); }
 }
 function bouton(txt, titre, f) { const b = document.createElement("button"); b.className = "petit"; b.textContent = txt; b.title = titre; b.setAttribute("aria-label", titre); b.onclick = f; return b; }
@@ -373,6 +407,12 @@ function dessinerPiste() {
     e.style.width = Math.max(0.3, 100 * ((v.boucle ? d : Math.min(d, v.debut_s + v.duree_s)) - v.debut_s) / d) + "%"; e.title = "Vidéo " + v.id + " : " + fmt(v.debut_s) + (v.boucle ? ", en boucle" : " → " + fmt(v.debut_s + v.duree_s)); z.appendChild(e); }
   P.phrases.forEach((ph, i) => { if (!horodatee(ph)) return; const e = document.createElement("div"); e.className = "ph"; e.dataset.i = i;
     e.style.left = 100 * ph.debut_s / d + "%"; e.style.width = Math.max(0.2, 100 * (ph.fin_s - ph.debut_s) / d) + "%"; z.appendChild(e); });
+  { const e = document.createElement("div"); e.className = "app fin"; e.style.left = Math.min(99.6, 100 * finP() / d) + "%"; e.innerHTML = "<b>fin</b>";
+    e.title = "Fin du pas : " + fmt(finP()) + " (faire glisser pour la déplacer)";
+    e.onpointerdown = ev => { ev.stopPropagation(); ev.preventDefault(); e.setPointerCapture(ev.pointerId); let t = null;
+      e.onpointermove = m => { const r = z.getBoundingClientRect(); t = Math.max(0.5, d * 1.5 * Math.max(0, Math.min(1, (m.clientX - r.left) / r.width / 1.5))); e.style.left = Math.min(99.6, 100 * t / d) + "%"; };
+      e.onpointerup = () => { e.onpointermove = e.onpointerup = null; if (t != null) { const c = document.querySelector("#finpas input[type=number]"); c.value = t.toFixed(1); c.onchange(); } }; };
+    z.appendChild(e); }
   for (const a of P.apparitions) {
     const e = document.createElement("div"); e.className = "app"; e.style.left = 100 * a.debut_s / d + "%"; e.innerHTML = "<b>" + a.id + "</b>";
     e.title = "Apparition " + a.id + " : " + fmt(a.debut_s);
@@ -389,6 +429,35 @@ function etatImage(t) { let f = P.fond, td = -1; for (const a of P.apparitions) 
 function image() { const f = etatImage(son.currentTime || 0); const im = $("image"); if (f && im.dataset.f !== f) { im.dataset.f = f; im.src = "/media/" + f; } }
 
 /* vidéos insérées : départ (ligne, apparition, ou instant), options, et aperçu joué sur l'image */
+function dessinerFin() {
+  const z = $("finpas"); z.textContent = ""; const f = P.fin || {};
+  const l = document.createElement("div"); l.className = "ligne";
+  const n = document.createElement("span"); n.className = "nom"; n.textContent = "⏹";
+  const c = document.createElement("input"); c.type = "number"; c.step = "0.1"; c.min = "0.5"; c.value = finP().toFixed(1); c.setAttribute("aria-label", "Fin du pas, en secondes");
+  const poserFin = t => { memoriser(); const g = P.fin || {}; t = Math.max(0.5, Math.round(10 * t) / 10);
+    if (g.video || g.phrase != null) { const sans = Object.assign({}, g, { decalage_s: 0 }); const b = (() => { const o = P.fin; P.fin = sans; const x = finP(); P.fin = o; return x; })(); P.fin = Object.assign({}, g, { decalage_s: +(t - b).toFixed(2) }); }
+    else P.fin = { instant_s: t };
+    marquer(); dessiner(); suivre(true); };
+  c.onchange = () => { if (c.value !== "") poserFin(+c.value); };
+  const u = document.createElement("span"); u.textContent = "s";
+  const acc = document.createElement("span"); acc.className = "accroche";
+  const sp = document.createElement("select"); sp.title = "Ce qui fixe la fin du pas (le passage au pas suivant)"; sp.setAttribute("aria-label", "Fin du pas");
+  sp.innerHTML = "<option value='auto'>automatique (voix, puis vidéos)</option>" + (P.videos || []).filter(v => !v.boucle).map(v => `<option value="v:${v.id}">après ${v.id}</option>`).join("")
+    + P.phrases.map((ph, i) => `<option value="l:${i + 1}">après L${i + 1}</option>`).join("") + "<option value='instant'>instant fixe</option>";
+  sp.value = f.instant_s != null ? "instant" : f.video ? "v:" + f.video : f.phrase != null ? "l:" + f.phrase : "auto";
+  const sd = document.createElement("input"); sd.type = "number"; sd.step = "0.1"; sd.title = "Décalage en secondes après la vidéo ou la ligne"; sd.setAttribute("aria-label", "Décalage de la fin du pas");
+  sd.value = (f.video || f.phrase != null) ? (f.decalage_s != null ? f.decalage_s : FIN_MARGE) : ""; sd.disabled = !(f.video || f.phrase != null);
+  sp.onchange = () => { memoriser(); const t = finP();
+    P.fin = sp.value === "auto" ? null : sp.value === "instant" ? { instant_s: t } : sp.value.startsWith("v:") ? { video: sp.value.slice(2) } : { phrase: +sp.value.slice(2) };
+    marquer(); dessiner(); suivre(true); };
+  sd.onchange = () => { if (sd.value === "") return; memoriser(); P.fin = Object.assign({}, P.fin, { decalage_s: Math.max(-30, Math.min(60, +sd.value)) }); marquer(); dessiner(); suivre(true); };
+  acc.append("→ ", sp, sd, " s");
+  const b = bouton("Poser à l'instant de lecture", "Le pas finira à l'instant où se trouve la lecture", () => poserFin(son.currentTime || 0));
+  const e = bouton("▶ Voir", "Lire les 4 dernières secondes du pas", () => { arretA = null; son.currentTime = Math.max(0, finP() - 4); son.play(); });
+  const i = document.createElement("span"); i.className = "duree"; i.textContent = "voix : " + String((+dureeVoix()).toFixed(1)).replace(".", ",") + " s" + (P.audio ? "" : " (estimée)");
+  l.append(n, c, u, acc, b, e, i); z.appendChild(l);
+}
+
 function dessinerVideos() {
   const z = $("videos"); z.textContent = ""; const vs = P.videos || []; $("titre-vid").style.display = vs.length ? "" : "none";
   for (const v of vs) {
@@ -659,12 +728,12 @@ function suivre(force) {
   document.querySelectorAll("#apparitions .ligne").forEach(e => e.classList.toggle("vue", e.dataset.id === vue));
 }
 function boucle() { if (P && !son.paused) { if (arretA != null && son.currentTime >= arretA) { son.pause(); arretA = null; }
-  if (son === muette && son.currentTime >= duree() - 0.001) son.pause(); suivre(); } requestAnimationFrame(boucle); }
+  if (son === muette && son.currentTime >= duree() - 0.001) son.pause(); synchroVoix(); suivre(); } requestAnimationFrame(boucle); }
 
-audio.onplay = audio.onpause = muette.onplay = muette.onpause = () => { incrustes(); $("lecture").textContent = son.paused ? "▶ Lire" : "⏸ Pause";
+audio.onplay = audio.onpause = muette.onplay = muette.onpause = () => { synchroVoix(); incrustes(); $("lecture").textContent = son.paused ? "▶ Lire" : "⏸ Pause";
   if (!son.paused && choisi) { choisi = null; dessinerObjets(); calque(true); } };      // en lecture, rien n'est montré hors de son temps
 audio.onloadedmetadata = () => { dessinerPiste(); dessinerApparitions(); info(); suivre(true); };
-audio.onseeked = muette.onseeked = () => { suivre(); infoAjout(); };
+audio.onseeked = muette.onseeked = () => { synchroVoix(); suivre(); infoAjout(); };
 audio.onerror = () => { if (P && P.audio) message("Son illisible : " + P.audio, true); };
 $("lecture").onclick = () => { if (son.paused) { arretA = null; son.play(); } else son.pause(); };
 $("vitesse").onchange = () => { const t = son.currentTime; son.playbackRate = +$("vitesse").value; if (son === muette) son.currentTime = t; };
@@ -690,6 +759,7 @@ async function enregistrer() {
   for (const id of modifies) { const p = C.pas.find(x => x.id === id);
     const phrases = p.audio ? p.phrases : p.phrases.map(({ debut_s, fin_s, ...x }) => x);   /* instants estimés : jamais écrits */
     envoi[id] = { phrases, accroches: true, apparitions: Object.fromEntries(p.apparitions.map(a => [a.id, { debut_s: a.debut_s, ...acc(a) }])),
+                  fin: p.fin || null,
                   videos: Object.fromEntries((p.videos || []).map(v => [v.id, { debut_s: v.debut_s, ...acc(v), avec: v.phrase == null ? v.avec || null : null,
                     boucle: !!v.boucle, plein_ecran: !!v.plein_ecran, masquer: !!v.masquer, rembobiner: !!v.rembobiner }])),
                   objets: p.objets.map(o => ({ ...o, ...acc(o) })) }; if (p.reluChange) envoi[id].relu = !!p.relu; }

@@ -37,7 +37,7 @@ ORDRE_CHAPITRE = ["format", "titre", "langues", "ecran", "vue", "source", "regla
 ORDRE_PARTIE = ["id", "titre", "type", "place", "prerequis", "parcours", "variantes", "exercice", "sections"]
 ORDRE_SECTION = ["id", "titre", "objectif", "source", "narration", "audio", "arret", "ouverture", "questions",
                  "annexes", "pas"]
-ORDRE_PAS = ["ecarte", "raison", "id", "fond", "video", "camera", "vue", "source", "narration", "phrases", "audio", "duree_s", "voix", "texte_diapo", "objets", "gestes",
+ORDRE_PAS = ["ecarte", "raison", "id", "fond", "video", "camera", "vue", "source", "narration", "phrases", "audio", "duree_s", "fin", "voix", "texte_diapo", "objets", "gestes",
              "a_vous", "retours"]
 ORDRE_GESTE = ["type", "zone", "point", "arrivee", "crans", "texte", "accepte", "tolerance", "touches", "cible",
                "trajectoire", "trajet"]
@@ -467,6 +467,15 @@ def _verifier_pas(q, N, dossier, ids_pas, ids_parties, appelees, err, av):
         if p is not None and (not isinstance(p, (int, float)) or isinstance(p, bool) or not 0 <= p <= 30):
             err.append(f"{nom} : phrase {i}, pause_s « {p} » (attendu un nombre de secondes entre 0 et 30)")
     n_ph = len(q.get("phrases") or [])
+    fin = q.get("fin")
+    if fin is not None:
+        ids_v = {o.get("id") for o in q.get("objets") or [] if o.get("type") == "video"}
+        if not isinstance(fin, dict) or not ({"instant_s", "video", "phrase"} & set(fin)):
+            err.append(f"{nom} : fin « {fin} » (attendu instant_s, video ou phrase, avec decalage_s)")
+        elif fin.get("video") is not None and fin["video"] not in ids_v:
+            err.append(f"{nom} : fin après la vidéo « {fin['video']} », absente du pas")
+        elif fin.get("phrase") is not None and not (isinstance(fin["phrase"], int) and 1 <= fin["phrase"] <= max(n_ph, 1)):
+            err.append(f"{nom} : fin après la ligne « {fin['phrase']} » (le pas en a {n_ph})")
     for o in q.get("objets") or []:
         if o.get("fichier") and not (dossier / o["fichier"]).is_file():
             err.append(f"{nom} : fichier introuvable {o['fichier']} (objet {o.get('id')})")

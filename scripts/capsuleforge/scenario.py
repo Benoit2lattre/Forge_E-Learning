@@ -6,7 +6,7 @@ Voir le guide « Préparer son diaporama pour CapsuleForge » (``outils/capsulef
   est la page de titre, ``partie`` ouvre une partie, ``section`` ouvre une section (quand le diaporama n'a pas de
   sections PowerPoint). Noms standard de PowerPoint par défaut, complétés par le profil de l'école puis par le
   chapitre (clé ``powerpoint: {dispositions: {nom: niveau}}``).
-- **Balises des notes** (:func:`lire_notes`) : ``[clic]``, ``[pause]``, ``[pause 2 s]``, ``[note] … [/note]``,
+- **Balises des notes** (:func:`lire_notes`) : ``[clic]``, ``[pause]``, ``[pause 2 s]``, ``[fin]``, ``[note] … [/note]``,
   retirées du texte dit ; délimiteurs ``[`` ``]`` par défaut (clé ``powerpoint: {balises: ["⟦", "⟧"]}``).
 - **Diagnostic** (:func:`diagnostiquer`) : degré atteint (0 brut à 5 enregistré) et ce qu'il faudrait ajouter.
 
@@ -86,6 +86,7 @@ def lire_notes(texte: str, d: tuple[str, str] = DELIMITEURS, debit_mm: float = 1
     - ``clics`` : un ``(phrase, decalage_s)`` par balise ``[clic]``, dans l'ordre : la phrase où tombe la balise
       (numérotée à partir de 1) et, si elle est au milieu de la phrase, le temps estimé des mots qui précèdent ;
     - ``pauses`` : ``{phrase: secondes}``, silence après la phrase ;
+    - ``fin`` : ``{phrase, decalage_s?}`` si la balise ``[fin]`` (ou ``[fin 3 s]``) fixe la fin du pas après une phrase ;
     - ``notes`` : les textes ``[note] … [/note]`` ; ``inconnues`` : les balises non reconnues.
     """
     texte = texte or ""
@@ -105,6 +106,9 @@ def lire_notes(texte: str, d: tuple[str, str] = DELIMITEURS, debit_mm: float = 1
             inconnues.append(m.group(0))
         elif nom in ("clic", "click"):
             evts.append((lg, "clic", None))
+        elif nom == "fin":
+            v = re.search(r"\d+(?:[.,]\d+)?", arg)
+            evts.append((lg, "fin", float(v.group(0).replace(",", ".")) if v else None))
         elif nom == "pause":
             v = re.search(r"\d+(?:[.,]\d+)?", arg)
             evts.append((lg, "pause", float(v.group(0).replace(",", ".")) if v else PAUSE_MARQUEE_S))
@@ -122,7 +126,7 @@ def lire_notes(texte: str, d: tuple[str, str] = DELIMITEURS, debit_mm: float = 1
         i = cur if i < 0 else i
         bornes.append((i, i + len(p)))
         cur = i + len(p)
-    clics, pauses = [], {}
+    clics, pauses, fin = [], {}, None
     for lg, sorte, val in evts:
         if not phrases:
             if sorte == "clic":
@@ -134,10 +138,14 @@ def lire_notes(texte: str, d: tuple[str, str] = DELIMITEURS, debit_mm: float = 1
             a, _ = bornes[k]
             avant = len(propre[a:lg].split()) if lg > a else 0
             clics.append((k + 1, round(avant * 60 / debit_mm, 2) if avant else None))
-        else:                                              # pause : après la phrase qui se termine avant la balise
+        else:                                              # pause, fin : après la phrase qui se termine avant la balise
             j = max([j for j, (a, b) in enumerate(bornes) if b <= lg + 1] or [0])
-            pauses[j + 1] = round(pauses.get(j + 1, 0) + val, 2)
-    return {"texte": propre, "phrases": phrases, "clics": clics, "pauses": pauses, "notes": notes, "inconnues": inconnues}
+            if sorte == "fin":
+                fin = {"phrase": j + 1, **({"decalage_s": val} if val is not None else {})}
+            else:
+                pauses[j + 1] = round(pauses.get(j + 1, 0) + val, 2)
+    return {"texte": propre, "phrases": phrases, "clics": clics, "pauses": pauses, "fin": fin, "notes": notes,
+            "inconnues": inconnues}
 
 
 def accroches(n_actions: int, lu: dict, reg_decalage: float) -> tuple[list[dict], list[str]]:

@@ -192,7 +192,8 @@ def detail(nom: str) -> dict:
             "video_pptx": ((chap.get("powerpoint") or {}).get("video")) or "fine",
             "construit": _date(SORTIES / nom / "index.html"),
             "lecteur": f"/dist/capsuleforge/{nom}/index.html" if (SORTIES / nom / "index.html").is_file() else None,
-            "paquets": paquets(nom), "voix": voix_disponibles(),
+            "paquets": paquets(nom), "voix": voix_disponibles(), "pdfs": pdfs(d, nom, source),
+            "lecteur_json": any(SORTIES.glob(f"{nom}*/lecteur.json")),
             "cameo": dict({"position": "bas-droite", "taille": 0.22, "forme": "rond"}, **(chap.get("cameo") or {}),
                           pas=sum(1 for p in chap.get("parties") or [] for s in p.get("sections") or []
                                   for q in s.get("pas") or [] if q.get("camera") and not q.get("ecarte")))}
@@ -252,6 +253,22 @@ def paquets(nom: str) -> list[dict]:
         quoi = f"partie {m.group(1)} ({m.group(2).replace('_', ' ')})" if m.group(1) else "capsule entière"
         out.append({"fichier": z.name, "libelle": quoi, "version": version, "chemin": chemins_rel(z), "date": z.stat().st_mtime})
     out.sort(key=lambda x: (x["libelle"] != "capsule entière", x["libelle"], x["version"]))
+    return out
+
+
+def pdfs(d: Path, nom: str, source: str) -> list[dict]:
+    """Versions du PDF de la capsule (``_pdf.yaml``) et, pour chacune, le fichier le plus récent parmi les lecteurs
+    construits (capsule nue ou éditions)."""
+    import pdf_capsule
+    out = []
+    for v in pdf_capsule.lire_versions(d, source):
+        cle = pdf_capsule.cle(v)
+        faits = sorted((f for f in SORTIES.glob(f"{nom}*/pdf/*_{cle}.pdf") if f.parent.parent.name == nom
+                        or f.parent.parent.name.startswith(nom + "_")), key=lambda f: f.stat().st_mtime)
+        f = faits[-1] if faits else None
+        out.append(dict(v, cle=cle, chemin=chemins_rel(f) if f else None, date=f.stat().st_mtime if f else None,
+                        perime=bool(f) and (f.parent.parent / "index.html").is_file()
+                        and (f.parent.parent / "index.html").stat().st_mtime > f.stat().st_mtime + 1))
     return out
 
 

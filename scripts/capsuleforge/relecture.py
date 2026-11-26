@@ -127,6 +127,7 @@ class SeanceRelecture:
                 "objets": [{k: o[k] for k in ("id", "type", "forme", "cadre", "position", "trajet", "couleur", "debut_s", "duree_s", "origine",
                                               *CAL.CLES) if k in o}
                            for o in pas.get("objets") or [] if o.get("type") in AJOUTS],
+                "fin": pas.get("fin"),
                 "videos": [{k: o[k] for k in ("id", "fichier", "affiche", "finale", "cadre", "apparait", "avec", "debut_s", "duree_s",
                                               "boucle", "plein_ecran", "masquer", "rembobiner", *CAL.CLES) if o.get(k) is not None}
                            for o in pas.get("objets") or [] if o.get("type") == "video" and o.get("fichier")],
@@ -216,6 +217,21 @@ class SeanceRelecture:
                     if v.get("decalage_s") is not None:
                         o["decalage_s"] = round(min(max(float(v["decalage_s"]), -30.0), 30.0), 2)
                 par_id = {o.get("id"): o for o in pas.get("objets") or []}
+                if "fin" in m:                                # fin du pas : automatique (absente) ou réglée
+                    f = m.get("fin") if isinstance(m.get("fin"), dict) else None
+                    g = {}
+                    if f and f.get("instant_s") is not None:
+                        g["instant_s"] = round(min(max(float(f["instant_s"]), 0.5), 36000.0), 2)
+                    elif f and f.get("video") in par_id and par_id[f["video"]].get("type") == "video":
+                        g["video"] = f["video"]
+                    elif f and f.get("phrase") is not None and n_ph:
+                        g["phrase"] = min(max(int(f["phrase"]), 1), n_ph)
+                    if g and "instant_s" not in g and f.get("decalage_s") is not None:
+                        g["decalage_s"] = round(min(max(float(f["decalage_s"]), -30.0), 60.0), 2)
+                    if g:
+                        pas["fin"] = g
+                    else:
+                        pas.pop("fin", None)
                 for o in pas.get("objets") or []:             # vidéos insérées : départ (accroche ou apparition) et options
                     v = (m.get("videos") or {}).get(o.get("id")) if o.get("type") == "video" else None
                     if not isinstance(v, dict):

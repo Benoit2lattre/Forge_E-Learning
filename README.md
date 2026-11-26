@@ -9,7 +9,7 @@ Des outils libres pour passer d'un cours existant à des activités en ligne : q
 
 Écrits pour l'enseignement de la mécanique et des mathématiques en école d'ingénieurs, les outils ne sont pas propres à ces disciplines.
 
-> **Version 0.2** publiée ; **0.3** en préparation. Les outils servent déjà en cours ; leur maturité est inégale : voir l'état ci-dessous et le [journal des versions](CHANGELOG.md).
+> **Version 0.3** publiée ; **0.4** en préparation. Les outils servent déjà en cours ; leur maturité est inégale : voir l'état ci-dessous et le [journal des versions](CHANGELOG.md).
 
 ## Les outils
 
@@ -57,13 +57,14 @@ Une fiche résume un article lu en texte complet (question, public, méthode, r�
 | [H — Spécificités STEM](reference/H_specificites_stem/README.md) | paramètres aléatoires, erreurs types en mécanique | 29 | 121 |
 | [I — Accessibilité](reference/I_accessibilite/README.md) | lisibilité, dyslexie, audio | 20 | 65 |
 
-## État des outils (version 0.3 en préparation)
+## État des outils (version 0.3)
 
 | Outil | Version | Essayé en conditions réelles | Livré, pas encore essayé | Manque |
 | --- | --- | --- | --- | --- |
+| AtelierForge | 0.5 | les outils lancés par boutons sous Windows ; cours, déclinaisons, éditions ; versions et registre ; carte « 6. PDF » ; « Oublier » dans Réglages | — | essai hors Windows |
 | QuizForge | 0.9 | tous les types de questions dans Moodle ; `valider` ; barème « équilibré » ; quiz de séance | rappel des réglages Moodle conseillés | catalogue d'erreurs types par domaine ; export H5P |
 | ExoForge | 0.8 | quatre exercices validés ; paquet SCORM 1.2 dans Moodle ; exercice traduit dans un chapitre | graphiques dans les étapes sur les exercices anciens | fonction Φ ; reprise d'un exercice interrompu |
-| CapsuleForge | 0.9 | chapitre pilote complet jusqu'aux paquets SCORM 2004 et 1.2 reçus par Moodle ; chapitre bilingue (sous-titres, questions, exercice) et voix de synthèse ; vidéo ; enregistrement d'écran | remarques de vérification dans la relecture | caméo dans le lecteur ; simulation ActivePresenter ; éditeur d'assemblage ; export H5P |
+| CapsuleForge | 0.9 | chapitre pilote complet jusqu'aux paquets SCORM 2004 et 1.2 reçus par Moodle ; chapitre bilingue (sous-titres, questions, exercice) et voix de synthèse ; vidéo ; enregistrement d'écran ; capsule habillée pour plusieurs écoles ; diaporama sans voix ; vidéo insérée dans le diaporama ; fin du pas réglable ; PDF à part, en versions | contrôle des chevauchements (à corriger pour la traduction) ; caméo dans le lecteur ; remarques de vérification dans la relecture | partir d'une intention (plan, squelette) ; simulation ActivePresenter ; éditeur d'assemblage ; export H5P |
 | DiagForge | 0.6 | bilan sur le bac à sable Moodle et des promotions fictives | commande `diagforge.py` ; tirage, équité, rétention ; erreurs types | essai sur une vraie promotion ; restitution aux étudiants ; traces SCORM |
 | Style, profils | — | profils `Delattre` et `Ecole1` | — | thème modifiable dans CapsuleForge |
 | Bibliographie | — | 9 axes, 197 fiches | — | règles de restitution (axe G) à appliquer dans DiagForge |

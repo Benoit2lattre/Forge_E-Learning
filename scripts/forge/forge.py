@@ -25,7 +25,8 @@ Routes :
   POST /api/parcourir         {dossier?, types?} : dialogue de fichiers de Windows, renvoie le chemin choisi
   POST /api/montrer           {chemin} : ouvre l'explorateur sur un fichier ou un dossier du dépôt
   POST /api/ouvrir            {chemin} : ouvre un fichier du dépôt avec son programme (Excel, navigateur…)
-  POST /api/reglages          {reglages: {profil?, diaporamas?: {}}} : enregistre les réglages
+  POST /api/reglages          {reglages: {profil?, diaporamas?: {}, oublier_diaporama?, retirer_classeur?}} : enregistre les réglages
+  (GET et POST /api/reglages donnent aussi ``absents`` : les chemins retenus introuvables)
   POST /api/quitter           arrête l'atelier (refusé si une tâche tourne, sauf {forcer: true})
   POST /api/depart            la page se ferme : arrêt dans 4 s si elle ne revient pas et qu'aucune tâche ne tourne
 
@@ -219,7 +220,7 @@ class Atelier:
         self.actions = {"exoforge.construire": self.a_exo_construire, "capsule.pptx": self.a_cap_pptx,
                         "capsule.transcrire": self.a_cap_transcrire, "capsule.relire": self.a_cap_relire,
                         "capsule.traduire": self.a_cap_traduire, "capsule.voix": self.a_cap_voix,
-                        "capsule.accrocher": self.a_cap_accrocher,
+                        "capsule.accrocher": self.a_cap_accrocher, "capsule.pdf": self.a_cap_pdf,
                         "capsule.verifier": self.a_cap_simple("verifier", "Vérifier"),
                         "capsule.convertir": self.a_cap_simple("convertir", "Mettre à jour pour le lecteur actuel"),
                         "capsule.construire": self.a_cap_construire, "capsule.video": self.a_cap_video,
@@ -638,6 +639,26 @@ class Atelier:
         d, t = self._cap(p)
         return self._tache_cap(d, f"Relire « {t} »", C.argv_base(PY, "relire") + [str(d), "--sans-navigateur"])
 
+    def a_cap_pdf(self, p: dict) -> Tache:
+        """Une version du PDF à partir du lecteur construit (carte « 6. PDF ») ; ou seulement la case « dans le paquet »."""
+        d, t = self._cap(p)
+        contenu, notes = p.get("contenu") or "texte", p.get("notes") or "aucune"
+        if contenu not in ("diapos", "texte", "diapo", "texte,diapo"):
+            raise ValueError("contenu du PDF inconnu")
+        if notes not in ("aucune", "marge", "dessous"):
+            raise ValueError("place des notes inconnue")
+        argv = C.argv_base(PY, "pdf") + [str(d), "--contenu", contenu, "--notes", notes]
+        if p.get("langue"):
+            if not re.fullmatch(r"[a-z]{2,3}", str(p["langue"])):
+                raise ValueError("langue du PDF inconnue")
+            argv += ["--langue", p["langue"]]
+        if p.get("paquet") in ("oui", "non"):
+            argv += ["--paquet", p["paquet"]]
+        if p.get("sans_refaire"):
+            argv.append("--sans-refaire")
+        argv += self.option_cours()
+        return self._tache_cap(d, f"PDF de « {t} »", argv)
+
     def a_cap_accrocher(self, p: dict) -> Tache:
         d, t = self._cap(p)
         argv = C.argv_base(PY, "accrocher") + [str(d)]
@@ -695,18 +716,6 @@ class Atelier:
             argv += ["--scorm", scorm, "--scorm-version", version]
         if p.get("audio") == "origine":
             argv += ["--audio", "origine"]
-        if p.get("pdf") and p.get("lecteur") != "1":           # PDF de la capsule (lecteur actuel seulement)
-            contenu = p.get("pdf_contenu") or "texte"
-            if contenu not in ("texte", "texte,diapo", "diapos"):
-                raise ValueError("contenu du PDF inconnu")
-            notes = p.get("pdf_notes") or "aucune"
-            if notes not in ("aucune", "marge", "dessous"):
-                raise ValueError("place des notes inconnue")
-            argv += ["--pdf", "--pdf-contenu", contenu, "--pdf-notes", notes]
-            if p.get("pdf_langue"):
-                if not re.fullmatch(r"[a-z]{2,3}", str(p["pdf_langue"])):
-                    raise ValueError("langue du PDF inconnue")
-                argv += ["--pdf-langue", p["pdf_langue"]]
         if p.get("lecteur") in ("1", "2"):
             argv += ["--lecteur", p["lecteur"]]
         elif (d / "capsule.yaml").is_file() and (d / "chapitre.yaml").is_file():
@@ -1222,6 +1231,12 @@ def profils_campus() -> dict:
     return out
 
 
+def reglages_absents(r: dict) -> list[str]:
+    """Chemins retenus par l'atelier (diaporamas, classeurs) qui n'existent plus sur cet ordinateur."""
+    chemins_ = list((r.get("diaporamas") or {}).values()) + list(r.get("classeurs") or [])
+    return [c for c in chemins_ if c and not Path(c).exists()]
+
+
 def noms_profils() -> list[str]:
     noms = []
     for f in chemins.fichiers_profils():
@@ -1264,7 +1279,7 @@ def gestionnaire(at: Atelier):
             if chemin == "/api/diagforge/dossiers":
                 return self._json({"ok": True, "dossiers": at.filtre(QB.dossiers_exports(), "dossier"), "actif": at.cours_actif()})
             if chemin == "/api/reglages":
-                return self._json({"ok": True, "reglages": C.reglages()})
+                return self._json({"ok": True, "reglages": C.reglages(), "absents": reglages_absents(C.reglages())})
             if chemin == "/api/appareils":
                 return self._json(at.appareils())
             if chemin == "/api/capsules":
@@ -1342,6 +1357,9 @@ def gestionnaire(at: Atelier):
                         C.garder_reglage("profil", r["profil"])
                     if "diaporamas" in r and r["diaporamas"] == {}:
                         C.garder_reglage("diaporamas", {})
+                    if r.get("oublier_diaporama"):                    # une ligne de « Diaporamas retrouvés »
+                        C.garder_reglage("diaporamas", {k: v for k, v in (C.reglages().get("diaporamas") or {}).items()
+                                                        if k != r["oublier_diaporama"]})
                     if r.get("apparence") in ("auto", "jour", "nuit"):
                         C.garder_reglage("apparence", r["apparence"])
                     liste = C.reglages().get("classeurs") or []
@@ -1350,11 +1368,12 @@ def gestionnaire(at: Atelier):
                         if str(f) not in liste:
                             C.garder_reglage("classeurs", liste + [str(f)])
                     if r.get("retirer_classeur"):
-                        cible = str(QB.classeur_valide(r["retirer_classeur"]))
+                        cible = (r["retirer_classeur"] if r["retirer_classeur"] in liste    # même introuvable
+                                 else str(QB.classeur_valide(r["retirer_classeur"])))
                         C.garder_reglage("classeurs", [x for x in liste if x != cible])
                     if r.get("classeurs") == []:
                         C.garder_reglage("classeurs", [])
-                    return self._json({"ok": True, "reglages": C.reglages()})
+                    return self._json({"ok": True, "reglages": C.reglages(), "absents": reglages_absents(C.reglages())})
                 if chemin == "/api/quitter":
                     if at.en_cours() and not p.get("forcer"):
                         return self._json({"ok": False, "en_cours": at.en_cours(),

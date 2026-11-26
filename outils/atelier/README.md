@@ -67,7 +67,8 @@ On choisit la capsule ; son résumé (parties, sections, durée, langues, remarq
 2. **Texte dit** : transcrire, puis relire phrase par phrase avec le son et l'image (l'écran de relecture s'ouvre dans un onglet).
 3. **Traduction** : langue, pré-remplissage (à la main, Argos hors ligne, DeepL), relire la traduction, l'importer dans la capsule.
 4. **Voix de synthèse** : langue, moteur, voix, vitesse.
-5. **Construire** : vérifier, construire le lecteur avec ou sans paquets SCORM (une capsule, une par partie, ou les deux ; SCORM 1.2 conseillé pour Moodle). Avec un cours choisi en haut de la page, la capsule est habillée pour l'édition (charte et logo de l'école, écran d'accueil, pied de page, crédits, filigrane si l'édition le demande) et rangée comme version ; « Registre » en donne les versions (voir « Habiller la capsule pour une édition » dans le [mode d'emploi de CapsuleForge](../capsuleforge/README.md)). La case « PDF de la capsule » écrit aussi un document à imprimer (diapositives, texte dit, texte des diapositives à la demande, place pour les notes en marge ou dessous, langue au choix), mis dans le paquet, ouvert par le bouton « PDF » du lecteur et rangé avec la version.
+5. **Construire** : vérifier, construire le lecteur avec ou sans paquets SCORM (une capsule, une par partie, ou les deux ; SCORM 1.2 conseillé pour Moodle). Avec un cours choisi en haut de la page, la capsule est habillée pour l'édition (charte et logo de l'école, écran d'accueil, pied de page, crédits, filigrane si l'édition le demande) et rangée comme version ; « Registre » en donne les versions (voir « Habiller la capsule pour une édition » dans le [mode d'emploi de CapsuleForge](../capsuleforge/README.md)). Les PDF cochés dans la carte 6 sont refaits et joints aux paquets.
+6. **PDF** : à partir du lecteur construit, sans le reconstruire, un document à imprimer (diapositives seules, avec le texte dit, le texte des diapositives ou les deux ; place pour les notes en marge ou dessous ; langue au choix). Chaque réglage donne sa version, au nom explicite, que « Montrer » ouvre ; la case « dans le paquet » la joint aux paquets SCORM à la prochaine construction (une par langue), et le bouton « PDF » du lecteur ouvre celle de la langue des sous-titres.
 
 Le tableau des sections, sous les étapes, donne l'état de chacune : diapositives reprises, images, texte dit, relu, texte et voix par langue, questions. Cocher des sections limite la transcription et la voix à celles-ci.
 
@@ -85,7 +86,7 @@ Les dossiers d'exports Moodle de `data/diagforge` et les exemples. « Faire le b
 
 ## Réglages et apparence
 
-L'écran Réglages garde dans `data/_atelier/reglages.json` : l'apparence (jour, nuit ou comme Windows ; aussi par le bouton ☾ / ☀ en haut de la page), le profil d'établissement proposé d'office, les classeurs ajoutés et les chemins des diaporamas retrouvés.
+L'écran Réglages garde dans `data/_atelier/reglages.json` : l'apparence (jour, nuit ou comme Windows ; aussi par le bouton ☾ / ☀ en haut de la page), le profil d'établissement proposé d'office, les classeurs ajoutés et les chemins des diaporamas retrouvés. Chaque classeur et chaque diaporama a son bouton « Oublier », et un chemin qui n'existe plus sur cet ordinateur est marqué « introuvable ».
 
 ![L'apparence nuit](../../_static/captures/atelier/capsules_nuit.png)
 

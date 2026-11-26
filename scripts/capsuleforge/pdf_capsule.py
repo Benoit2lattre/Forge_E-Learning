@@ -271,14 +271,88 @@ def imprimer(page_html: Path, pdf: Path, journal=print, attente_ms: int = 20000)
 
 
 def ecrire(donnees: dict, sortie: Path, nom: str, langue: str | None = None, contenu=("texte",), notes: str = "aucune",
-           journal=print) -> Path | None:
-    """Écrit ``<sortie>/imprimer.html`` puis ``<sortie>/<nom>.pdf`` ; renvoie le chemin du PDF, ou ``None``."""
+           journal=print, dossier: str = "") -> Path | None:
+    """Écrit ``<sortie>/imprimer.html`` puis ``<sortie>/<dossier>/<nom>.pdf`` ; renvoie le chemin du PDF, ou ``None``."""
     sortie = Path(sortie)
     texte, _ = page(donnees, langue, contenu, notes)
     p = sortie / "imprimer.html"
     p.write_text(texte, encoding="utf-8")
-    pdf = sortie / f"{nom}.pdf"
+    (sortie / dossier).mkdir(parents=True, exist_ok=True)
+    pdf = sortie / dossier / f"{nom}.pdf"
     if imprimer(p, pdf, journal):
         journal(f"  PDF : {pdf} ({pdf.stat().st_size / 1e6:.1f} Mo)")
         return pdf
     return None
+
+
+# --------------------------------------------------------------------------- versions du PDF d'une capsule
+#
+# Un PDF se fait à partir du lecteur construit (``<sortie>/lecteur.json``), sans refaire la capsule. Chaque réglage
+# (langue, contenu, notes) donne sa propre version, au nom explicite, dans ``<sortie>/pdf/``. Les versions faites sont
+# notées dans ``_pdf.yaml`` du dossier de la capsule (hors empreinte) ; celles cochées « dans le paquet » (une par
+# langue au plus) sont refaites à chaque construction, jointes aux paquets SCORM et ouvertes par le bouton PDF du
+# lecteur dans la langue des sous-titres.
+
+CONTENU_PDF = {"diapos": (), "texte": ("texte",), "diapo": ("diapo",), "texte,diapo": ("texte", "diapo")}
+NOMS_CONTENU = {"diapos": "diapos", "texte": "texte", "diapo": "diapo", "texte,diapo": "texte-diapo"}
+
+
+def norme(v: dict, src: str) -> dict:
+    """Version complétée et contrôlée : ``{langue, contenu, notes, paquet}``."""
+    contenu = v.get("contenu") or "texte"
+    if contenu not in CONTENU_PDF:
+        raise ValueError(f"contenu du PDF « {contenu} » inconnu (diapos, texte, diapo, texte,diapo)")
+    notes = v.get("notes") or "aucune"
+    if notes not in NOTES:
+        raise ValueError(f"place des notes « {notes} » inconnue (aucune, marge, dessous)")
+    return {"langue": v.get("langue") or src, "contenu": contenu, "notes": notes, "paquet": bool(v.get("paquet"))}
+
+
+def cle(v: dict) -> str:
+    return f"{v['langue']}_{NOMS_CONTENU[v['contenu']]}" + ("" if v["notes"] == "aucune" else f"_{v['notes']}")
+
+
+def fichier(v: dict, nom: str) -> str:
+    """Chemin de la version, relatif au dossier du lecteur construit."""
+    return f"pdf/{nom}_{cle(v)}.pdf"
+
+
+def lire_versions(dossier: Path, src: str) -> list[dict]:
+    import yaml
+    f = Path(dossier) / "_pdf.yaml"
+    if not f.is_file():
+        return []
+    out = []
+    for v in (yaml.safe_load(f.read_text(encoding="utf-8")) or {}).get("versions") or []:
+        try:
+            out.append(norme(v, src))
+        except ValueError:
+            continue
+    return out
+
+
+def ecrire_versions(dossier: Path, versions: list[dict]) -> None:
+    import yaml
+    f = Path(dossier) / "_pdf.yaml"
+    entete = "# Versions du PDF de la capsule (capsuleforge pdf, carte « 6. PDF » de l'atelier)\n"
+    f.write_text(entete + yaml.safe_dump({"versions": versions}, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+
+def noter_version(dossier: Path, v: dict, src: str, paquet: bool | None = None) -> list[dict]:
+    """Ajoute ou met à jour une version ; ``paquet`` vrai la met dans le paquet (et en retire l'autre de sa langue)."""
+    vs = [x for x in lire_versions(dossier, src) if cle(x) != cle(v)]
+    v = dict(v, paquet=bool(v.get("paquet")) if paquet is None else paquet)
+    if v["paquet"]:
+        for x in vs:
+            if x["langue"] == v["langue"]:
+                x["paquet"] = False
+    vs.append(v)
+    vs.sort(key=lambda x: (x["langue"], cle(x)))
+    ecrire_versions(dossier, vs)
+    return vs
+
+
+def faire(donnees: dict, sortie: Path, nom: str, v: dict, journal=print) -> Path | None:
+    """Fait la version ``v`` du PDF à partir des données du lecteur ; renvoie son chemin, ou ``None``."""
+    f = fichier(v, nom)
+    return ecrire(donnees, sortie, Path(f).stem, v["langue"], CONTENU_PDF[v["contenu"]], v["notes"], journal, dossier="pdf")

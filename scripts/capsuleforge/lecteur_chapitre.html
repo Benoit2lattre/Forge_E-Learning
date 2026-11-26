@@ -359,7 +359,7 @@ const LG = C.langues || { source: "fr", autres: [], noms: {} };
 C._titre = C.titre;
 for (const p of C.parties) { p._t = { titre: p.titre };
   for (const s of p.sections) { s._t = { titre: s.titre, objectif: s.objectif, ouverture: s.ouverture };
-    for (const q of s.pas) q._src = { fond: q.fond, audio: q.audio, duree_s: q.duree_s, apparitions: q.apparitions, objets: q.objets, incrustes: q.incrustes,
+    for (const q of s.pas) q._src = { fond: q.fond, audio: q.audio, duree_s: q.duree_s, audio_s: q.audio_s, apparitions: q.apparitions, objets: q.objets, incrustes: q.incrustes,
                                       temps: q.phrases.map(ph => [ph[0], ph[1]]), textes: q.phrases.map(ph => ph[2]) }; } }
 const tousPas = () => C.parties.flatMap(p => p.sections.flatMap(s => s.pas));
 const voixDispo = [LG.source].concat((LG.autres || []).filter(l => tousPas().some(q => q.voix && q.voix[l])));
@@ -380,6 +380,7 @@ function traduireQuestion(q) {
 }
 let voixL = LG.source, stL = LG.source;
 function appliquerLangues() {
+  if (typeof majPdf === "function" && C) majPdf();
   const t = (o, k) => (o && o.tr && o.tr[stL] && o.tr[stL][k]) || null;
   C.titre = t(C, "titre") || C._titre;
   for (const p of C.parties) { p.titre = t(p, "titre") || p._t.titre;
@@ -387,7 +388,7 @@ function appliquerLangues() {
       let d = 0;
       for (const q of s.pas) { const v = (voixL !== LG.source && q.voix && q.voix[voixL]) || null, o = q._src;
         const fi = (stL !== LG.source && q.fonds_tr && q.fonds_tr[stL]) || null, im = f => (fi && fi[f]) || f;   /* diapositives traduites */
-        q.audio = v ? v.audio : o.audio; q.duree_s = v ? v.duree_s : o.duree_s; q.fond = im(o.fond);
+        q.audio = v ? v.audio : o.audio; q.duree_s = v ? v.duree_s : o.duree_s; q.audio_s = v ? v.audio_s : o.audio_s; q.fond = im(o.fond);
         q.apparitions = (v ? v.apparitions : o.apparitions).map(a => [a[0], im(a[1])]);
         q.objets = v ? v.objets : o.objets; q.voixSynthese = v ? true : !!q.synthese;
         q.incrustes = (v && v.incrustes) || o.incrustes;
@@ -641,8 +642,11 @@ function caler(force) {
   if (film.readyState >= 1 && (force || ecart > (enLecture ? 0.3 : 0.04))) { try { film.currentTime = cible; } catch (e) {} }
   if (enLecture && film.paused) film.play().catch(() => {}); else if (!enLecture && !film.paused) film.pause();
 }
+/* après la voix, le pas peut continuer en silence jusqu'à sa fin (vidéo qui se termine, fin réglée) */
+let apresSon = false;
+const finSon = q => Math.min(q.duree_s, q.audio_s || (isFinite(son.duration) && son.duration) || q.duree_s);
 function chargerPas(i, t, lancer) {
-  iPas = i; tPas = t; const q = S.s.pas[i]; $("synth").hidden = !q.voixSynthese;
+  iPas = i; tPas = t; const q = S.s.pas[i]; apresSon = !!q.audio && q.audio_s != null && t >= q.audio_s - 0.05; $("synth").hidden = !q.voixSynthese;
   if (q.video) { const u = new URL(q.video.src, location.href).href; film.hidden = false;
     if (film.src !== u) { film.src = u; film.addEventListener("loadedmetadata", () => caler(true), { once: true }); } else caler(true); }
   else { film.hidden = true; film.pause(); }
@@ -653,7 +657,7 @@ function chargerPas(i, t, lancer) {
   const nx = S.s.pas[i + 1]; if (nx) { const im = new Image(); im.src = nx.fond; }
   if (q.audio) { const u = new URL(q.audio, location.href).href;
     if (son.src !== u) { son.src = u; son.load(); }
-    const poser = () => { try { son.currentTime = t; } catch (e) {} son.playbackRate = +$("vitesse").value; if (lancer) lecture(); };
+    const poser = () => { if (!apresSon) { try { son.currentTime = t; } catch (e) {} } else son.pause(); son.playbackRate = +$("vitesse").value; if (lancer) lecture(); };
     if (son.readyState >= 1) poser(); else son.addEventListener("loadedmetadata", poser, { once: true });
   } else { son.pause(); son.removeAttribute("src"); if (lancer) lecture(); }
   dessiner(true);
@@ -662,7 +666,7 @@ function aller(t, lancer) {
   const d = dureeSec(); t = Math.max(0, Math.min(d - 0.05, t)); let i = 0; while (i < S.s.pas.length - 1 && t >= debutPas(i + 1)) i++;
   $("voile").hidden = true; $("voile").classList.remove("quiz"); enQuiz = false; chargerPas(i, t - debutPas(i), lancer === undefined ? enLecture : lancer);
 }
-function lecture() { if (modeAV && S && S.s.pas[iPas] && S.s.pas[iPas].didac) return; enLecture = true; tHorloge = performance.now(); const q = S.s.pas[iPas]; if (q.audio) son.play().catch(() => { enLecture = false; bouton(); voileDepart(); }); bouton(); }
+function lecture() { if (modeAV && S && S.s.pas[iPas] && S.s.pas[iPas].didac) return; enLecture = true; tHorloge = performance.now(); const q = S.s.pas[iPas]; if (q.audio && !apresSon) son.play().catch(() => { enLecture = false; bouton(); voileDepart(); }); bouton(); }
 function pause() { enLecture = false; son.pause(); film.pause(); cameo.pause(); document.querySelectorAll("#incrustes video").forEach(v => v.pause()); bouton(); }
 /* vidéos insérées dans la diapositive (reprises de PowerPoint) : posées à leur place, calées sur l'horloge du pas.
    Avant le départ : première image ; pendant : la vidéo (en boucle, ou en plein écran, selon ses options) ;
@@ -1127,13 +1131,15 @@ function texte() {
 }
 function boucle(maintenant) {
   if (S && enLecture) { const q = S.s.pas[iPas];
-    if (q.audio) { tPas = son.currentTime || 0; if (son.ended || tPas >= q.duree_s - 0.03) { finPas(); } }
+    if (q.audio && !apresSon) { tPas = son.currentTime || 0;
+      if (son.ended || tPas >= finSon(q) - 0.03) { if (tPas < q.duree_s - 0.05) { apresSon = true; tHorloge = maintenant; } else finPas(); } }
     else { tPas += (maintenant - tHorloge) / 1000 * +$("vitesse").value; tHorloge = maintenant; if (tPas >= q.duree_s) finPas(); }
     if (S && enLecture) { dessiner(); caler(false); } }
   requestAnimationFrame(boucle);
 }
-son.addEventListener("ended", () => { if (enLecture) finPas(); });
-son.addEventListener("seeked", () => { tPas = son.currentTime; dessiner(); caler(true); });
+son.addEventListener("ended", () => { if (!enLecture || !S) return; const q = S.s.pas[iPas];
+  if (tPas < q.duree_s - 0.05) { apresSon = true; tHorloge = performance.now(); } else finPas(); });
+son.addEventListener("seeked", () => { if (apresSon) return; tPas = son.currentTime; dessiner(); caler(true); });
 son.addEventListener("error", () => { if (son.getAttribute("src")) { pause(); const v = $("voile"); v.hidden = false; v.textContent = ""; const p = document.createElement("p"); p.textContent = T("Le son de ce passage est introuvable ou illisible ({0}).", S.s.pas[iPas].audio); v.appendChild(p); } });
 
 /* ---------- commandes ---------- */
@@ -1242,7 +1248,13 @@ if (C.parcours.length > 1) { const s = $("parcours"); C.parcours.forEach(p => { 
 $("vitesse").value = memo.lire("vitesse", "1"); if (!$("vitesse").value) $("vitesse").value = "1";
 if (memo.lire("son", true) === false) reglerSon(false);
 if (memo.lire("st", true) === false) $("b-st").setAttribute("aria-pressed", "false");
-if (C.pdf) { const a = $("b-pdf"); a.href = C.pdf; a.hidden = false; }                       /* PDF de la capsule (construire --pdf) */
+/* PDF de la capsule : celui de la langue des sous-titres, sinon celui de la langue source, sinon le premier */
+function majPdf() {
+  const a = $("b-pdf"); if (!C.pdf) { a.hidden = true; return; }
+  const p = typeof C.pdf === "string" ? C.pdf : (C.pdf[stL] || C.pdf[LG.source] || Object.values(C.pdf)[0]);
+  if (p) { a.href = p; a.hidden = false; } else a.hidden = true;
+}
+majPdf();
 if (memo.lire("texte", false) === true) { $("b-texte").setAttribute("aria-pressed", "true"); $("texte").hidden = false; }
 reglerTexte(+(memo.lire("taille_texte", 1)) || 1, memo.lire("aere", false) === true);
 libelles(); plan(); taille();

@@ -115,7 +115,7 @@ Un pas de didacticiel porte en plus les gestes attendus et les retours :
 
 **Section** : `id`, `titre`, `objectif`, `source` (`fichier`, `diapos`, `duree_s` ; `chemin` : où le diaporama a été repris, relatif au chapitre, pour le retrouver à la construction d'une édition), `narration`, `audio`, `arret`, `ouverture`, `questions`, `annexes`, `variantes`, `sauf`, `pas`.
 
-**Pas** : `id`, `fond`, `fond_pour`, `vue`, `source`, `narration`, `phrases` (`debut_s`, `fin_s`, `texte`, `pause_s`, `variantes`, `sauf`, `pour`, `audio_pour`), `variantes`, `sauf`, `audio`, `duree_s`, `voix`, `texte_diapo` (texte de la diapositive, écrit par `capsuleforge pptx` : blocs `{texte, titre: true}`, `{texte, niveau}`, `{formule}` en LaTeX, `{cellules: [[{texte}…]…]}` ; `liens` : `[{texte, url}]` d'un paragraphe ; `etat` : clic à partir duquel le bloc est visible ; `cas` et `publics` : bloc d'une forme « cf édition » ou « cf nu » ; textes traduisibles `{fr: …, en: …}`), `objets`, `gestes`, `a_vous` (`observer`, `indice`), `retours` (`juste`, `faux`), `ecarte`, `raison`.
+**Pas** : `id`, `fond`, `fond_pour`, `vue`, `source`, `narration`, `fin` (fin du pas, voir plus bas), `phrases` (`debut_s`, `fin_s`, `texte`, `pause_s`, `variantes`, `sauf`, `pour`, `audio_pour`), `variantes`, `sauf`, `audio`, `duree_s`, `voix`, `texte_diapo` (texte de la diapositive, écrit par `capsuleforge pptx` : blocs `{texte, titre: true}`, `{texte, niveau}`, `{formule}` en LaTeX, `{cellules: [[{texte}…]…]}` ; `liens` : `[{texte, url}]` d'un paragraphe ; `etat` : clic à partir duquel le bloc est visible ; `cas` et `publics` : bloc d'une forme « cf édition » ou « cf nu » ; textes traduisibles `{fr: …, en: …}`), `objets`, `gestes`, `a_vous` (`observer`, `indice`), `retours` (`juste`, `faux`), `ecarte`, `raison`.
 
 **Pas vidéo** : `video` = `{fichier: videos/<nom>.mp4, debut_s, fin_s}` (extrait de la vidéo joué pendant le pas) ; le pas garde `fond` (image d'affiche), `audio` (son de l'extrait, horloge du pas), `duree_s`, `phrases` et `objets` comme une diapositive ; `source: {type: video, fichier, debut_s, fin_s}` (instants dans le fichier d'origine). Écrit par `capsuleforge video`. `camera` = `{fichier: videos/<nom>_camera.mp4, debut_s, fin_s}` : webcam filmée en même temps (caméo), même découpage que `video` (écrit par `capsuleforge filmer --webcam`) ; le lecteur la montre en médaillon, calée sur la vidéo (bouton « Caméo », touche V) ; `position`, `taille` et `forme` sur un pas remplacent ceux du chapitre.
 
@@ -139,6 +139,18 @@ Un texte (titre, narration, bulle, retour) est une chaîne dans la langue source
 | `{zone: [x, y, l, h], variantes: […]}` ou `sauf` | masque | zone floutée selon la variante |
 
 Une phrase retirée coupe son extrait de narration (de son début au début de la suivante) dans le son du pas et dans les voix de synthèse des autres langues ; les phrases, apparitions et objets qui suivent sont recalés. Un pas vidéo garde son film : seuls ses sous-titres changent. Dans l'écran de relecture, le bouton « Public » de chaque phrase règle `variantes`, `sauf` et `pour`.
+
+### Fin du pas
+
+Par défaut, un pas finit avec sa voix, prolongée jusqu'à la fin de ses vidéos insérées qui ne bouclent pas, plus 0,5 s : une vidéo n'est jamais coupée. La clé `fin` du pas la règle autrement :
+
+```yaml
+fin: {video: v20, decalage_s: 1}     # 1 s après la fin de la vidéo v20
+fin: {phrase: 3, decalage_s: 0.5}    # 0,5 s après la fin de la ligne 3 (0,5 s par défaut)
+fin: {instant_s: 24}                  # à 24 s
+```
+
+Le lecteur continue le pas en silence après la voix jusqu'à sa fin (pause, piste et vitesse comprises) ; une fin plus tôt que la voix la coupe. Dans une autre langue, la même règle s'applique aux instants de sa voix. La balise `[fin]` (ou `[fin 2 s]`) des notes la fixe après la ligne qui la précède.
 
 ### Vidéo insérée dans une diapositive
 

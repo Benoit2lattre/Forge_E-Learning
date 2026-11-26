@@ -87,6 +87,7 @@ label.case{flex-direction:row !important;align-items:center;gap:6px}
 table.sections td,table.sections th{padding:6px 8px;font-size:13px}
 table.sections tr.partie td{background:var(--entete-t);font-weight:600}
 table.sections tr.partie .pastille{margin-left:8px;font-weight:400}
+ul.oublis{list-style:none;padding-left:0}ul.oublis li{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0;word-break:break-all}ul.oublis li>span:first-child{flex:1 1 200px}
 table.sections tr.partie .sous{margin-left:10px;font-weight:400}
 dialog.formulaire{border:1px solid var(--bord);border-radius:10px;padding:18px 22px;min-width:460px;max-width:620px;display:flex;flex-direction:column;gap:10px}
 dialog.formulaire[open]{display:flex}
@@ -393,22 +394,37 @@ async function detailCapsule(zone, nom) {
     el("label", {}, "Vitesse ", choix("vitesse", [["0.9", "0,9"], ["1", "normale"], ["1.1", "1,1"], ["1.2", "1,2"]], "1")),
     caseA("refaire_voix", "refaire même si le texte n'a pas changé"),
     el("button", { class: "btn", type: "button", onclick: () => lancer("capsule.voix", { langue: selVoixL.value, moteur: selMoteur.value, voix: selVoix.value, vitesse: opt("vitesse", "1"), refaire: opt("refaire_voix", false), sections: portee() }) }, "Faire la voix"));
+  const CONTENUS_PDF = [["texte", "diapositives et texte dit"], ["texte,diapo", "texte dit et texte des diapositives"], ["diapo", "texte des diapositives"], ["diapos", "diapositives seules"]];
+  const NOTES_PDF = [["aucune", "pas de place"], ["marge", "en marge"], ["dessous", "sous chaque diapositive"]];
+  const libPdf = v => `${d.noms_langues[v.langue] || v.langue} · ${(CONTENUS_PDF.find(c => c[0] === v.contenu) || [0, v.contenu])[1]}` + (v.notes !== "aucune" ? ` · notes ${(NOTES_PDF.find(c => c[0] === v.notes) || [0, v.notes])[1]}` : "");
   const construire = el("div", { class: "carte" }, el("div", { class: "nom" }, "5. Construire"),
     el("label", {}, "Paquets SCORM ", choix("scorm", [["", "aucun (lecteur seul)"], ["chapitre", "un pour la capsule"], ["parties", "un par partie"], ["tout", "les deux"]], "")),
     el("label", {}, "Format ", choix("version", [["1.2", "SCORM 1.2 (conseillé, Moodle)"], ["2004", "SCORM 2004"]], "1.2")),
     d.cameo && d.cameo.pas ? reglageCameo(d.cameo, lancer) : null,
-    caseA("pdf", "PDF de la capsule (à imprimer, ouvert depuis le lecteur)"),
-    el("label", {}, "Dans le PDF ", choix("pdf_contenu", [["texte", "diapositives et texte dit"], ["texte,diapo", "+ texte des diapositives"], ["diapos", "diapositives seules"]], "texte")),
-    el("label", {}, "Notes ", choix("pdf_notes", [["aucune", "pas de place"], ["marge", "en marge"], ["dessous", "sous chaque diapositive"]], "aucune")),
-    d.autres.length ? el("label", {}, "Langue du PDF ", choix("pdf_langue", [["", "langue source"], ...d.autres.map(l => [l, l])], "")) : null,
+    el("div", { class: "sous" }, typo(d.pdfs.some(v => v.paquet) ? "PDF joint : " + d.pdfs.filter(v => v.paquet).map(libPdf).join(" ; ") + " (refaits à la construction)" : "Aucun PDF joint (carte « 6. PDF »)")),
     coursChoisi() ? el("div", { class: "sous" }, "Cours choisi : capsule habillée pour l'édition et rangée comme version (registre).") : null,
     el("div", { class: "actions" }, el("button", { class: "btn second", type: "button", onclick: () => lancer("capsule.verifier", {}) }, "Vérifier"),
-      el("button", { class: "btn", type: "button", onclick: () => lancer("capsule.construire", { scorm: opt("scorm", ""), version: opt("version", "1.2"),
-        pdf: opt("pdf", false), pdf_contenu: opt("pdf_contenu", "texte"), pdf_notes: opt("pdf_notes", "aucune"), pdf_langue: opt("pdf_langue", "") }) }, "Construire"),
+      el("button", { class: "btn", type: "button", onclick: () => lancer("capsule.construire", { scorm: opt("scorm", ""), version: opt("version", "1.2") }) }, "Construire"),
       coursChoisi() ? el("button", { class: "btn second", type: "button", onclick: () => registreDialog({ capsule: d.nom }, d.titre || d.nom) }, "Registre") : null),
     d.paquets.length ? el("div", { class: "paquets" }, el("div", { class: "sous" }, "Paquets construits :"), d.paquets.map(z => el("div", { class: "paquet", title: z.fichier },
       el("span", {}, el("b", {}, z.libelle), el("span", { class: "sous" }, `${z.version} · ${quand(z.date)}`)),
       el("button", { class: "btn second petit", type: "button", onclick: e => montrer(z.chemin, e.currentTarget) }, "Montrer")))) : null);
+  /* 6. PDF : versions faites à partir du lecteur construit, chacune avec sa case « dans le paquet » */
+  const pdf = el("div", { class: "carte" }, el("div", { class: "nom" }, "6. PDF"),
+    el("p", { class: "sous" }, typo(d.lecteur_json ? "Fait à partir du lecteur construit, sans reconstruire. Chaque réglage donne sa version." : "Construire d'abord la capsule (carte 5).")),
+    el("label", {}, "Langue ", choix("pdf_langue", [[d.langue, d.noms_langues[d.langue] || d.langue], ...d.autres.map(l => [l, d.noms_langues[l] || l])], d.langue)),
+    el("label", {}, "Contenu ", choix("pdf_contenu", CONTENUS_PDF, "texte")),
+    el("label", {}, "Notes ", choix("pdf_notes", NOTES_PDF, "aucune")),
+    el("div", { class: "actions" }, el("button", { class: "btn", type: "button", disabled: !d.lecteur_json, onclick: () => lancer("capsule.pdf", { langue: opt("pdf_langue", d.langue), contenu: opt("pdf_contenu", "texte"), notes: opt("pdf_notes", "aucune") }) }, "Faire le PDF")),
+    d.pdfs.length ? el("div", { class: "paquets" }, el("div", { class: "sous" }, "Versions :"), d.pdfs.map(v => {
+      const c = el("input", { type: "checkbox", "aria-label": "Dans le paquet SCORM : " + v.cle }); c.checked = v.paquet;
+      c.onchange = () => lancer("capsule.pdf", { langue: v.langue, contenu: v.contenu, notes: v.notes, paquet: c.checked ? "oui" : "non", sans_refaire: true });
+      return el("div", { class: "paquet", title: v.cle },
+        el("span", {}, el("b", {}, typo(libPdf(v))), el("span", { class: "sous" }, v.chemin ? quand(v.date) + (v.perime ? typo(" · lecteur reconstruit depuis : refaire") : "") : "pas encore faite")),
+        el("label", { class: "sous" }, c, " dans le paquet"),
+        v.chemin ? el("button", { class: "btn second petit", type: "button", onclick: e => montrer(v.chemin, e.currentTarget) }, "Montrer") : null);
+    })) : null,
+    el("p", { class: "sous" }, typo("Une version par langue au plus dans le paquet SCORM ; le bouton PDF du lecteur suit la langue des sous-titres.")));
   /* sections */
   const entetes = ["", "Section", "Genre", "Durée", "Pas", "Diapos reprises", "Images", "Texte dit", "Relu", ...d.autres.flatMap(l => [`Texte ${l}`, `Voix ${l}`]), "Questions"];
   const corps = el("tbody", {});
@@ -426,7 +442,7 @@ async function detailCapsule(zone, nom) {
         el("td", {}, s.questions ? String(s.questions) : "–")));
     }
   }
-  zone.replaceChildren(haut, resume, el("div", { class: "etapes" }, sources, texteDit, traduction, voix, construire), libPortee,
+  zone.replaceChildren(haut, resume, el("div", { class: "etapes" }, sources, texteDit, traduction, voix, construire, pdf), libPortee,
     el("h3", {}, "Sections"), el("table", { class: "sections" }, el("thead", {}, el("tr", {}, entetes.map(h => el("th", {}, h)))), corps));
 }
 const SUITES = {};                                   // tâche à lancer quand une autre réussit
@@ -1019,7 +1035,11 @@ async function autreDossier() {
 async function reglages() { const g = ++GEN;   /* page en cours : une page quittée n'écrit plus dans l'écran */
   vider(el("div", { class: "entete" }, el("h2", {}, "Réglages")), el("p", { class: "chapeau" }, "Réglages de l'atelier, gardés dans data/_atelier/reglages.json. Chaque écran garde aussi les derniers choix de la séance."));
   if (!ETAT) ETAT = await api("/api/etat");
-  REGLAGES = null; const R = await reglagesAtelier();
+  REGLAGES = null; const RA = await api("/api/reglages"), R = RA.ok ? RA.reglages : {}; REGLAGES = R;
+  const absents = new Set(RA.absents || []);
+  const oublier = async reglage => { const r = await api("/api/reglages", { reglages: reglage }); if (!r.ok) message(r.message, true); if (ECRAN === "reglages") reglages(); };
+  const ligne = (texte, chemin, reglage) => el("li", { class: "ligne-oubli" }, el("span", {}, texte), absents.has(chemin) ? el("span", { class: "pastille p-ko", title: "Ce chemin n'existe plus sur cet ordinateur" }, "introuvable") : null,
+    el("button", { class: "btn second petit", type: "button", onclick: () => oublier(reglage) }, "Oublier"));
   const profil = el("select", {}, el("option", { value: "" }, "celui que les outils prennent par défaut"), (ETAT.profils || []).map(p => el("option", { value: p }, p)));
   profil.value = R.profil || "";
   const dia = Object.entries(R.diaporamas || {}), cls = R.classeurs || [];
@@ -1028,14 +1048,14 @@ async function reglages() { const g = ++GEN;   /* page en cours : une page quitt
   app.onchange = async () => { choisirTheme(app.value); const r = await api("/api/reglages", { reglages: { apparence: app.value } }); if (r.ok) REGLAGES = r.reglages; };
   principal(g).append(el("div", { class: "carte etroite" }, el("div", { class: "nom" }, "Apparence"), el("p", {}, "Aussi par le bouton ☾ / ☀ en haut de la page."), champ("Apparence", app)));
   principal(g).append(el("div", { class: "carte etroite" }, el("div", { class: "nom" }, "Classeurs ajoutés"),
-    cls.length ? el("ul", { class: "sous" }, cls.map(c => el("li", {}, c))) : el("p", {}, "Aucun : « Autre classeur… » (écran Questions) en ajoute un pris hors de data/quizforge."),
-    cls.length ? el("button", { class: "btn second", type: "button", onclick: async () => { await api("/api/reglages", { reglages: { classeurs: [] } }); if (ECRAN === "reglages") reglages(); } }, "Retirer ces classeurs de la liste") : null));
+    cls.length ? el("ul", { class: "sous oublis" }, cls.map(c => ligne(c, c, { retirer_classeur: c }))) : el("p", {}, "Aucun : « Autre classeur… » (écran Questions) en ajoute un pris hors de data/quizforge."),
+    cls.length > 1 ? el("button", { class: "btn second", type: "button", onclick: () => oublier({ classeurs: [] }) }, "Les retirer tous") : null));
   principal(g).append(el("div", { class: "carte etroite" },
     el("div", { class: "nom" }, "Profil d'établissement"), el("p", {}, "Proposé d'office dans les écrans Exercices, Questions et Bilans (couleurs, barème, tirage des quiz)."),
     champ("Profil", profil), el("button", { class: "btn", type: "button", onclick: async () => { const r = await api("/api/reglages", { reglages: { profil: profil.value } }); if (r.ok) { REGLAGES = r.reglages; garder("profil", profil.value); message("Profil enregistré."); } else message(r.message, true); } }, "Enregistrer")),
     el("div", { class: "carte etroite" }, el("div", { class: "nom" }, "Diaporamas retrouvés"),
-      dia.length ? el("ul", { class: "sous" }, dia.map(([n, c]) => el("li", {}, `${n} → ${c}`))) : el("p", {}, "Aucun : l'atelier cherche les diaporamas dans data/capsuleforge et dans le dossier e_learning voisin du dépôt."),
-      dia.length ? el("button", { class: "btn second", type: "button", onclick: async () => { await api("/api/reglages", { reglages: { diaporamas: {} } }); if (ECRAN === "reglages") reglages(); } }, "Oublier ces chemins") : null),
+      dia.length ? el("ul", { class: "sous oublis" }, dia.map(([n, c]) => ligne(`${n} → ${c}`, c, { oublier_diaporama: n }))) : el("p", {}, "Aucun : l'atelier cherche les diaporamas dans data/capsuleforge et dans le dossier e_learning voisin du dépôt."),
+      dia.length > 1 ? el("button", { class: "btn second", type: "button", onclick: () => oublier({ diaporamas: {} }) }, "Les oublier tous") : null),
     el("div", { class: "carte etroite" }, el("div", { class: "nom" }, "Journal des tâches"), el("p", {}, "Toutes les tâches lancées par l'atelier sont notées dans data/_atelier/journal.jsonl (date, commande, état, durée)."),
       el("button", { class: "btn second", type: "button", onclick: e => montrer("data/_atelier", e.currentTarget) }, "Dossier de l'atelier")));
 }

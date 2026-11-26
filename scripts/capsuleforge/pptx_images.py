@@ -19,7 +19,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-MSO_GROUPE, MSO_MEDIA = 6, 16
+MSO_GROUPE, MSO_MEDIA, MSO_ESPACE_RESERVE = 6, 16, 14
 CHAMPS = ("cours", "code", "bloc", "promo", "annee", "ecole", "declinaison", "edition", "enseignant", "capsule")
 
 
@@ -34,6 +34,98 @@ def _formes(diapo) -> dict:
             g = f.GroupItems
             for j in range(1, g.Count + 1):
                 out[int(g.Item(j).Id)] = g.Item(j)
+    return out
+
+
+TOLERANCE_PT = 3.0                                     # recouvrement ou débord en dessous : ignoré
+
+
+def _cadre_texte(f):
+    """Rectangle (gauche, haut, droite, bas) du texte d'une forme visible, en points, ou ``None`` sans texte."""
+    try:
+        if not int(f.Visible) or not int(f.HasTextFrame) or not int(f.TextFrame2.HasText):
+            return None
+        t = f.TextFrame2.TextRange
+        g, h = float(t.BoundLeft), float(t.BoundTop)
+        return (g, h, g + float(t.BoundWidth), h + float(t.BoundHeight))
+    except Exception:
+        return None
+
+
+def _cadre(f):
+    try:
+        g, h = float(f.Left), float(f.Top)
+        return (g, h, g + float(f.Width), h + float(f.Height))
+    except Exception:
+        return None
+
+
+def _recouvre(a, b, tol: float = TOLERANCE_PT) -> bool:
+    return min(a[2], b[2]) - max(a[0], b[0]) > tol and min(a[3], b[3]) - max(a[1], b[1]) > tol
+
+
+def _nom(f) -> str:
+    try:
+        return str(f.Name)
+    except Exception:
+        return "?"
+
+
+def chevauchements(diapo, n: int, largeur_pt: float, hauteur_pt: float, masque: bool = True) -> list[str]:
+    """Textes qui se chevauchent ou débordent sur une diapositive, après l'application du modèle de l'école (ou la
+    traduction) : texte plus grand que sa zone, texte hors de la diapositive, deux textes l'un sur l'autre, texte
+    sur une forme du masque ou de la disposition (logo, pied de page). Renvoie une phrase par problème."""
+    out = []
+    textes = []
+    coll = diapo.Shapes
+    for i in range(1, coll.Count + 1):
+        f = coll.Item(i)
+        membres = [f]
+        try:
+            if int(f.Type) == MSO_GROUPE:
+                membres = [f.GroupItems.Item(j) for j in range(1, f.GroupItems.Count + 1)]
+        except Exception:
+            pass
+        for m in membres:
+            t = _cadre_texte(m)
+            if t:
+                textes.append((m, t))
+    for f, t in textes:
+        c = _cadre(f)
+        if c and (t[3] - c[3] > TOLERANCE_PT or t[2] - c[2] > TOLERANCE_PT):
+            out.append(f"le texte de « {_nom(f)} » déborde de sa zone")
+        if t[0] < -TOLERANCE_PT or t[1] < -TOLERANCE_PT or t[2] > largeur_pt + TOLERANCE_PT or t[3] > hauteur_pt + TOLERANCE_PT:
+            out.append(f"le texte de « {_nom(f)} » sort de la diapositive")
+    for i, (f, t) in enumerate(textes):
+        for g, u in textes[i + 1:]:
+            if _recouvre(t, u):
+                out.append(f"les textes de « {_nom(f)} » et « {_nom(g)} » se chevauchent")
+    if masque:                                          # formes du masque et de la disposition, hors espaces réservés
+        try:
+            montrees = int(diapo.DisplayMasterShapes)
+        except Exception:
+            montrees = 1
+        fonds = []
+        if montrees:
+            for source in ("CustomLayout", "Master"):
+                try:
+                    sh = getattr(diapo, source).Shapes
+                    for i in range(1, sh.Count + 1):
+                        x = sh.Item(i)
+                        try:
+                            if int(x.Type) == MSO_ESPACE_RESERVE or not int(x.Visible):
+                                continue
+                        except Exception:
+                            continue
+                        c = _cadre_texte(x) or _cadre(x)
+                        if c and (c[2] - c[0]) * (c[3] - c[1]) < 0.5 * largeur_pt * hauteur_pt:   # pas un fond plein
+                            fonds.append((x, c))
+                except Exception:
+                    pass
+        for f, t in textes:
+            for x, c in fonds:
+                if _recouvre(t, c):
+                    out.append(f"le texte de « {_nom(f)} » passe sur « {_nom(x)} » du modèle")
     return out
 
 
@@ -311,6 +403,7 @@ def exporter(fichier: Path, diapos: list[dict], dossier: Path, largeur: int, jou
     pres = None
     ecrits = []
     signales: set = set()
+    chevauchants = 0
     try:
         pres = app.Presentations.Open(str(fichier), -1, 0, 0)          # lecture seule, sans fenêtre
         hauteur = round(largeur * float(pres.PageSetup.SlideHeight) / float(pres.PageSetup.SlideWidth))
@@ -371,6 +464,16 @@ def exporter(fichier: Path, diapos: list[dict], dossier: Path, largeur: int, jou
                     formes[f["spid"]].Visible = 0
                 except Exception as e:
                     journal(f"  diapositive {d['n']} : annotation « {f.get('nom')} » non cachée ({type(e).__name__})")
+            if modele or table:                                         # mise en page à vérifier (texte de l'école ou traduit)
+                try:
+                    pbs = chevauchements(diapo, d["n"], float(pres.PageSetup.SlideWidth), float(pres.PageSetup.SlideHeight),
+                                         masque=montrer_masque)
+                except Exception as exc:
+                    pbs = []
+                    journal(f"  diapo {d['n']} : chevauchements non vérifiés ({type(exc).__name__})")
+                for p in pbs:
+                    journal(f"  diapo {d['n']} : {p} : à vérifier")
+                chevauchants += bool(pbs)
             # tout ce qu'une animation fait apparaître ou disparaître dans cette diapositive
             animes = {tuple(c) if isinstance(c, list) else c for e in d["etats"] for c in e}
             animes = {c for c in animes if (c[0] if isinstance(c, tuple) else c) not in fixes}
@@ -409,6 +512,12 @@ def exporter(fichier: Path, diapos: list[dict], dossier: Path, largeur: int, jou
                 diapo.Export(str(dossier / rel), "PNG", int(largeur), int(hauteur))
                 ecrits.append(rel)
             journal(f"  diapo {d['n']} : {len(d['etats'])} image(s)")
+        if chevauchants:
+            journal(f"  {chevauchants} diapositive(s) à vérifier : textes qui se chevauchent ou débordent "
+                    + ("après le modèle de l'école" if modele else "après la traduction")
+                    + " (voir les lignes « à vérifier » plus haut)")
+        elif modele or ((edition or {}).get("traductions")):
+            journal("  aucun texte ne se chevauche ni ne déborde" + (" après le modèle de l'école" if modele else ""))
     finally:
         if pres is not None:
             pres.Saved = -1

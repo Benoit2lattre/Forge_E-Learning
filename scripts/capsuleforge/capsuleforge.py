@@ -18,6 +18,8 @@ Commandes (abréviations acceptées : « en », « ed », « cons », « conv »
     python capsuleforge.py construire demo_traction --cours traction[:ecole1-meca[/2026]]
         Capsule habillée pour l'édition (charte, logo et textes du profil de l'école, titre, codes, promo ; filigrane si
         l'édition le demande), rangée comme version de l'édition (capsules/<capsule>/v1/) et inscrite au registre.
+    python capsuleforge.py pdf fiabilite [--langue en] [--contenu diapos|texte|diapo|texte,diapo] [--notes marge] [--paquet oui]
+        Une version du PDF à partir du lecteur construit (pdf/fiabilite_en_texte.pdf…) ; --paquet oui la joint aux paquets.
     python capsuleforge.py traduire fiabilite --langue en [--moteur aucun|argos|deepl]
         Écrit ou complète data/capsuleforge/fiabilite/traductions/en.yaml (source, cible, relu) ; le moteur pré-remplit.
     python capsuleforge.py traduire fiabilite --langue en --importer
@@ -194,11 +196,79 @@ def cmd_construire(a):
         langues = PE.produire_langues(PE.plan_langues(y2, F.lire(y2), None), y2.parent)   # diapositives traduites
         construire_chapitre.construire(y2, sortie, largeur=a.largeur, fmt=a.format or "webp", audio=a.audio,
                                        scorm=getattr(a, "scorm", None), scorm_version=getattr(a, "scorm_version", None) or "2004",
-                                       variante=getattr(a, "variante", None), images_langues=langues, pdf=options_pdf(a))
+                                       variante=getattr(a, "variante", None), images_langues=langues, pdfs=pdfs_paquet(a, y2))
         return 0
     import construire
     sortie = Path(a.sortie) if a.sortie else chemins.SORTIES / "capsuleforge" / y.parent.name
     construire.construire(y, sortie, largeur=a.largeur, fmt=a.format or "png")
+
+
+def pdfs_paquet(a, y: Path) -> list[dict]:
+    """Versions du PDF à joindre aux paquets : celles cochées « dans le paquet » (``_pdf.yaml``), plus celle que
+    demande ``--pdf`` (notée alors comme version, dans le paquet)."""
+    import pdf_capsule as PDF
+    src = (F.lire(y).get("langues") or {}).get("source") or "fr"
+    o = options_pdf(a)
+    if o:
+        PDF.noter_version(y.parent, PDF.norme({"langue": o["langue"], "contenu": ",".join(o["contenu"]) or "diapos",
+                                              "notes": o["notes"]}, src), src, paquet=True)
+    return [v for v in PDF.lire_versions(y.parent, src) if v["paquet"]]
+
+
+def cmd_pdf(a):
+    """Fait une version du PDF d'une capsule à partir de son lecteur construit, sans la reconstruire (commande ``pdf``).
+
+    Chaque réglage (``--langue``, ``--contenu``, ``--notes``) donne sa version, au nom explicite, dans le dossier
+    ``pdf/`` du lecteur (``<capsule>_<langue>_<contenu>[_<notes>].pdf``) ; une version n'écrase que celle qui a les
+    mêmes réglages. ``--paquet oui`` la met dans les paquets SCORM (une par langue : l'autre en sort), ``--paquet non``
+    l'en retire ; la prochaine construction joint les versions cochées et les refait avec le lecteur à jour.
+    ``--sans-refaire`` change seulement la case. ``--liste`` montre les versions. Avec ``--cours``, le lecteur
+    habillé de l'édition.
+    """
+    import pdf_capsule as PDF
+    y = trouver_chapitre(a.capsule)
+    if not y.is_file():
+        raise SystemExit(f"Pas de chapitre : {y}")
+    chap = F.lire(y)
+    src = (chap.get("langues") or {}).get("source") or "fr"
+    if getattr(a, "cours", None):
+        import habillage as HB
+        h = HB.pour_cours(a.cours, F.texte(chap.get("titre")))
+        sortie = chemins.SORTIES / "capsuleforge" / HB.nom_paquet(h, y.parent.name)
+    else:
+        sortie = chemins.SORTIES / "capsuleforge" / y.parent.name
+    if a.liste:
+        vs = PDF.lire_versions(y.parent, src)
+        if not vs:
+            print("Aucune version du PDF")
+        for v in vs:
+            f = sortie / PDF.fichier(v, sortie.name)
+            print(f"  {PDF.cle(v)}{'  [dans le paquet]' if v['paquet'] else ''}  "
+                  + (f"{f} ({f.stat().st_size / 1e6:.1f} Mo)" if f.is_file() else "(pas encore faite pour ce lecteur)"))
+        return 0
+    try:
+        v = PDF.norme({"langue": a.langue, "contenu": a.contenu, "notes": a.notes}, src)
+    except ValueError as e:
+        raise SystemExit(str(e))
+    langues = [src] + list((chap.get("langues") or {}).get("autres") or [])
+    if v["langue"] not in langues:
+        raise SystemExit(f"Langue « {v['langue']} » absente de la capsule ({', '.join(langues)})")
+    paquet = None if a.paquet is None else a.paquet == "oui"
+    if not a.sans_refaire:
+        donnees_f = sortie / "lecteur.json"
+        if not donnees_f.is_file():
+            raise SystemExit(f"Pas de lecteur construit dans {sortie} : construire d'abord la capsule")
+        import json
+        donnees = json.loads(donnees_f.read_text(encoding="utf-8"))
+        f = PDF.faire(donnees, sortie, sortie.name, v, print)
+        if not f:
+            raise SystemExit("PDF non écrit (Edge ou Chrome introuvable ?)")
+    vs = PDF.noter_version(y.parent, v, src, paquet=paquet)
+    dans = [PDF.cle(x) for x in vs if x["paquet"]]
+    print(f"Version {PDF.cle(v)}" + (" : dans le paquet" if paquet else " : hors du paquet" if paquet is False else ""))
+    print("Dans les paquets : " + (", ".join(dans) if dans else "aucun PDF")
+          + (" (reconstruire la capsule pour les joindre)" if paquet is not None else ""))
+    return 0
 
 
 def options_pdf(a) -> dict | None:
@@ -265,7 +335,11 @@ def construire_pour_cours(a, y: Path) -> int:
     import pptx_edition as PE
     pl = PE.plan(y, chap, h)                    # diapositives PowerPoint à habiller (formes d'édition, champs)
     reglages = {"habillage": HB.resume(h), "scorm": scorm, "scorm_version": version, "largeur": a.largeur,
-                "format": a.format or "webp", "audio": a.audio, "pdf": options_pdf(a)}
+                "format": a.format or "webp", "audio": a.audio}
+    import pdf_capsule as PDF
+    pdfs = pdfs_paquet(a, y)
+    if pdfs:
+        reglages["pdf"] = [PDF.cle(v) for v in pdfs]
     if pl:
         reglages["powerpoint"] = PE.resume(pl)
     tl = PE.plan_langues(y, chap, h)            # diapositives traduites
@@ -284,12 +358,12 @@ def construire_pour_cours(a, y: Path) -> int:
     langues = PE.produire_langues(tl, y.parent, exiger=True)
     construire_chapitre.construire(y, sortie, largeur=a.largeur, fmt=a.format or "webp", audio=a.audio, scorm=scorm,
                                    scorm_version=version, habillage=h, nom_paquets=HB.nom_paquet(h, nom, v["label"]),
-                                   paquets=paquets, images_edition=images, images_langues=langues, pdf=options_pdf(a))
+                                   paquets=paquets, images_edition=images, images_langues=langues, pdfs=pdfs)
     if not paquets:
         print("Aucun paquet SCORM écrit : rien de rangé")
         return 1
-    if options_pdf(a) and not any(Path(z).suffix.lower() == ".pdf" for z in paquets):
-        print("PDF demandé mais non écrit : version non rangée (le lecteur et les paquets sont dans dist/)")
+    if len({v["langue"] for v in pdfs}) > sum(1 for z in paquets if Path(z).suffix.lower() == ".pdf"):
+        print("PDF du paquet non écrit : version non rangée (le lecteur et les paquets sont dans dist/)")
         return 1
     d = Path(v["dossier"])
     d.mkdir(parents=True, exist_ok=True)
@@ -732,7 +806,7 @@ def main(argv=None):
     c.add_argument("--scorm-version", choices=["2004", "1.2"], default="2004", help="format des paquets : 2004 (défaut) ou 1.2 (seul format officiellement pris en charge par Moodle)")
     c.add_argument("--cours", help="cours[:déclinaison[/édition]] : capsule habillée pour l'édition (profil de l'école, "
                    "titre, codes, promo), rangée comme version de l'édition et inscrite au registre")
-    c.add_argument("--pdf", action="store_true", help="écrire aussi le PDF de la capsule (Edge ou Chrome, sans fenêtre)")
+    c.add_argument("--pdf", action="store_true", help="noter une version du PDF et la joindre aux paquets (voir la commande pdf)")
     c.add_argument("--pdf-contenu", help="ce que le PDF met sous chaque diapositive : texte (texte dit, défaut), diapo "
                    "(texte de la diapositive), ou diapos (les images seules) ; plusieurs séparés par des virgules")
     c.add_argument("--pdf-notes", choices=["aucune", "marge", "dessous"], help="place pour les notes des étudiants")
@@ -814,12 +888,22 @@ def main(argv=None):
     ac.add_argument("--sections", help="identifiants de parties ou de sections, séparés par des virgules")
     ac.add_argument("--remplacer", action="store_true", help="refaire aussi les accroches existantes")
     ac.add_argument("--essai", action="store_true", help="montrer le résultat sans rien écrire")
+    pf = sp.add_parser("pdf", help="une version du PDF d'une capsule construite, sans la reconstruire")
+    pf.add_argument("capsule")
+    pf.add_argument("--langue", help="langue du PDF (défaut : langue source)")
+    pf.add_argument("--contenu", default="texte", choices=["diapos", "texte", "diapo", "texte,diapo"],
+                    help="sous chaque diapositive : rien (diapos), texte dit, texte de la diapositive, ou les deux")
+    pf.add_argument("--notes", default="aucune", choices=["aucune", "marge", "dessous"], help="place pour les notes")
+    pf.add_argument("--paquet", choices=["oui", "non"], help="joindre (oui) ou non cette version aux paquets SCORM")
+    pf.add_argument("--sans-refaire", action="store_true", help="changer seulement la case « dans le paquet »")
+    pf.add_argument("--liste", action="store_true", help="montrer les versions faites")
+    pf.add_argument("--cours", help="cours[:déclinaison[/édition]] : le lecteur habillé de l'édition")
     sp.add_parser("assistant", help="menu pas à pas")
     a = p.parse_args(argv)
     if not a.cmd:
         p.print_help(); return 0
     return {"enregistrer": cmd_enregistrer, "editer": cmd_editer, "construire": cmd_construire, "traduire": cmd_traduire, "voix": cmd_voix, "video": cmd_video, "filmer": cmd_filmer, "convertir": cmd_convertir, "plan": cmd_plan, "pptx": cmd_pptx, "transcrire": cmd_transcrire, "relire": cmd_relire, "verifier": cmd_verifier,
-            "assembler": cmd_assembler, "approj": cmd_approj, "nouvelle": cmd_nouvelle, "cameo": cmd_cameo, "accrocher": cmd_accrocher, "diagnostic": cmd_diagnostic, "assistant": cmd_assistant}[a.cmd](a) or 0
+            "assembler": cmd_assembler, "approj": cmd_approj, "nouvelle": cmd_nouvelle, "cameo": cmd_cameo, "accrocher": cmd_accrocher, "diagnostic": cmd_diagnostic, "pdf": cmd_pdf, "assistant": cmd_assistant}[a.cmd](a) or 0
 
 
 if __name__ == "__main__":

@@ -15,7 +15,7 @@ Forge E-Learning réunit des outils libres pour passer d'un cours existant à de
 Les outils sont écrits pour l'enseignement de la mécanique et des mathématiques en école d'ingénieurs (de la licence au master), mais rien n'y est propre à ces disciplines.
 
 :::{note}
-**Version 0.2** publiée, **0.3** en préparation. Les outils servent déjà en cours ; leur maturité est inégale. La page {doc}`etat_outils` dit, outil par outil, ce qui a été essayé en conditions réelles, ce qui est livré sans avoir encore été essayé et ce qui manque.
+**Version 0.3** publiée, **0.4** en préparation. Les outils servent déjà en cours ; leur maturité est inégale. La page {doc}`etat_outils` dit, outil par outil, ce qui a été essayé en conditions réelles, ce qui est livré sans avoir encore été essayé et ce qui manque.
 :::
 
 ## La démarche : de la diapositive à l'étudiant

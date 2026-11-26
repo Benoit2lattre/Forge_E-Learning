@@ -235,3 +235,33 @@ def suivre_decoupage(pas: dict, chap: dict, nouvelles: list[dict]) -> None:
                 o["decalage_s"] = round(float(dec) + avant_mots / len(neufs[hote]) * (b1 - b0), 2)
             continue
         o["phrase"] = min(k + 1, len(nouvelles))                      # réécrite : même numéro
+
+
+FIN_MARGE_S = 0.5
+
+
+def fin_pas(fin: dict | None, base: float, t: list[list[float]], videos: list[dict]) -> float:
+    """Fin d'un pas, en secondes (voir la clé ``fin`` du pas).
+
+    - absente : automatique, la fin de la voix (``base``), prolongée jusqu'à la fin des vidéos insérées qui ne
+      bouclent pas, plus ``FIN_MARGE_S`` ;
+    - ``{video: v20, decalage_s: 0.5}`` : après la vidéo ;
+    - ``{phrase: 3, decalage_s: 0.5}`` : après la fin de la ligne 3 ;
+    - ``{instant_s: 24}`` : à un instant fixe.
+
+    ``videos`` : ``[{id, d, du, b}]`` (départ, durée, boucle) dans la langue de la voix ; ``t`` : instants des lignes.
+    """
+    fin = fin or {}
+    fins_v = {v.get("id"): v["d"] + v["du"] for v in videos if not v.get("b")}
+    dec = fin.get("decalage_s")
+    dec = FIN_MARGE_S if dec is None else float(dec)
+    if fin.get("instant_s") is not None:
+        r = float(fin["instant_s"])
+    elif fin.get("video") in fins_v:
+        r = fins_v[fin["video"]] + dec
+    elif fin.get("phrase") is not None and t:
+        k = min(max(int(fin["phrase"]) - 1, 0), len(t) - 1)
+        r = t[k][1] + dec
+    else:
+        r = max([base] + [f + FIN_MARGE_S for f in fins_v.values()])
+    return round(max(0.5, r), 2)

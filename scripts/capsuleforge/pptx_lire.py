@@ -945,6 +945,8 @@ def reprendre(src: Path, y: Path, diapos: str | None = None, largeur: int | None
                 q["phrases"] = [{"texte": t, **({"pause_s": notes["pauses"][i + 1]} if i + 1 in notes["pauses"] else {})}
                                 for i, t in enumerate(notes["phrases"])]
                 q["source"]["phrases_notes"] = empreinte
+                if notes.get("fin"):
+                    q["fin"] = notes["fin"]                  # [fin] : le pas finit après cette ligne
                 accr, rem = SC.accroches(len(actions), notes, float(reg["decalage_s"]))
                 for x in rem:
                     noter(f"  diapositive {n} : {x}")
